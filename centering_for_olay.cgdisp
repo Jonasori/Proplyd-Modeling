@@ -1,0 +1,10 @@
+# This is right; don't touch it now.
+# OFIG XOTYPE YOTYPE ID WRITE X Y XS YS
+
+# Offsets from the Williams paper
+# star arcsec arcsec diskA no -0.0298 0.072 0.1
+# star arcsec arcsec diskB no -1.0456 -0.1879 0.1 0.1
+
+# Offsets from fitting (Sep23-3 and thereabout)
+star arcsec arcsec diskB no -1.0456 -0.1879 0.1 0.1
+star arcsec arcsec diskB no -1.0456 -0.1879 0.1 0.1
