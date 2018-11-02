@@ -115,25 +115,24 @@ def find_split_cutoffs(mol, other_restfreq=0):
     restfreq = lines[mol]['restfreq']
     nchans = 3840
 
-    freqs = [chan0_freq + chanstep*i for i in range(nchans)]
+    freqs = np.array([chan0_freq + chanstep*i for i in range(nchans)])
 
     # Find the index of the restfreq channel
-    loc = 0
-    min_diff = 1
-    for i in range(len(freqs)):
-        diff = abs(freqs[i] - restfreq)
-        if diff < min_diff:
-            min_diff = diff
-            loc = i
+    loc = np.where(abs(freqs - restfreq) == min(abs(freqs - restfreq)))[0][0]
 
-    # Need to account for the systemic velocitys shift. Do so by rearranging
-    # d_nu/nu = dv/c
+
+    # Need to account for the systemic velocitys shift to put RF at v_sys.
+    # Do so by rearranging d_nu/nu = dv/c
     # ((sysv/c) * restfreq)/chanstep = nchans of shift to apply
     # = (10.55/c) * 356.734223/0.000488281 = 25.692
-    shift = int(10.55/c * abs(restfreq/chanstep))
+
+    shift = int(10.55/c * restfreq/chanstep)
     # So shift in an extra 26 channels
     loc = loc - shift if loc > shift else -np.inf
     split_range = [loc - shift, loc + shift]
+    split_range = [min(split_range), max(split_range)]
+
+    obsv = c * (restfreq-freqs)/restfreq
 
     return split_range
 

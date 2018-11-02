@@ -21,8 +21,8 @@ from constants import mol, obs_stuff, other_params, dataPath
 
 
 # Default params
-col_dens, Tfo, Tmid, m_star, m_disk, r_in, rotHand, offsets = other_params
-vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+col_dens, Tfo, Tmid, m_star, r_in, rotHand, offsets = other_params
+vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=True)
 
 distance = 1/(2.569750671443057 * 10**(-3))
 # Maybe this is error? I don't remember.
@@ -53,18 +53,19 @@ def makeModel(diskParams, outputPath, DI):
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
     # To just make a model (no grid search), add [0] after each param. Not sure why.
-    Tatms = diskParams[0]
-    Tqq   = diskParams[1]
-    Xmol  = diskParams[2]
-    Rout  = diskParams[3]
-    PA    = diskParams[4]
-    Incl  = diskParams[5]
-    Pos_X = diskParams[6]
-    Pos_Y = diskParams[7]
-    v_sys = diskParams[8]
+    Tatms  = diskParams[0]
+    Tqq    = diskParams[1]
+    Xmol   = diskParams[2]
+    Rout   = diskParams[3]
+    PA     = diskParams[4]
+    Incl   = diskParams[5]
+    Pos_X  = diskParams[6]
+    Pos_Y  = diskParams[7]
+    v_sys  = diskParams[8]
+    m_disk = diskParams[9]
 
     a = Disk(params=[Tqq,
-                     m_disk[DI],
+                     10**m_disk,
                      1.,
                      r_in[DI],
                      Rout,

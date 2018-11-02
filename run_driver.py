@@ -18,10 +18,10 @@ M_sun = M_sun.value
 
 # Import some local files
 import mcmc
+import fitting
 import plotting
 from tools import remove, already_exists, already_exists_old
 from constants import mol, obs_stuff, lines, today, offsets, observations_dict
-import fitting
 
 # Import some files from Kevin's modeling code
 from disk_model import raytrace as rt
@@ -69,8 +69,6 @@ param_dict = {
     'r_ins':               [1, 1],            # AU
     'T_freezeout':         19,                # Freezeout temperature
     'm_disks':             [0.078, 0.028],    # Disk Gas Masses (solar masses)
-    'm_disks':             [0.078, 0.028],    # Disk Gas Masses (solar masses)
-    'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
     'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
     'surf_dens_str_A':     1.,          # Surface density power law index
@@ -99,18 +97,18 @@ param_dict = {
 # The order matters here (for comparing in lnprob)
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
-param_info = [('r_out_A',           500,     200,      (10, 1000)),
+param_info = [('r_out_A',           500,     300,      (10, 1000)),
               ('atms_temp_A',       300,     150,      (0, np.inf)),
-              ('mol_abundance_A',   -10,      3,        (-13, -3)),
-              ('temp_struct_A',    -0.2,     0.3,      (-3., 3.)),
-              ('incl_A',            65.,     15.,      (0, 90.)),
-              ('pos_angle_A',       69.7,    4,        (0, 360)),
-              ('r_out_B',           500,     100,      (10, 1000)),
-              ('atms_temp_B',       200,     100,      (0, np.inf)),
-              ('mol_abundance_B',   -10,      3,        (-13, -3)),
-              ('temp_struct_B',    -0.2,     0.3,      (-3., 3.)),
-              ('incl_B',            45.,     20,       (0, 90.)),
-              ('pos_angle_B',       136.0,   30,       (0, 360)),
+              ('mol_abundance_A',   -8,      3,        (-13, -3)),
+              ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+              ('incl_A',            65.,     30.,      (0, 90.)),
+              ('pos_angle_A',       70,      45,       (0, 360)),
+              ('r_out_B',           500,     300,      (10, 1000)),
+              ('atms_temp_B',       200,     150,      (0, np.inf)),
+              ('mol_abundance_B',   -8,      3,        (-13, -3)),
+              ('temp_struct_B',     0.,      1,        (-3., 3.)),
+              ('incl_B',            45.,     30,       (0, 90.)),
+              ('pos_angle_B',       136.0,   45,       (0, 360)),
               ]
 
 
@@ -203,7 +201,7 @@ def main():
             run.corner(variables=args.corner_vars)
 
 
-def make_fits(model, param_dict, mol=mol):
+def make_fits(model, param_dict, mol=mol, testing=False):
     """Take in two list of disk params and return a two-disk model.
 
     Args:
@@ -211,13 +209,21 @@ def make_fits(model, param_dict, mol=mol):
         param_dict (dict): the dynamically updated, global parameter dictionary
                             of parameters. Each parameter that is different for
                             the two disks is a tuple of [diskA_val, diskB_val]
+        testing: if you're setting up this model as a diagnostic, you'll run into
+                 problems since the necessary directories are set up in run_emcee.
 
     Output:
         (model.path).fits
     """
+
+    if testing is True:
+        dir_list = model.modelfiles_path.split('/')[:-1]
+        dir_to_make = '/'.join(dir_list) + '/'
+        sp.call(['mkdir {}'.format(dir_to_make)])
+
     # Make Disk 1
     print "Entering make fits; exporting to", model.modelfiles_path
-    print "Fitting disk 1"
+    #print "Fitting disk 1"
     DI = 0
     d1 = Disk(params=[param_dict['temp_struct_A'],
                       param_dict['m_disks'][DI],
@@ -255,7 +261,7 @@ def make_fits(model, param_dict, mol=mol):
                    )
 
     # Now do Disk 2
-    print "Now fitting disk 2"
+    #print "Now fitting disk 2"
     DI = 1
     d2 = Disk(params=[param_dict['temp_struct_B'],
                       param_dict['m_disks'][DI],
@@ -292,7 +298,7 @@ def make_fits(model, param_dict, mol=mol):
                    isgas=True
                    )
 
-    print "Both disks have been made; going to summing them now."
+    #print "Both disks have been made; going to summing them now."
     # Now sum those two models, make a header, and crank out some other files.
     a = fits.getdata(model.modelfiles_path + '-d1.fits')
     b = fits.getdata(model.modelfiles_path + '-d2.fits')
@@ -326,7 +332,7 @@ def make_fits(model, param_dict, mol=mol):
 
     # Write it out to a file, overwriting the existing one if need be
     fitsout = model.modelfiles_path + '.fits'
-    print "Writing out model fits file to: ", fitsout
+    #print "Writing out model fits file to: ", fitsout
     im.writeto(fitsout, overwrite=True)
 
     """
@@ -356,7 +362,7 @@ def lnprob(theta, run_name, param_info, mol=mol):
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
                             and with length = total number of free params
     """
-    print "Evaluating lnprob"
+    #print "Evaluating lnprob"
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
         # print '\n', i, free_param
@@ -366,7 +372,8 @@ def lnprob(theta, run_name, param_info, mol=mol):
             # print "Taking if"
             name = free_param[0]
             param_dict[name] = theta[i]
-            # print name, theta[i], param_dict[name]
+            #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
+                #print name, theta[i], param_dict[name]
         else:
             # print "Taking else, returning -inf"
             return -np.inf
@@ -392,8 +399,10 @@ def lnprob(theta, run_name, param_info, mol=mol):
     model.obs_sample()
     model.chiSq()
     model.delete()
-    # print "Finished make_fits\n\n\n"
-    return -0.5 * sum(model.raw_chis)
+    lnp = -0.5 * sum(model.raw_chis)
+    print "Lnprob val: ", lnp
+    print '\n\n\n'
+    return lnp
 
 
 # This still needs a bunch of cleaning up.

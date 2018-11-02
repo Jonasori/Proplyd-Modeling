@@ -14,8 +14,9 @@ from run_driver import run_name, run_path
 from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 
-
 import plotting
+
+
 
 sns.set_style('ticks')
 
@@ -77,6 +78,48 @@ class MCMCrun:
         print 'Making walker evolution plot...'
         plt.close()
 
+        self.nsteps = len(self.groomed)//self.nwalkers
+        print self.nsteps, self.nwalkers
+        stepmin, stepmax = 0, self.nsteps
+
+        main = self.groomed.copy().iloc[stepmin * self.nwalkers:
+                                     stepmax * self.nwalkers, :]
+
+        axes = main.iloc[0::self.nwalkers].plot(
+            x=np.arange(stepmin, stepmax),
+            figsize=(9, 1.5*(len(main.columns))),
+            subplots=True,
+            color='black',
+            alpha=0.1)
+
+        for i in range(self.nwalkers-1):
+            main.iloc[i+1::self.nwalkers].plot(
+                x=np.arange(stepmin, stepmax), subplots=True, ax=axes,
+                legend=False, color='black', alpha=0.1)
+
+            # make y-limits on lnprob subplot reasonable
+            # This is not reasonable. Change it?
+            #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
+            axes[-1].set_ylim(-40000, 0)
+
+        # if you want mean at each step over plotted:
+        # main.index //= self.nwalkers
+        # walker_means = pd.DataFrame([main.loc[i].mean() for i in range(self.nsteps)])
+        # walker_means.plot(subplots=True, ax=axes, legend=False, color='forestgreen', ls='--')
+
+        plt.tight_layout()
+        plt.suptitle(self.name + ' walker evolution')
+        plt.savefig(self.image_outpath + '_evolution.png', dpi=200)  # , dpi=1)
+        print 'Image saved image to ' + self.image_outpath + '_evolution.png'
+        plt.show(block=False)
+
+
+
+    def evolution_main(self):
+        """Plot walker evolution."""
+        print 'Making walker evolution plot...'
+        plt.close()
+
         stepmin, stepmax = 0, self.nsteps
 
         main = self.main.copy().iloc[stepmin * self.nwalkers:
@@ -95,8 +138,9 @@ class MCMCrun:
                 legend=False, color='black', alpha=0.1)
 
             # make y-limits on lnprob subplot reasonable
-            axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -
-                                        1].min(), main.lnprob.max())
+            # This is not reasonable. Change it?
+            #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
+            axes[-1].set_ylim(-50000, -38000)
 
         # if you want mean at each step over plotted:
         # main.index //= self.nwalkers
@@ -108,6 +152,9 @@ class MCMCrun:
         plt.savefig(self.image_outpath + '_evolution.png', dpi=200)  # , dpi=1)
         print 'Image saved image to ' + self.image_outpath + '_evolution.png'
         plt.show(block=False)
+
+
+
 
     def kde(self):
         """Make a kernel density estimate (KDE) plot."""
@@ -288,8 +335,7 @@ def run_emcee(run_path, nsteps, nwalkers, lnprob, param_info):
         # Set up a header line
         with open(chain_filename, 'w') as f:
             param_names = [param[0] for param in param_info]
-            np.savetxt(f,
-                       (np.append(param_names, 'lnprob'), ),
+            np.savetxt(f, (np.append(param_names, 'lnprob'), ),
                        delimiter=',', fmt='%s')
 
         # Set up initial positions?
@@ -320,8 +366,10 @@ def run_emcee(run_path, nsteps, nwalkers, lnprob, param_info):
                                         lnprob,
                                         args=(run_name, param_info))
 
-    # Here's where the magic happens
-    run = sampler.sample(pos, iterations=nsteps, storechain=False)
+    # Initiate a generator to provide the data. More about generators here:
+    # https://medium.freecodecamp.org/how-and-why-you-should-use-python-generators-f6fb56650888
+    print "About to run sampler"
+    run = sampler.sample(pos, iterations=nsteps, storechain=True)
     """Note that sampler.sample returns:
             pos: list of the walkers' current positions in an object of shape
                     [nwalkers, ndim]
@@ -332,18 +380,25 @@ def run_emcee(run_path, nsteps, nwalkers, lnprob, param_info):
             blobs (optional): The metadata "blobs" associated with the current
                               position. The value is only returned if
                               lnpostfn returns blobs too.
-    """
+            """
     lnprobs = []
+    print "About to loop over run"
+    # Instantiate the generator
     for i, result in enumerate(run):
         """Enumerate returns a tuple the element and a counter.
             tuples = [t for t in enumerate(['a', 'b', 'c'])]
             counters = [c for c, l in enumerate(['a', 'b', 'c'])]
             """
+        print "Got a result"
         pos, lnprobs, blob = result
+        print "Step: ", i
+        # print "Lnprobs: ", lnprobs
+        # print "Positions: ", pos
 
         # Log out the new positions
         with open(chain_filename, 'a') as f:
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
+            print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
 
     if run_w_pool is True:

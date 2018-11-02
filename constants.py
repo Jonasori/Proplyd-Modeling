@@ -11,7 +11,7 @@ import datetime
 c = c.to('km/s').value
 
 
-mol = 'hco'
+mol = 'cs'
 nwalkers, nsteps = 50, 500
 
 
@@ -35,8 +35,6 @@ Tatm = 100
 Tqq = -0.5
 # Stellar mass, in solar masses [a,b]
 m_star = [3.5, 0.4]
-# Disk mass, in solar masses [a,b]
-m_disk = [0.078, 0.028]
 # Inner disk radius, in AU
 r_in = [1., 1.]
 # Outer disk radius, in AU
@@ -52,15 +50,17 @@ offsets = [[0.0002, 0.082], [-1.006, -0.3]]
 vsys = [10., 10.75]
 
 
-other_params = [col_dens, Tfo, Tmid, m_star, m_disk, r_in, rotHand, offsets]
+other_params = [col_dens, Tfo, Tmid, m_star, r_in, rotHand, offsets]
 
 
 
-def obs_stuff(mol):
+def obs_stuff(mol, short_vis_only=True):
     """Get freqs, restfreq, obsv, chanstep, both n_chans, and both chanmins.
 
     Just putting this stuff in a function because it's ugly and line-dependent.
     """
+    dataPath = get_data_path(mol, short_vis_only)
+
     jnum = lines[mol]['jnum']
 
     # Dig some observational params out of the data file.
@@ -69,13 +69,16 @@ def obs_stuff(mol):
     restfreq = lines[mol]['restfreq']
     # restfreq = hdr['CRVAL4'] * 1e-9
 
+    chan_dir = lines[mol]['chanstep_freq']/np.abs(lines[mol]['chanstep_freq'])
+
     # Get the frequencies and velocities of each step
     # {[arange(nchans) + 1 - chanNum] * chanStepFreq) + ChanNumFreq} * Hz2GHz
     # [-25,...,25] * d_nu + ref_chan_freq
-    freqs = ( (np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * hdr['cdelt4'] + hdr['crval4']) * 1e-9
+    chanstep = lines[mol]['chanstep_freq'] * 1e9
+    freqs = ((np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * chanstep + hdr['crval4']) * 1e-9
+    # freqs = ( (np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * hdr['cdelt4'] + hdr['crval4']) * 1e-9
     obsv = c * (restfreq-freqs)/restfreq
 
-    chan_dir = lines[mol]['chanstep_freq']/np.abs(lines[mol]['chanstep_freq'])
     chanstep = -1 * chan_dir * np.abs(obsv[1]-obsv[0])
     # chanstep = c * (lines[mol]['chanstep_freq']/lines[mol]['restfreq'])
 
@@ -113,14 +116,14 @@ lines = {'hco': {'restfreq': 356.73422300,
                 'jnum': 2,
                 'rms': 1,
                 'chanstep_freq': -1 * 0.000488281,
-                'baseline_cutoff': 25,
+                'baseline_cutoff': 60,
                 'chan0_freq': 346.114523,
                 'spwID': 2},
          'cs': {'restfreq': 342.88285030,
                 'jnum': 6,
                 'rms': 1,
                 'chanstep_freq': -1 * 0.000488281,
-                'baseline_cutoff': 25,
+                'baseline_cutoff': 0,
                 'chan0_freq': 344.237292,
                 'spwID': 3}
          }
@@ -129,30 +132,22 @@ lines = {'hco': {'restfreq': 356.73422300,
 
 
 # Observations stuff for MCMC
-obs_hco = Observation(mol='hco',
-                      rms=1e-3,
-                      restfreq=lines['hco']['restfreq'])
+"""
+obs_hco = Observation(mol='hco')
 
-#"""
-obs_hcn = Observation(mol='hcn',
-                      rms=1e-3,
-                      restfreq=lines['hco']['restfreq'])
+obs_hcn = Observation(mol='hcn')
 
-obs_co = Observation(mol='co',
-                     rms=1e-3,
-                     restfreq=lines['hco']['restfreq'])
+obs_co = Observation(mol='co')
 
-obs_cs = Observation(mol='cs',
-                     rms=1e-3,
-                     restfreq=lines['hco']['restfreq'])
-#"""
+obs_cs = Observation(mol='cs')
+
 observations_dict = {'hco': obs_hco,
                      'hcn': obs_hcn,
                      'co': obs_co,
                      'cs': obs_cs
                      }
-#"""
 
+"""
 
 
 

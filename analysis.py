@@ -11,6 +11,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
+import os
+import re
+import argparse
+import subprocess as sp
+import matplotlib.pyplot as plt
+from astropy.io import fits
+from matplotlib.pylab import *
+from matplotlib.ticker import *
+from matplotlib.pylab import figure
+from matplotlib.patches import Ellipse as ellipse
+from astropy.visualization import astropy_mpl_style
+from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
+plt.style.use(astropy_mpl_style)
+
 
 matplotlib.rcParams['font.sans-serif'] = "Times"
 matplotlib.rcParams['font.family'] = "serif"
@@ -253,6 +267,337 @@ def full_analysis_plot(pickleLog, timeLog):
                         fontweight='bold', fontsize=14)
     fig.add_subplot(ax_bottom)
     fig.show()
+
+
+def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False,
+              crop_arcsec=2, cmap='magma',
+              save=True, show=True, use_cut_baselines=True):
+    """
+    Plot some fits image data.
+
+    The cropping currently assumes a square image. That could be easily
+    fixed by just adding y_center, y_min, and y_max and putting them in the
+    imshow() call.
+    Args:
+        image_path (str): full path, including filetype, to image.
+        crop_arcsec (float): How many arcseconds from 0 should the axis limits be set?
+        nchans_to_cut (int): cut n/2 chans off the front and end
+        cmap (str): colormap to use. Magma, copper, afmhot, CMRmap, CMRmap(_r) are nice
+
+    Known Bugs:
+        - Some values of n_chans_to_cut give a weird error. I don't really wanna
+            figure that out right now
+
+    To Do:
+        - Maybe do horizontal layout for better screenshots for Evernote.
+    """
+    image_data = fits.getdata(image_path, ext=0).squeeze()
+    header     = fits.getheader(image_path, ext=0)
+
+    if scale_cbar_to_mol is True:
+        # Get the data
+        dataPath = get_data_path(mol, use_cut_baselines=True)
+        real_data = fits.getdata(dataPath + '.fits', ext=0).squeeze()
+
+        vmin = 0
+        vmin = np.nanmin(real_data)
+        vmax = np.nanmax(real_data)
+
+    else:
+        # vmin = -0.25
+        vmin = np.nanmin(image_data)
+        vmax = np.nanmax(image_data)
+
+    # Add some crosses to show where the disks should be centered (arcsec)
+    # offsets_dA, offsets_dB = [-0.0298, 0.072], [-1.0456, -0.1879]
+    offsets_dA, offsets_dB = offsets[0], offsets[1]
+
+    # Beam stuff
+    add_beam = True if 'bmaj' in header else False
+    if add_beam is True:
+        bmin = header['bmin'] * 3600.
+        bmaj = header['bmaj'] * 3600.
+        bpa = header['bpa']
+
+    # Cropping: How many arcsecs radius should it be
+    x_center = int(np.floor(image_data.shape[1]/2))
+    # If zero is entered, just don't do any cropping and show full image.
+    if crop_arcsec == 0:
+        crop_arcsec = 256 * 0.045
+
+    crop_pix = int(crop_arcsec / 0.045)
+    xmin, xmax = x_center - crop_pix, x_center + crop_pix
+
+    # Set up velocities:
+    chanstep_vel = header['CDELT3'] * 1e-3
+    # Reference pix value - chanstep * reference pix number
+    chan0_vel = (header['CRVAL3'] * 1e-3) - header['CRPIX3'] * chanstep_vel
+
+    # Cut 2/3 of nchans_to_cut out of the front end
+    nchans_to_cut=12
+    chan_offset = 2 * int(nchans_to_cut/3)
+    nchans = image_data.shape[0] - nchans_to_cut
+
+    # I think these are labeled backwards, but whatever.
+    n_rows = int(np.floor(np.sqrt(nchans)))
+    n_cols = int(np.ceil(np.sqrt(nchans)))
+    chan_offset = 4
+
+    fig = figure(figsize=[n_rows, n_cols])
+
+    # Add the actual data
+    for i in range(nchans):
+        chan = i + int(np.floor(nchans_to_cut/2))
+        velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
+        # i+1 because plt indexes from 1
+        ax = fig.add_subplot(n_cols, n_rows, i+1)
+        ax.grid(False)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.text(0, -0.8 * crop_arcsec, velocity + ' km/s',
+                fontsize=6, color='w',
+                horizontalalignment='center', verticalalignment='center')
+
+        if i == n_rows * (n_cols - 1) and add_beam is True:
+            el = ellipse(xy=[0.8 * crop_arcsec, 0.8*crop_arcsec],
+                         width=bmin, height=bmaj, angle=-bpa,
+                         fc='k', ec='w', fill=False, hatch='////////')
+            ax.add_artist(el)
+
+        cmaps = imshow(image_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                      cmap=cmap, vmin=vmin, vmax=vmax,
+                      extent=(crop_arcsec, -crop_arcsec,
+                              crop_arcsec, -crop_arcsec))
+
+        ax.plot(offsets_dA[0], offsets_dA[1], '+g')
+        ax.plot(offsets_dB[0], offsets_dB[1], '+g')
+
+
+    # Make the colorbar
+    # Want it to be in the gap left at the end of the channels?
+    inset_cbar = True
+    if inset_cbar is True:
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cax = plt.axes([0.55, 0.08, 0.38, 0.07])
+        cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+        cbar.set_label('Jy/beam',labelpad=-12,fontsize=12, weight='bold')
+        cbar.set_ticks([vmin, vmax])
+
+    # If not, put it on top.
+    else:
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, top=0.9)
+        cax = plt.axes([0.1, 0.95, 0.81, 0.025])
+        cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+        cbar.set_label('Jy/beam',labelpad=-12,fontsize=12, weight='bold')
+        cbar.set_ticks([vmin, vmax])
+
+
+    # Want to save? Want to show?
+    if save is True:
+        suffix = ''
+        if 'data' in image_path:
+            resultsPath = 'data/' + mol + '/images/'
+            if '-short' in image_path:
+                suffix = '-' + image_path.split('-')[1].split('.')[0]
+        elif 'mcmc' in image_path:
+            resultsPath = 'mcmc_results/'
+        elif 'gridsearch' in image_path:
+            resultsPath = 'gridsearch_results/'
+        else:
+            return 'Failed to make image; specify save location.'
+
+        run_name = image_path.split('/')[-2]
+        outpath = resultsPath + run_name + suffix + '_image.png'
+
+        plt.savefig(outpath, dpi=200)
+        print "Image saved to " + outpath
+
+    if show is True:
+        plt.show(block=False)
+    plt.gca()
+
+
+def plot_model_and_data(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='magma', save=True, show=True, use_cut_baselines=True):
+    """
+    Make a two-panel plot comparing data and model.
+
+    NOT CURRENTLY IMPLEMENTED. NEEDS FULL REWRITE.
+
+    The cropping currently assumes a square image. That could be easily
+    fixed by just adding y_center, y_min, and y_max and putting them in the
+    imshow() call.
+    Args:
+        image_path (str): full path, including filetype, to image.
+        crop_arcsec (float): How many arcseconds from 0 should the axis limits be set?
+        nchans_to_cut (int): cut n/2 chans off the front and end
+        cmap (str): colormap to use. Magma, copper, afmhot, CMRmap, CMRmap(_r) are nice
+
+    Known Bugs:
+        - Some values of n_chans_to_cut give a weird error. I don't really wanna
+            figure that out right now
+
+    To Do:
+        - Maybe do horizontal layout for better screenshots for Evernote.
+    """
+    image_data = fits.getdata(image_path, ext=0).squeeze()
+    header     = fits.getheader(image_path, ext=0)
+
+    if scale_cbar_to_mol is True:
+        # Get the data
+        dataPath = get_data_path(mol, use_cut_baselines=True)
+        real_data = fits.getdata(dataPath + '.fits', ext=0).squeeze()
+
+        vmin = np.nanmin(real_data)
+        # vmin = -0.5
+        vmax = np.nanmax(real_data)
+
+    else:
+        vmin = np.nanmin(image_data)
+        # vmin = -0.5
+        vmax = np.nanmax(image_data)
+
+    # Add some crosses to show where the disks should be centered (arcsec)
+    # offsets_dA, offsets_dB = [-0.0298, 0.072], [-1.0456, -0.1879]
+    offsets_dA, offsets_dB = offsets[0], offsets[1]
+
+    # Beam stuff
+    add_beam = True if 'bmaj' in header else False
+    if add_beam is True:
+        bmin = header['bmin'] * 3600.
+        bmaj = header['bmaj'] * 3600.
+        bpa = header['bpa']
+
+    # Cropping: How many arcsecs radius should it be
+    x_center = int(np.floor(image_data.shape[1]/2))
+    # If zero is entered, just don't do any cropping and show full image.
+    if crop_arcsec == 0:
+        crop_arcsec = 256 * 0.045
+
+    crop_pix = int(crop_arcsec / 0.045)
+    xmin, xmax = x_center - crop_pix, x_center + crop_pix
+
+    # Set up velocities:
+    chanstep_vel = header['CDELT3'] * 1e-3
+    # Reference pix value - chanstep * reference pix number
+    chan0_vel = (header['CRVAL3'] * 1e-3) - header['CRPIX3'] * chanstep_vel
+
+    # Cut 2/3 of nchans_to_cut out of the front end
+    nchans_to_cut=12
+    chan_offset = 2 * int(nchans_to_cut/3)
+    nchans = image_data.shape[0] - nchans_to_cut
+
+    # I think these are labeled backwards, but whatever.
+    n_rows = int(np.floor(np.sqrt(nchans)))
+    n_cols = int(np.ceil(np.sqrt(nchans)))
+    chan_offset = 4
+
+    fig = figure(figsize=[n_rows, n_cols])
+
+    # Add the actual data
+    for i in range(nchans):
+        chan = i + int(np.floor(nchans_to_cut/2))
+        velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
+        # i+1 because plt indexes from 1
+        ax = fig.add_subplot(n_cols, n_rows, i+1)
+        ax.grid(False)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.text(0, -0.8 * crop_arcsec, velocity + ' km/s',
+                fontsize=6, color='w',
+                horizontalalignment='center', verticalalignment='center')
+
+        if i == n_rows * (n_cols - 1) and add_beam is True:
+            el = ellipse(xy=[0.8 * crop_arcsec, 0.8*crop_arcsec],
+                         width=bmin, height=bmaj, angle=-bpa,
+                         fc='k', ec='w', fill=False, hatch='////////')
+            ax.add_artist(el)
+
+        cmaps = imshow(image_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                      cmap=cmap, vmin=vmin, vmax=vmax,
+                      extent=(crop_arcsec, -crop_arcsec,
+                              crop_arcsec, -crop_arcsec))
+
+        ax.plot(offsets_dA[0], offsets_dA[1], '+g')
+        ax.plot(offsets_dB[0], offsets_dB[1], '+g')
+
+
+    # Make the colorbar
+    # Want it to be in the gap left at the end of the channels?
+    inset_cbar = True
+    if inset_cbar is True:
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cax = plt.axes([0.55, 0.08, 0.38, 0.07])
+        cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+        cbar.set_label('Jy/beam',labelpad=-12,fontsize=12, weight='bold')
+        cbar.set_ticks([vmin, vmax])
+
+    # If not, put it on top.
+    else:
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, top=0.9)
+        cax = plt.axes([0.1, 0.95, 0.81, 0.025])
+        cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+        cbar.set_label('Jy/beam',labelpad=-12,fontsize=12, weight='bold')
+        cbar.set_ticks([vmin, vmax])
+
+
+    # Want to save? Want to show?
+    if save is True:
+        suffix = ''
+        if 'data' in image_path:
+            resultsPath = 'data/' + mol + '/images/'
+            if '-short' in image_path:
+                suffix = '-' + image_path.split('-')[1].split('.')[0]
+        elif 'mcmc' in image_path:
+            resultsPath = 'mcmc_results/'
+        elif 'gridsearch' in image_path:
+            resultsPath = 'gridsearch_results/'
+        else:
+            return 'Failed to make image; specify save location.'
+
+        run_name = image_path.split('/')[-2]
+        outpath = resultsPath + run_name + suffix + '_image.png'
+
+        plt.savefig(outpath, dpi=200)
+        print "Image saved to " + outpath
+
+    if show is True:
+        plt.show(block=False)
+    plt.gca()
+
+
+def plot_param_degeneracies(dataPath, param1, param2, DI=0):
+    df = pickle.load(open('{}_step-log.pickle'.format(dataPath), 'rb'))
+    df_a, df_b = df.loc['A', :], df.loc['B', :]
+    df = df_a if DI == 0 else df_b
+
+    l = list(df.columns)
+    l.remove(param1)
+    l.remove(param2)
+    l.remove('Reduced Chi2')
+    for p in l:
+        df = df.drop(df[df[p] != df[p][0]].index)
+        df = df.drop(p, axis=1)
+    df = df.reset_index(drop=True)
+
+    len_p1, len_p2 = len(list(set(df[param1]))), len(list(set(df[param2])))
+    mat = np.zeros((len_p2, len_p1))
+    for i in range(len_p1-1):
+        for j in range(len_p2-1):
+            print i, j, '\t\t', df[param1][i*len_p1], df[param2][j]
+            # mat[i, j] = df['Reduced Chi2'][i*len_p1 + j]
+
+
+
+
+
+
+
+
+
 
 
 # The End

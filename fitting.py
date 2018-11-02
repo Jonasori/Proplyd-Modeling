@@ -8,7 +8,8 @@ import numpy as np
 import subprocess as sp
 import matplotlib.pyplot as plt
 from astropy.io import fits
-from tools import plot_fits
+# from constants import lines
+# from tools import plot_fits
 
 
 class Observation:
@@ -19,7 +20,7 @@ class Observation:
     spit out a cleaned image and some other stuff.
     """
 
-    def __init__(self, mol,  rms, restfreq, cut_baselines=False):
+    def __init__(self, mol, cut_baselines=False):
         """Give some init values.
 
         Args:
@@ -39,8 +40,8 @@ class Observation:
         self.baseline_cutoff = 110
 
         # We manually get rms later on so maybe don't need this?
-        self.rms = rms
-        self.restfreq = restfreq
+        self.rms = lines[mol]['rms']
+        self.restfreq = lines[mol]['restfreq']
 
         """
         Not convinced about this stuff. It's not working for my files.
@@ -314,8 +315,8 @@ class Model:
         model = fits.open(self.modelfiles_path + '.uvf')
         model_vis = model[0].data['data'].squeeze()
 
-        print "Getting Chi2 for " + self.modelfiles_path
-        print
+        #print "Getting Chi2 for " + self.modelfiles_path
+        #print
         # PREPARE STUFF FOR CHI SQUARED
 
         # get real and imaginary values, skipping repeating values created by
@@ -345,8 +346,7 @@ class Model:
         self.raw_chis.append(raw_chi)
         self.reduced_chis.append(reduced_chi)
         print "Raw Chi2: ", self.raw_chis
-        print "Reduced Chi2: ", self.reduced_chis
-        print '\n\n\n'
+        #print "Reduced Chi2: ", self.reduced_chis
 
     def make_residuals(self, obs, suffix='', show=False):
         """Create model residuals, and clean/display if desired.
@@ -381,4 +381,5 @@ class Model:
         """
         model = fits.getdata(self.modelfiles_path + '.fits')
         # Choose a channel:
-        plot_fits(model)
+        # plot_fits(model)
+        return 'THIS DOESNT WORK'

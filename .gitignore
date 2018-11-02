@@ -1,0 +1,9 @@
+*.pyc
+*.bm
+*.cl
+*.mp
+*.dat
+mcmc_runs/*
+gridsearch_runs/*
+data/*
+

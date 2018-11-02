@@ -75,7 +75,7 @@ def analysis(df, mol, niters):
     # axarr[1].set_ylabel('Mean Off-Source Flux (Jy/Beam)')
     # axarr[1].plot(df['Baseline'], df['Mean'], 'or')
     axarr[1].plot(df['Baseline'], df['Mean'], '-b')
-    im_name = './data/images/' + mol + '-imnoise_' + mol + str(int(niters)) + '.png'
+    im_name = './data/' + mol + '/images/' + mol + '-imnoise.png'
     plt.savefig(im_name)
     # plt.show(block=False)
     return [df['Baseline'], df['Mean'], df['RMS']]
