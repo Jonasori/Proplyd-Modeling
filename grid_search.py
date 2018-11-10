@@ -314,11 +314,12 @@ def fullRun(diskAParams, diskBParams,
             print "Bad path; must have 'fitted_A or fitted_B' in it. Try again"
             return
 
+
+
+
     # STARTING THE RUN #
     # Make the initial static model (B), just with the first parameter values
-    dBInit = []
-    for i in diskBParams:
-        dBInit.append(i[0])
+    dBInit = [i[0] for i in diskBParams]
 
     # Grid search over Disk A, retrieve the resulting pd.DataFrame
     if to_skip != 'A':
@@ -331,15 +332,7 @@ def fullRun(diskAParams, diskBParams,
     print "Index of Best Fit, A is ", idx_of_BF_A
 
     # Make a list of those parameters to pass the next round of grid searching.
-    Ps_A = [df_A_fit['Atms Temp'][idx_of_BF_A],
-            df_A_fit['Temp Struct'][idx_of_BF_A],
-            df_A_fit['Molecular Abundance'][idx_of_BF_A],
-            df_A_fit['Outer Radius'][idx_of_BF_A],
-            df_A_fit['Pos. Angle'][idx_of_BF_A],
-            df_A_fit['Incl.'][idx_of_BF_A],
-            df_A_fit['Offset X'][idx_of_BF_A],
-            df_A_fit['Offset Y'][idx_of_BF_A],
-            df_A_fit['Systemic Velocity'][idx_of_BF_A]]
+    Ps_A = [df_A_fit[param][idx_of_BF_A] for param in  df_A_fit.columns]
     fit_A_params = np.array(Ps_A)
 
     print "First disk has been fit\n"
@@ -352,16 +345,9 @@ def fullRun(diskAParams, diskBParams,
     idx_of_BF_B = df_B_fit.index[df_B_fit['Reduced Chi2'] == np.min(
         df_B_fit['Reduced Chi2'])][0]
 
-    Ps_B = [df_B_fit['Atms Temp'][idx_of_BF_B],
-            df_B_fit['Temp Struct'][idx_of_BF_B],
-            df_B_fit['Molecular Abundance'][idx_of_BF_B],
-            df_B_fit['Outer Radius'][idx_of_BF_B],
-            df_B_fit['Pos. Angle'][idx_of_BF_B],
-            df_B_fit['Incl.'][idx_of_BF_B],
-            df_B_fit['Offset X'][idx_of_BF_B],
-            df_B_fit['Offset Y'][idx_of_BF_B],
-            df_B_fit['Systemic Velocity'][idx_of_BF_B]]
+    Ps_B = [df_B_fit[param][idx_of_BF_B] for param in  df_B_fit.columns]
     fit_B_params = np.array(Ps_B)
+
 
     # Bind the data frames, output them.
     # Reiterated in tools.py/depickler(), but we can unwrap these vals with:

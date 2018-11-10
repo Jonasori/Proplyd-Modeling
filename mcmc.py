@@ -10,11 +10,13 @@ import subprocess as sp
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from emcee.utils import MPIPool
-from run_driver import run_name, run_path
+#from run_driver import run_path #, run_name
 from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
-
+from analysis import plot_fits, plot_model_and_data
+import fitting
 import plotting
+import run_driver
 
 
 
@@ -30,17 +32,17 @@ class MCMCrun:
     By the time this is run, a chain file has already been made.
     """
     # Set up a path for the images to go to:
-    def __init__(self, name, nwalkers=nwalkers, burn_in=0):
+    def __init__(self, run_path, name, nwalkers=nwalkers, burn_in=0):
         """Set up.
 
         Args:
+            path (str): the file path to where to find the chain
             name (str): the name of the run (for output files).
             nwalkers (int): how many walkers to have.
-            path (str): the file path to where to find the chain
             burn_in (int): how many of the first steps to ignore.
         """
         self.name = name
-        self.runpath = './mcmc_runs/' + name + '/' + name
+        self.runpath = run_path + name
         self.image_outpath = './mcmc_results/' + name
 
         # having name/name_chain.csv makes sense
@@ -54,18 +56,24 @@ class MCMCrun:
 
         self.nwalkers = nwalkers
 
+
         # This only makes sense if it already exists?
         self.nsteps = self.main.shape[0] // nwalkers
+
         # Remove burn in
         self.burnt_in = self.main.iloc[burn_in*nwalkers:, :]
 
         # Get rid of steps that resulted in bad lnprobs
         lnprob_vals = self.burnt_in.loc[:, 'lnprob']
         self.groomed = self.burnt_in.loc[lnprob_vals != -np.inf, :]
-        print 'Removed burn-in phase (step 0 through {} ).'.format(burn_in)
+        print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
+
+
+
+
 
         with open(self.runpath + '_log.txt', 'w') as f:
-            s0 = 'Run: ' + run_name + '\n'
+            s0 = 'Run: ' + self.runpath + '\n'
             s1 = 'Molecular line: ' + mol + '\n'
             s2 = 'Nwalkers: ' + str(nwalkers) + '\n'
             s3 = 'Nsteps: ' + str(nsteps)  + '\n'
@@ -74,7 +82,10 @@ class MCMCrun:
 
 
     def evolution(self):
-        """Plot walker evolution."""
+        """Plot walker evolution.
+
+        Uses groomed data, so no infs.
+        """
         print 'Making walker evolution plot...'
         plt.close()
 
@@ -98,9 +109,8 @@ class MCMCrun:
                 legend=False, color='black', alpha=0.1)
 
             # make y-limits on lnprob subplot reasonable
-            # This is not reasonable. Change it?
-            #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
-            axes[-1].set_ylim(-40000, 0)
+            axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
+            #axes[-1].set_ylim(-40000, 0)
 
         # if you want mean at each step over plotted:
         # main.index //= self.nwalkers
@@ -113,14 +123,17 @@ class MCMCrun:
         print 'Image saved image to ' + self.image_outpath + '_evolution.png'
         plt.show(block=False)
 
-
-
     def evolution_main(self):
-        """Plot walker evolution."""
+        """Plot walker evolution.
+
+        This one uses the full step log, including bad steps (not groomed).
+        """
         print 'Making walker evolution plot...'
         plt.close()
 
+        self.nsteps = len(self.groomed)//self.nwalkers
         stepmin, stepmax = 0, self.nsteps
+        print self.nsteps, self.nwalkers
 
         main = self.main.copy().iloc[stepmin * self.nwalkers:
                                      stepmax * self.nwalkers, :]
@@ -140,7 +153,11 @@ class MCMCrun:
             # make y-limits on lnprob subplot reasonable
             # This is not reasonable. Change it?
             #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
-            axes[-1].set_ylim(-50000, -38000)
+            amin = np.nanmin(main.lnprob[main.lnprob != -np.inf])
+            amax = np.nanmax(main.lnprob)
+            print amin, amax
+            axes[-1].set_ylim(amin, amax)
+            #axes[-1].set_ylim(-50000, -38000)
 
         # if you want mean at each step over plotted:
         # main.index //= self.nwalkers
@@ -149,12 +166,9 @@ class MCMCrun:
 
         plt.tight_layout()
         plt.suptitle(self.name + ' walker evolution')
-        plt.savefig(self.image_outpath + '_evolution.png', dpi=200)  # , dpi=1)
-        print 'Image saved image to ' + self.image_outpath + '_evolution.png'
+        plt.savefig(self.image_outpath + '_evolution-main.png', dpi=200)  # , dpi=1)
+        print 'Image saved image to ' + self.image_outpath + '_evolution-main.png'
         plt.show(block=False)
-
-
-
 
     def kde(self):
         """Make a kernel density estimate (KDE) plot."""
@@ -274,13 +288,70 @@ class MCMCrun:
         plt.savefig(self.image_outpath + '_corner.png', dpi=200)
         print 'Image saved image to ' + self.image_outpath + '_corner.png'
 
+    def make_best_fits(self):
+        """Do some modeling stuff.
+
+        Args:
+            run (mcmc.MCMCrun): the
+        """
+        # run.main is the pd.df that gets read in from the chain.csv
+        subset_df = self.main  # [run.main['r_in'] < 15]
+
+        # Locate the best fit model from max'ed lnprob.
+        max_lnp = subset_df['lnprob'].max()
+        model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
+        print 'Model parameters:\n', model_params.to_string(), '\n\n'
+
+        bf_param_dict = {}
+        for param in model_params.columns[:-1]:
+            bf_param_dict[param] = model_params[param].values
+
+        print bf_param_dict
+        bf_disk_params = bf_param_dict.values()
+
+        # intialize model and make fits image
+        print 'Making model...'
+        # This obviously has to be generalized.
+
+        obs = fitting.Observation(mol, cut_baselines=True)
+        model = fitting.Model(observation=obs,
+                              run_name=self.runpath,
+                              model_name=self.name + '_bestFit')
+        # run_driver.make_fits(model, bf_param_dict)
+
+
+        # This seems cool but I need to get plotting.py going first.
+        """
+        fig = plotting.Figure(layout=(1, 3),
+                              paths=[aumic_fitting.band6_fits_images[-1],
+                                     paths[-1] + '.fits',
+                                     paths[-1] + '.residuals.fits'],
+                              rmses=3*[aumic_fitting.band6_rms_values[-1]],
+                              texts=[[[4.6, 4.0, 'Data']],
+                                     [[4.6, 4.0, 'Model']],
+                                     [[4.6, 4.0, 'Residuals']]
+                                     ],
+                              title=r'Run 6 Global Best Fit Model & Residuals',
+                              savefile=run.name + '/' + run.name + '_bestfit_concise.pdf',
+                              show=True)
+        """
+        # plot_fits(self.runpath)
+
+        return (model, bf_param_dict)
+
+
+
+
+
+
 
 # Use this one.
-def run_emcee(run_path, nsteps, nwalkers, lnprob, param_info):
+def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob, param_info):
     """Make an actual MCMC run.
 
     Args:
         run_path (str): the name to output I guess
+        run_name (str): the name to feed the actual emcee routine (line 360)
         nsteps (int):
         nwalkers (int):
         lnprob (something):
@@ -398,7 +469,7 @@ def run_emcee(run_path, nsteps, nwalkers, lnprob, param_info):
         # Log out the new positions
         with open(chain_filename, 'a') as f:
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
-            print "Adding a new step to the chain: ", new_step
+            # print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
 
     if run_w_pool is True:

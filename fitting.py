@@ -8,9 +8,10 @@ import numpy as np
 import subprocess as sp
 import matplotlib.pyplot as plt
 from astropy.io import fits
-# from constants import lines
+from constants import lines
 # from tools import plot_fits
 
+print lines['hco']['baseline_cutoff']
 
 class Observation:
     """Make the whole observation/data processing shindig a Class.
@@ -20,7 +21,7 @@ class Observation:
     spit out a cleaned image and some other stuff.
     """
 
-    def __init__(self, mol, cut_baselines=False):
+    def __init__(self, mol, cut_baselines=True):
         """Give some init values.
 
         Args:
@@ -29,7 +30,7 @@ class Observation:
             rms (float): the rms noise of that particular observation
         """
         if cut_baselines:
-            fname_end = '-short' + str(lines[mol][baseline_cutoff])
+            fname_end = '-short' + str(lines[mol]['baseline_cutoff'])
         else:
             fname_end = ''
 

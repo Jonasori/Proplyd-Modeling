@@ -3,7 +3,10 @@
 *.cl
 *.mp
 *.dat
-mcmc_runs/*
-gridsearch_runs/*
-data/*
-
+mcmc_runs
+gridsearch_runs
+disk_model
+data
+*.pyc
+__init__.py
+.nfs*

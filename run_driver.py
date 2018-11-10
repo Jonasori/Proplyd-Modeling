@@ -9,10 +9,9 @@ import os
 import argparse
 import numpy as np
 import subprocess as sp
-#from constants import nsteps, nwalkers
 import matplotlib.pyplot as plt
-from astropy.io import fits
 from astropy.constants import M_sun
+from astropy.io import fits
 plt.switch_backend('agg')
 M_sun = M_sun.value
 
@@ -21,7 +20,7 @@ import mcmc
 import fitting
 import plotting
 from tools import remove, already_exists, already_exists_old
-from constants import mol, obs_stuff, lines, today, offsets, observations_dict
+from constants import mol, obs_stuff, lines, today, offsets
 
 # Import some files from Kevin's modeling code
 from disk_model import raytrace as rt
@@ -65,17 +64,18 @@ param_dict = {
     'pos_angle_A':          69.7,
     'pos_angle_B':          136.,
     'T_mids':              [15, 15],          # Kelvin
-    'r_ins':               1,            # AU
+    'r_ins':               1,                 # AU
     'r_ins':               [1, 1],            # AU
     'T_freezeout':         19,                # Freezeout temperature
-    'm_disks':             [0.078, 0.028],    # Disk Gas Masses (solar masses)
+    'm_disk_A':            -1.10791,        # Disk Gas Masses (log10 solar masses)
+    'm_disk_B':            -1.552842,       # Disk Gas Masses (log10 solar masses)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
     'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
-    'surf_dens_str_A':     1.,          # Surface density power law index
-    'surf_dens_str_B':     1.,          # Surface density power law index
+    'surf_dens_str_A':     1.,                # Surface density power law index
+    'surf_dens_str_B':     1.,                # Surface density power law index
     'v_turb':              0.081,             # Turbulence velocity
     'vert_temp_str':       70.,               # Zq in Kevin's docs
-    'r_crit':              100.,      # Critical radius (AU)
+    'r_crit':              100.,              # Critical radius (AU)
     'rot_hands':           [-1, -1],          # disk rotation direction
     'distance':            389.143,           # parsec, errors of 3ish
     'offsets':             [pos_A, pos_B],    # from center (")
@@ -97,19 +97,37 @@ param_dict = {
 # The order matters here (for comparing in lnprob)
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
-param_info = [('r_out_A',           500,     300,      (10, 1000)),
-              ('atms_temp_A',       300,     150,      (0, np.inf)),
-              ('mol_abundance_A',   -8,      3,        (-13, -3)),
-              ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-              ('incl_A',            65.,     30.,      (0, 90.)),
-              ('pos_angle_A',       70,      45,       (0, 360)),
-              ('r_out_B',           500,     300,      (10, 1000)),
-              ('atms_temp_B',       200,     150,      (0, np.inf)),
-              ('mol_abundance_B',   -8,      3,        (-13, -3)),
-              ('temp_struct_B',     0.,      1,        (-3., 3.)),
-              ('incl_B',            45.,     30,       (0, 90.)),
-              ('pos_angle_B',       136.0,   45,       (0, 360)),
-              ]
+if mol != 'co':
+    param_info = [('r_out_A',           500,     300,      (10, 1000)),
+                  ('atms_temp_A',       300,     150,      (0, np.inf)),
+                  ('mol_abundance_A',   -8,      3,        (-13, -3)),
+                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+                  ('incl_A',            65.,     30.,      (0, 90.)),
+                  ('pos_angle_A',       70,      45,       (0, 360)),
+                  ('r_out_B',           500,     300,      (10, 1000)),
+                  ('atms_temp_B',       200,     150,      (0, np.inf)),
+                  ('mol_abundance_B',   -8,      3,        (-13, -3)),
+                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                  ('incl_B',            45.,     30,       (0, 90.)),
+                  ('pos_angle_B',       136.0,   45,       (0, 360))
+                  ]
+
+else:
+    param_info = [('r_out_A',           500,     300,      (10, 1000)),
+                  ('atms_temp_A',       300,     150,      (0, np.inf)),
+                  ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
+                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+                  ('incl_A',            65.,     30.,      (0, 90.)),
+                  ('pos_angle_A',       70,      45,       (0, 360)),
+                  ('r_out_B',           500,     300,      (10, 1000)),
+                  ('atms_temp_B',       200,     150,      (0, np.inf)),
+                  ('m_disk_B',          -1.,      1.,      (-2.5, 0))
+                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                  ('incl_B',            45.,     30,       (0, 90.)),
+                  ('pos_angle_B',       136.0,   45,       (0, 360))
+                  ]
+
+
 
 
 def main():
@@ -158,18 +176,21 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        # is param_info_init the whole range or just initial vals?
+        print "Starting run:", run_path + today
+        print "with " + nsteps + " steps and " + nwalkers + "walkers."
+        print '\n\n\n'
         mcmc.run_emcee(run_path=run_path,
+                       run_name=today,
                        nsteps=nsteps,
                        nwalkers=nwalkers,
                        lnprob=lnprob,
-                       param_info=param_info
-                       )
+                       param_info=param_info)
     else:
         if already_exists(run_path) is False:
             return 'Go in and specify which run you want.'
 
-        run = mcmc.MCMCrun(today,
+        run = mcmc.MCMCrun(run_path,
+                           today,
                            nwalkers=nwalkers,
                            burn_in=args.burn_in)
         # old_nsamples = run.groomed.shape[0]
@@ -225,8 +246,9 @@ def make_fits(model, param_dict, mol=mol, testing=False):
     print "Entering make fits; exporting to", model.modelfiles_path
     #print "Fitting disk 1"
     DI = 0
+    print type(param_dict)
     d1 = Disk(params=[param_dict['temp_struct_A'],
-                      param_dict['m_disks'][DI],
+                      10**param_dict['m_disk_A'],
                       param_dict['surf_dens_str_A'],
                       param_dict['r_ins'][DI],
                       param_dict['r_out_A'],
@@ -264,7 +286,7 @@ def make_fits(model, param_dict, mol=mol, testing=False):
     #print "Now fitting disk 2"
     DI = 1
     d2 = Disk(params=[param_dict['temp_struct_B'],
-                      param_dict['m_disks'][DI],
+                      10**param_dict['m_disks_B'],
                       param_dict['surf_dens_str_B'],
                       param_dict['r_ins'][DI],
                       param_dict['r_out_B'],
@@ -379,8 +401,8 @@ def lnprob(theta, run_name, param_info, mol=mol):
             return -np.inf
 
 
-    # Pull the appropriate observation
-    obs = observations_dict[mol]
+    # Set up an observation
+    obs = fitting.Observation(mol=mol)
 
     # Make model and the resulting fits image
     model_name = run_name + '_' + str(np.random.randint(1e10))
@@ -398,7 +420,7 @@ def lnprob(theta, run_name, param_info, mol=mol):
 
     model.obs_sample()
     model.chiSq()
-    model.delete()
+    # model.delete()
     lnp = -0.5 * sum(model.raw_chis)
     print "Lnprob val: ", lnp
     print '\n\n\n'

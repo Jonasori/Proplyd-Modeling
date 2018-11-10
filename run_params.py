@@ -56,9 +56,92 @@ if mol == 'co':
 else:
     MdiskB   = np.array([-1.552842])
     XmolB    = -1 * np.arange(6., 13., 1.)
-
-
 #"""
+
+
+# Short run values
+"""
+TatmsA       = np.array([20, 200])
+TqqA         = np.array([0])
+R_outA       = np.array([100, 400])
+# PA and InclA are from Williams et al
+PAA          = np.array([69.7])
+InclA        = np.array([65])
+Pos_XA       = np.array([pos_Ax])
+Pos_YA       = np.array([pos_Ay])
+VsysA        = np.array([vsysA])
+# Note that both these are log-scaled and in m_disk is in units of solar masses
+if mol == 'co':
+    MdiskA   = np.array([-1.10791, -0.9])
+    XmolA    = -1 * np.array([4.])
+else:
+    MdiskA   = np.array([-1.10791])
+    XmolA    = -1 * np.array([4., 6.])
+
+
+# Parameters for Disk B
+TatmsB       = np.array([20, 200])
+TqqB         = -1 * np.array([0])
+R_outB       = np.array([50, 300])
+PAB          = np.array([135])
+InclB        = np.array([30])
+Pos_XB       = np.array([pos_Bx])
+Pos_YB       = np.array([pos_By])
+VsysB        = np.array([10.70])
+# Note that both these are log-scaled and in m_disk is in units of solar masses
+if mol == 'co':
+    MdiskB   = np.array([-1.552842, -1.])
+    XmolB    = -1 * np.array([4.])
+else:
+    MdiskB   = np.array([-1.552842])
+    XmolB    = -1 * np.array([4., 6.])
+"""
+
+
+# One-step run values
+"""
+TatmsA       = np.array([100])
+TqqA         = np.array([0])
+R_outA       = np.array([300])
+# PA and InclA are from Williams et al
+PAA          = np.array([69.7])
+InclA        = np.array([65])
+Pos_XA       = np.array([pos_Ax])
+Pos_YA       = np.array([pos_Ay])
+VsysA        = np.array([vsysA])
+# Note that both these are log-scaled and in m_disk is in units of solar masses
+if mol == 'co':
+    MdiskA   = np.array([-1.10791])
+    XmolA    = -1 * np.array([4.])
+else:
+    MdiskA   = np.array([-1.10791])
+    XmolA    = -1 * np.array([4.])
+
+
+# Parameters for Disk B
+TatmsB       = np.array([100])
+TqqB         = -1 * np.array([0])
+R_outB       = np.array([200])
+PAB          = np.array([135])
+InclB        = np.array([30])
+Pos_XB       = np.array([pos_Bx])
+Pos_YB       = np.array([pos_By])
+VsysB        = np.array([10.70])
+# Note that both these are log-scaled and in m_disk is in units of solar masses
+if mol == 'co':
+    MdiskB   = np.array([-1.552842])
+    XmolB    = -1 * np.array([4.])
+else:
+    MdiskB   = np.array([-1.552842])
+    XmolB    = -1 * np.array([4.])
+"""
+
+
+
+
+
+
+
 
 
 

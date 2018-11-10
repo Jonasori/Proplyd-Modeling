@@ -5,7 +5,6 @@ FOR GRID SEARCH.
 
 from astropy.constants import c
 from astropy.io import fits
-from fitting import Observation
 import numpy as np
 import datetime
 c = c.to('km/s').value
@@ -128,26 +127,6 @@ lines = {'hco': {'restfreq': 356.73422300,
                 'spwID': 3}
          }
 
-
-
-
-# Observations stuff for MCMC
-"""
-obs_hco = Observation(mol='hco')
-
-obs_hcn = Observation(mol='hcn')
-
-obs_co = Observation(mol='co')
-
-obs_cs = Observation(mol='cs')
-
-observations_dict = {'hco': obs_hco,
-                     'hcn': obs_hcn,
-                     'co': obs_co,
-                     'cs': obs_cs
-                     }
-
-"""
 
 
 

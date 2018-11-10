@@ -271,7 +271,8 @@ def full_analysis_plot(pickleLog, timeLog):
 
 def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False,
               crop_arcsec=2, cmap='magma',
-              save=True, show=True, use_cut_baselines=True):
+              save=True, show=True, use_cut_baselines=True,
+              best_fit=False):
     """
     Plot some fits image data.
 
@@ -364,10 +365,21 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False,
                          fc='k', ec='w', fill=False, hatch='////////')
             ax.add_artist(el)
 
-        cmaps = imshow(image_data[i + chan_offset][xmin:xmax, xmin:xmax],
-                      cmap=cmap, vmin=vmin, vmax=vmax,
-                      extent=(crop_arcsec, -crop_arcsec,
-                              crop_arcsec, -crop_arcsec))
+        do_countours = False
+        if do_countours is False:
+            cmaps = imshow(image_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                          cmap=cmap, vmin=vmin, vmax=vmax,
+                          extent=(crop_arcsec, -crop_arcsec,
+                                  crop_arcsec, -crop_arcsec))
+        else:
+            # Not currently functional but would be great it if were.
+            # Draw from /Volumes/disks/sam/analysis/mk_chmaps
+            levels = np.arange(8) * 0.001785
+            cmaps = contourf(image_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                             cmap=cmap, vmin=vmin, vmax=vmax,
+                             extent=(crop_arcsec, -crop_arcsec,
+                                     crop_arcsec, -crop_arcsec),
+                             levels=[1, 2, 3, 4, 5, 6])
 
         ax.plot(offsets_dA[0], offsets_dA[1], '+g')
         ax.plot(offsets_dB[0], offsets_dB[1], '+g')
@@ -405,13 +417,15 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False,
             resultsPath = 'mcmc_results/'
         elif 'gridsearch' in image_path:
             resultsPath = 'gridsearch_results/'
+
         else:
             return 'Failed to make image; specify save location.'
 
         run_name = image_path.split('/')[-2]
-        outpath = resultsPath + run_name + suffix + '_image.png'
+        suffix += '_bestFit' if best_fit is True else ''
+        outpath = resultsPath + run_name + suffix + '_image.pdf'
 
-        plt.savefig(outpath, dpi=200)
+        plt.savefig(outpath)
         print "Image saved to " + outpath
 
     if show is True:
@@ -570,34 +584,69 @@ def plot_model_and_data(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcse
 
 
 def plot_param_degeneracies(dataPath, param1, param2, DI=0):
-    df = pickle.load(open('{}_step-log.pickle'.format(dataPath), 'rb'))
-    df_a, df_b = df.loc['A', :], df.loc['B', :]
-    df = df_a if DI == 0 else df_b
+    """Plot Chi2 as a function of two params.
 
-    l = list(df.columns)
+    I think this works now.
+    """
+    df_raw = pickle.load(open('{}_step-log.pickle'.format(dataPath), 'rb'))
+    df_full = df_raw.loc['A', :] if DI == 0 else df_raw.loc['B', :]
+
+    # Other than the two params we're looking for, fix each param's val.
+    l = list(df_full.columns)
+    # print l
+
     l.remove(param1)
     l.remove(param2)
     l.remove('Reduced Chi2')
+    df = df_full
+    # print l
     for p in l:
-        df = df.drop(df[df[p] != df[p][0]].index)
-        df = df.drop(p, axis=1)
+        p_vals = list(set(df[p]))
+        # print len(p_vals), p_vals
+
+        if len(p_vals) == 1 or p == 'Raw Chi2':
+            df = df.drop(p, axis=1)
+
+        else:
+            # This is removing some stuff that it shouldn't be removing.
+            df = df.drop(df[df[p] != df[p][0]].index)
+        #df = df.drop(p, axis=1)
     df = df.reset_index(drop=True)
 
+
+    # Fill a grid of values
+    # Note that this list(set()) thing filters duplicates, so is better than .size
     len_p1, len_p2 = len(list(set(df[param1]))), len(list(set(df[param2])))
-    mat = np.zeros((len_p2, len_p1))
-    for i in range(len_p1-1):
-        for j in range(len_p2-1):
-            print i, j, '\t\t', df[param1][i*len_p1], df[param2][j]
-            # mat[i, j] = df['Reduced Chi2'][i*len_p1 + j]
+    print len_p1, len_p2
+    if len_p1 < 2 or len_p2 < 2:
+        return "Use parameters of length greater than 1"
+    # Figure out which param is changing constantly and which is changing in blocks.
+    # Let i be the slow moving counter and j the quick one.
+    # If p1 is moving fast, have j be its counter
+    if df[param1][0] == df[param1][1]:
+        p_i, p_j = param2, param1
+        len_p_i, len_p_j = len_p2, len_p1
+    else:
+        p_i, p_j = param1, param2
+        len_p_i, len_p_j = len_p1, len_p2
 
+    mat = np.zeros((len_p_i, len_p_j))
 
+    for i in range(len_p_i):
+        for j in range(len_p_j):
+            mat[i, j] = df['Reduced Chi2'][i*len_p_j + j]
+            print p_i, df[p_i][i*len_p_j + j]
+            print p_j, df[p_j][i*len_p_j + j]
 
+    plt.matshow(mat, cmap='jet')
+    plt.xlabel(df[p_j].name)
+    plt.ylabel(df[p_i].name)
+    plt.title("Chi2 Map Over Params")
+    plt.grid(False)
+    plt.colorbar()
 
-
-
-
-
-
+    plt.show(block=False)
+    # return mat
 
 
 # The End
