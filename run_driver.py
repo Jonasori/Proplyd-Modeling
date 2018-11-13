@@ -27,7 +27,7 @@ from disk_model import raytrace as rt
 from disk_model.disk import Disk
 
 nwalkers = 50
-nsteps = 500
+nsteps = 400
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
@@ -177,7 +177,7 @@ def main():
 
     if args.run:
         print "Starting run:", run_path + today
-        print "with " + nsteps + " steps and " + nwalkers + "walkers."
+        print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
         mcmc.run_emcee(run_path=run_path,
                        run_name=today,
@@ -246,7 +246,6 @@ def make_fits(model, param_dict, mol=mol, testing=False):
     print "Entering make fits; exporting to", model.modelfiles_path
     #print "Fitting disk 1"
     DI = 0
-    print type(param_dict)
     d1 = Disk(params=[param_dict['temp_struct_A'],
                       10**param_dict['m_disk_A'],
                       param_dict['surf_dens_str_A'],
@@ -286,7 +285,7 @@ def make_fits(model, param_dict, mol=mol, testing=False):
     #print "Now fitting disk 2"
     DI = 1
     d2 = Disk(params=[param_dict['temp_struct_B'],
-                      10**param_dict['m_disks_B'],
+                      10**param_dict['m_disk_B'],
                       param_dict['surf_dens_str_B'],
                       param_dict['r_ins'][DI],
                       param_dict['r_out_B'],
@@ -423,7 +422,7 @@ def lnprob(theta, run_name, param_info, mol=mol):
     # model.delete()
     lnp = -0.5 * sum(model.raw_chis)
     print "Lnprob val: ", lnp
-    print '\n\n\n'
+    print '\n'
     return lnp
 
 
