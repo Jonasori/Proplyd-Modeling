@@ -11,7 +11,6 @@ from astropy.io import fits
 from constants import lines
 # from tools import plot_fits
 
-print lines['hco']['baseline_cutoff']
 
 class Observation:
     """Make the whole observation/data processing shindig a Class.

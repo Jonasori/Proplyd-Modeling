@@ -359,10 +359,12 @@ def fullRun(diskAParams, diskBParams,
     # To read the pickle:
     # f = pickle.load(open('{}_step-log.pickle'.format(modelPath), "rb"))
 
-    # Finally, Create the final best-fit model.
+    # Finally, Create the final best-fit model and residuals
     print "\n\nCreating best fit model now"
     sample_model_in_uvplane(modelPath + '_bestFit', mol=mol)
+    sample_model_in_uvplane(modelPath + '_bestFit', options='subtract', mol=mol)
     icr(modelPath + '_bestFit', mol=mol)
+    icr(modelPath + '_bestFit_resid', mol=mol)
     print "Best-fit model created: " + modelPath + "_bestFit.im\n\n"
 
     # Calculate and present the final X2 values.

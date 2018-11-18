@@ -90,8 +90,8 @@ class MCMCrun:
         plt.close()
 
         self.nsteps = len(self.groomed)//self.nwalkers
-        print self.nsteps, self.nwalkers
         stepmin, stepmax = 0, self.nsteps
+        print self.nsteps, self.nwalkers
 
         main = self.groomed.copy().iloc[stepmin * self.nwalkers:
                                      stepmax * self.nwalkers, :]
@@ -109,7 +109,9 @@ class MCMCrun:
                 legend=False, color='black', alpha=0.1)
 
             # make y-limits on lnprob subplot reasonable
-            axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
+            amin = main.iloc[-1 * self.nwalkers:, -1].min()
+            amax = main.lnprob.max()
+            axes[-1].set_ylim(amin, amax)
             #axes[-1].set_ylim(-40000, 0)
 
         # if you want mean at each step over plotted:
@@ -119,8 +121,8 @@ class MCMCrun:
 
         plt.tight_layout()
         plt.suptitle(self.name + ' walker evolution')
-        plt.savefig(self.image_outpath + '_evolution.png', dpi=200)  # , dpi=1)
-        print 'Image saved image to ' + self.image_outpath + '_evolution.png'
+        plt.savefig(self.image_outpath + '_evolution.pdf')  # , dpi=1)
+        print 'Image saved image to ' + self.image_outpath + '_evolution.pdf'
         plt.show(block=False)
 
     def evolution_main(self):
@@ -131,7 +133,7 @@ class MCMCrun:
         print 'Making walker evolution plot...'
         plt.close()
 
-        self.nsteps = len(self.groomed)//self.nwalkers
+        self.nsteps = len(self.main)//self.nwalkers
         stepmin, stepmax = 0, self.nsteps
         print self.nsteps, self.nwalkers
 
@@ -155,7 +157,6 @@ class MCMCrun:
             #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
             amin = np.nanmin(main.lnprob[main.lnprob != -np.inf])
             amax = np.nanmax(main.lnprob)
-            print amin, amax
             axes[-1].set_ylim(amin, amax)
             #axes[-1].set_ylim(-50000, -38000)
 
@@ -166,8 +167,8 @@ class MCMCrun:
 
         plt.tight_layout()
         plt.suptitle(self.name + ' walker evolution')
-        plt.savefig(self.image_outpath + '_evolution-main.png', dpi=200)  # , dpi=1)
-        print 'Image saved image to ' + self.image_outpath + '_evolution-main.png'
+        plt.savefig(self.image_outpath + '_evolution-main.pdf')  # , dpi=1)
+        print 'Image saved image to ' + self.image_outpath + '_evolution-main.pdf'
         plt.show(block=False)
 
     def kde(self):
@@ -307,18 +308,21 @@ class MCMCrun:
             bf_param_dict[param] = model_params[param].values
 
         print bf_param_dict
-        bf_disk_params = bf_param_dict.values()
+        bf_disk_params = bf_param_dict.keys()
+	return bf_disk_params
 
         # intialize model and make fits image
         print 'Making model...'
         # This obviously has to be generalized.
 
+
         obs = fitting.Observation(mol, cut_baselines=True)
         model = fitting.Model(observation=obs,
                               run_name=self.runpath,
                               model_name=self.name + '_bestFit')
-        # run_driver.make_fits(model, bf_param_dict)
-
+        run_driver.make_fits(model, bf_param_dict)
+        analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
+                           bestFit=True,)
 
         # This seems cool but I need to get plotting.py going first.
         """
