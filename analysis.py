@@ -352,9 +352,10 @@ def plot_model_and_data():
     """Plot a triptych of data, model, and residuals.
 
     It would be nice to have an option to also plot the grid search results.
+    Still need to:
+    - Get the beam to plot
+    - Get the velocity labels in the right places
     """
-    plt.close()
-
     # Read in the data
     modeling = '/Volumes/disks/jonas/modeling/'
     model_path = modeling + 'gridsearch_runs/nov8_hco/nov8_hco_bestFit.fits'
@@ -362,11 +363,11 @@ def plot_model_and_data():
     data_path = modeling + 'data/hco/hco-short110.fits'
 
     real_data = fits.getdata(data_path, ext=0).squeeze()
-    header = fits.getheader(data_path, ext=0)
+    image_header = fits.getheader(data_path, ext=0)
     model_data = fits.getdata(model_path, ext=0).squeeze()
-    header = fits.getheader(model_path, ext=0)
+    model_header = fits.getheader(model_path, ext=0)
     resid_data = fits.getdata(resid_path, ext=0).squeeze()
-    header = fits.getheader(resid_path, ext=0)
+    resid_header = fits.getheader(resid_path, ext=0)
 
     # Define some plotting params
     hspace = -0.2
@@ -381,10 +382,19 @@ def plot_model_and_data():
     crop_pix = int(crop_arcsec / 0.045)
     xmin, xmax = x_center - crop_pix, x_center + crop_pix
 
-    chanstep_vel = header['CDELT3'] * 0.001
-    chan0_vel = header['CRVAL3'] * 0.001 - header['CRPIX3'] * chanstep_vel
+    chanstep_vel = image_header['CDELT3'] * 0.001
+    chan0_vel = image_header['CRVAL3'] * 0.001 - image_header['CRPIX3'] * chanstep_vel
     chan_offset = 15
     nchans = 30
+
+    # Add beam info for the data
+    add_beam_d = True if 'bmaj' in image_header else False
+    if add_beam_d is True:
+        bmin = image_header['bmin'] * 3600.0
+        bmaj = image_header['bmaj'] * 3600.0
+        bpa = image_header['bpa']
+
+
 
     # Set up which channels are getting plotted, checking to make sure its legal
     if real_data.shape[0] < nchans + chan_offset:
@@ -405,6 +415,7 @@ def plot_model_and_data():
                                                  subplot_spec=big_fig[2],
                                                  wspace=wspace, hspace=hspace)
     # Populate the plots
+    print "Got the necessary info; now plotting..."
     for i in range(nchans):
         chan = i + chan_offset
         velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
@@ -441,20 +452,37 @@ def plot_model_and_data():
         ax_r.plot(offsets_dA[0], offsets_dA[1], '+g')
         ax_r.plot(offsets_dB[0], offsets_dB[1], '+g')
 
+        # Add info
+        ax_d.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+                horizontalalignment='center', verticalalignment='center')
+        ax_m.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+                horizontalalignment='center', verticalalignment='center')
+        ax_r.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+                horizontalalignment='center', verticalalignment='center')
+
+        if i == n_rows * (n_cols - 1) and add_beam_d is True:
+            el = ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_arcsec],
+                         width=bmin, height=bmaj, angle=-bpa,
+                         fc='k', ec='w', fill=False, hatch='////////')
+            ax_d.add_artist(el)
+
         fig.add_subplot(ax_m)
         fig.add_subplot(ax_d)
         fig.add_subplot(ax_r)
 
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.9)
+    print "Finished plotting; showing"
+    plt.close()
     fig.show()
 
 
-def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_hcn/nov8_hcn', DI=0):
+def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0):
     """Plot Chi2 as a function of two params.
 
     I think this works now.
     """
+
     df_raw = pickle.load(open(('{}_step-log.pickle').format(dataPath), 'rb'))
     df_full = df_raw.loc['A', :] if DI == 0 else df_raw.loc['B', :]
     l = list(df_full.columns)
@@ -463,7 +491,7 @@ def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_hcn/nov8_hcn', DI=0):
         len_p = len(list(set(df_full[p])))
         if len_p > 1:
             if p != 'Reduced Chi2' and p != 'Raw Chi2':
-                print str([i]), p, ['Length: ' + len_p]
+                print str([i]), p, '(Length: ' + str(len_p) + ')'
 
     p1_idx = int(raw_input('Select the index of the first parameter.\n'))
     p2_idx = int(raw_input('Select the index of the second parameter.\n'))
@@ -487,12 +515,19 @@ def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_hcn/nov8_hcn', DI=0):
     print len_p1, len_p2
     if len_p1 < 2 or len_p2 < 2:
         return 'Use parameters of length greater than 1'
+
+    """
+    I think this was trying to force a landscape layout.
+    Could consider using mat.T instead?
     if df[param1][0] == df[param1][1]:
         p_i, p_j = param2, param1
         len_p_i, len_p_j = len_p2, len_p1
     else:
         p_i, p_j = param1, param2
         len_p_i, len_p_j = len_p1, len_p2
+    """
+    p_i, p_j = param1, param2
+    len_p_i, len_p_j = len_p1, len_p2
 
     # Populate our chi-squared grid
     mat = np.zeros((len_p_i, len_p_j))
@@ -504,14 +539,17 @@ def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_hcn/nov8_hcn', DI=0):
             print p_i, df[p_i][i * len_p_j + j], '; ', p_j, df[p_j][i * len_p_j + j]
             print
 
-    plt.matshow(mat, cmap='jet')
+    plt.close()
+    # vmin, vmax = np.nanmin(df_full['Raw Chi2']), np.nanmax(df_full['Raw Chi2'])
+    plt.matshow(mat, cmap='jet')  #, vmin=vmin, vmax=vmax)
     plt.xlabel(df[p_j].name)
     plt.ylabel(df[p_i].name)
     plt.xticks(range(len_p2), sorted(list(set(df[param2]))))
     plt.yticks(range(len_p1), sorted(list(set(df[param1]))))
     plt.title('Chi2 Map Over Params')
-    plt.grid(False)
+    plt.grid(True, color='k')  #, alpha=0.5)
     plt.colorbar()
+    plt.gca().xaxis.tick_bottom()
     plt.show(block=False)
     return mat
 
