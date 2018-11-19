@@ -11,21 +11,21 @@ import numpy as np
 import pandas as pd
 import subprocess as sp
 import matplotlib.pyplot as plt
+import matplotlib.rcParams as rcParams
 import matplotlib.gridspec as gridspec
 
 from astropy.io import fits
 from matplotlib.pylab import *
 from matplotlib.ticker import *
 from matplotlib.pylab import figure
-import matplotlib.gridspec as gridspec
 from matplotlib.patches import Ellipse as ellipse
 from astropy.visualization import astropy_mpl_style
 
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 
 plt.style.use(astropy_mpl_style)
-matplotlib.rcParams['font.sans-serif'] = 'Times'
-matplotlib.rcParams['font.family'] = 'serif'
+rcParams['font.sans-serif'] = 'Times'
+rcParams['font.family'] = 'serif'
 
 resultsPath = '/Volumes/disks/jonas/modeling/gridsearch_results/'
 
