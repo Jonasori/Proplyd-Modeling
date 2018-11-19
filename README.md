@@ -55,7 +55,6 @@ Holds functions to actually build the disk models, sum them, and evaluate their 
 Calculates and adds weights to the visibilities. I didn't write this, so I don't have a super deep understanding of it, but it's used in the data processing pipeline, so it's important.
 
 
-
 ## IGNORED FILES
 These files are not included in this repo but are not described above, mostly because they're not relevant to me right now for whatever reasons (pulled from someone else's writing and currently unused, or just outdated)
 
@@ -69,3 +68,5 @@ plotting.py
 ## THOUGHTS and COMMENTS
 
 The fitting assumes that the two disks are not interacting, which may be a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within the realm of interaction, although we don't know their relative z-axis distances from us.
+
+Grid search is mostly done, MCMC is not but is at least vaguely functional right now.

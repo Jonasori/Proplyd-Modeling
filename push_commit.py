@@ -55,7 +55,7 @@ def push():
             files.append(f)
             print f
 
-    [sp.call(['git', 'stage', '{}'.format(i)]) for i in files]
+    [sp.call(['git', 'add', '{}'.format(i)]) for i in files]
 
     commit_message = raw_input('Enter commit message:\n')
 
