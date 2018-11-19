@@ -9,7 +9,7 @@ Using disk modelling and ray tracing code (Flaherty 2015), I am working to chara
 
 
 ## HOW IT WORKS
-Given a range of parameters and a the appropriate molecular line data, create a best-fit model of the V2434 Ori system.
+Given a range of parameters and a the appropriate molecular line data, create a best-fit model of the V2434 Ori system. Each fitting method (grid search and MCMC) choose parameter combinations differently, but both take that set of parameters, and use the disk modeling code to make two model disks, convert them into synthetic sky-projected images, convert those to the visibility domain, evaluate how well they match the observational data, and repeat this process.
 
 
 EXPLANATION OF SCRIPTS
@@ -18,7 +18,6 @@ Contains fairly generic plotting and analysis tools for making channel maps in v
 
 ### baseline_cutoff.py
 Images a visibility set while cutting out short baselines, varying that cutoff point, before evluating RMS and mean noise for each image to find where noise is minimized. This information is then entered (manually) into the data set's dictionary in constants.py.
-
 
 ### constants.py
 A place to centrally store constants and other such things. The 'lines' dictionary holds characteristic information about each molecular line I'm looking at (HCO+, HCN, CS, and CO), including which min baseline cutoff results in the lowest noise, the line's rest frequency, and which spectral window (in the original, full dataset) the line is held in.
@@ -50,7 +49,6 @@ Some analysis tools. Basically wrappers and shortcuts for MIRIAD functions. Ther
 ### utils.py
 Holds functions to actually build the disk models, sum them, and evaluate their chi-squared value compared to the relevant data.
 
-
 ### var_vis.py
 Calculates and adds weights to the visibilities. I didn't write this, so I don't have a super deep understanding of it, but it's used in the data processing pipeline, so it's important.
 
@@ -67,6 +65,6 @@ plotting.py
 
 ## THOUGHTS and COMMENTS
 
-The fitting assumes that the two disks are not interacting, which may be a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within the realm of interaction, although we don't know their relative z-axis distances from us.
+The fitting assumes that the two disks are not interacting, which may be a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within the realm of interaction, although we don't know their relative z-axis distances from us. However, right now the grid search is refusing to settle well, and it's looking like the MCMC runs are as well. Hopefully the four line fit will shed some light on things.
 
 Grid search is mostly done, MCMC is not but is at least vaguely functional right now.
