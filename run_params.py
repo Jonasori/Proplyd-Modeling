@@ -30,39 +30,103 @@ pos_By = -0.1879
 
 
     # Parameters for Disk B
-    TatmsB       = np.arange(10, 500, 50)
-    TqqB         = -1 * np.array([-0.5, 0, 0.5])
-    R_outB       = np.arange(50, 400, 50)
-    PAB          = np.array([135])
-    InclB        = np.array([30])
-    Pos_XB       = np.array([pos_Bx])
-    Pos_YB       = np.array([pos_By])
-    VsysB        = np.array([10.70])
-    # Note that both these are log-scaled and in m_disk is in units of solar masses
-    if mol == 'co':
-        MdiskB   = np.arange(-1.8, -1.3, 0.1)
-        XmolB    = -1 * np.array([4.])
-    else:
-        MdiskB   = np.array([-1.552842])
-        XmolB    = -1 * np.arange(6., 13., 1.)
-    """
+        TatmsB       = np.arange(10, 500, 50)
+        TqqB         = -1 * np.array([-0.5, 0, 0.5])
+        R_outB       = np.arange(50, 400, 50)
+        PAB          = np.array([135])
+        InclB        = np.array([30])
+        Pos_XB       = np.array([pos_Bx])
+        Pos_YB       = np.array([pos_By])
+        VsysB        = np.array([10.70])
+        # Note that both these are log-scaled and in m_disk is in units of solar masses
+        if mol == 'co':
+            MdiskB   = np.arange(-1.8, -1.3, 0.1)
+            XmolB    = -1 * np.array([4.])
+        else:
+            MdiskB   = np.array([-1.552842])
+            XmolB    = -1 * np.arange(6., 13., 1.)
+        """
 
 
 
-def make_diskB_params(mol='hco', run_length='mid'):
-    # Params that are always constant
+def make_diskA_params(mol='hco', run_length='mid'):
+    # Params that are constant but could be fit
     v_turb       = np.array([0.081])
     zq           = np.array([70.])
     r_crit       = np.array([100.])
     rho_p        = np.array([1.])
     t_mid        = np.array([15.])
+    PA           = np.array([69.7])
+    incl         = np.array([65])
+    pos_x        = np.array([offsets[0][0]])
+    pos_y        = np.array([offsets[0][1]])
+    v_sys        = vsys[0]          # np.array([10.70])
+    m_disk       = np.array([-1.10791])
 
-    PA          = np.array([135])
-    incl        = np.array([30])
-    pos_x       = np.array([offsets[1][0]])
-    pos_y       = np.array([offsets[1][1]])
+    # Params that are fit
+    if run_length == 'short':
+        t_atms      = np.array([100])
+        t_qq        = -1 * np.array([0])
+        r_out       = np.array([150])
+        x_mol       = -1 * np.array([4.])
+    elif run_length == 'mid':
+        t_atms      = np.arange(10, 500, 100)
+        t_qq        = -1 * np.array([-0.5, 0, 0.5])
+        r_out       = np.arange(50, 500, 100)
+        x_mol       = -1 * np.array([4.])
+    elif run_length == 'long':
+        t_atms      = np.arange(10, 500, 100)
+        t_qq        = -1 * np.array([-0.5, 0, 0.5])
+        r_out       = np.arange(50, 500, 50)
+        x_mol       = -1 * np.array([4.])
+
+    else:
+        return "Please choose 'short', 'mid', or 'long'"
+
+    # If we're looking at CO, then fix X_mol and fit for M_disk
+    if mol == 'co':
+        x_mol = -1 * np.array([4.])
+        if run_length == 'short':
+            m_disk = np.array([-1.10791])
+        elif run_length == 'mid':
+            m_disk = np.array([-1.07, -1.108, -1.109])
+        elif run_length == 'long':
+            m_disk = np.array([-1.06, -1.07, -1.108, -1.109, -1.11])
+
+    params = np.array([v_turb, zq, r_crit, rho_p, t_mid, PA, incl,
+                       pos_x, pos_y, v_sys, t_atms, t_qq, r_out,
+                       m_disk, x_mol])
+    params = {'v_turb': v_turb,
+              'zq': zq,
+              'r_crit': r_crit,
+              'rho_p': rho_p,
+              't_mid': t_mid,
+              'PA': PA,
+              'incl': incl,
+              'pos_x': pos_x,
+              'pos_y': pos_y,
+              'v_sys': v_sys,
+              't_atms': t_atms,
+              't_qq': t_qq,
+              'r_out': r_out,
+              'm_disk': m_disk,
+              'x_mol': x_mol}
+    return params
+
+
+def make_diskB_params(mol='hco', run_length='mid'):
+    # Params that are constant but could be fit
+    v_turb       = np.array([0.081])
+    zq           = np.array([70.])
+    r_crit       = np.array([100.])
+    rho_p        = np.array([1.])
+    t_mid        = np.array([15.])
+    PA           = np.array([135])
+    incl         = np.array([30])
+    pos_x        = np.array([offsets[1][0]])
+    pos_y        = np.array([offsets[1][1]])
     v_sys        = vsys[1]          # np.array([10.70])
-    m_disk   = np.array([-1.552842])
+    m_disk       = np.array([-1.552842])
 
     # Params that are fit
     if run_length == 'short':
@@ -90,9 +154,9 @@ def make_diskB_params(mol='hco', run_length='mid'):
         if run_length == 'short':
             m_disk = np.array([-1.552842])
         elif run_length == 'mid':
-            m_disk = np.array([-1.552842])
+            m_disk = np.array([-1.552, -1.553, -1.554])
         elif run_length == 'long':
-            m_disk = np.array([-1.552842])
+            m_disk = np.array([-1.551, -1.552, -1.553, -1.554, -1.555])
 
     params = np.array([v_turb, zq, r_crit, rho_p, t_mid, PA, incl,
                        pos_x, pos_y, v_sys, t_atms, t_qq, r_out,
@@ -108,12 +172,12 @@ def make_diskB_params(mol='hco', run_length='mid'):
               'pos_y': pos_y,
               'v_sys': v_sys,
               't_atms': t_atms,
-              't_atms': t_qq,
+              't_qq': t_qq,
               'r_out': r_out,
               'm_disk': m_disk,
               'x_mol': x_mol}
     return params
 
 
-# diskAParams = make_diskA_params(mol=mol, run_length='mid')
-diskBParams = make_diskB_params(mol=mol, run_length='mid')
+diskAParams = make_diskA_params(mol=mol, run_length='short')
+diskBParams = make_diskB_params(mol=mol, run_length='short')

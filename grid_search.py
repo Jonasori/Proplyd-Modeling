@@ -28,36 +28,13 @@ param_names = ['v_turb', 'zq', 'r_crit', 'rho_p', 't_mid', 'PA', 'incl',
                'pos_x', 'pos_y', 'v_sys', 't_atms', 't_atms',
                'r_out', 'm_disk', 'x_mol']
 
-shape = [len(diskBParams[p]) for p in param_names]
-
 # Prep some storage space for all the chisq vals
-diskARawX2 = np.zeros((len(diskAParams[0]), len(diskAParams[1]),
-                       len(diskAParams[2]), len(diskAParams[3]),
-                       len(diskAParams[4]), len(diskAParams[5]),
-                       len(diskAParams[6]), len(diskAParams[7]),
-                       len(diskAParams[8]), len(diskAParams[9])
-                       ))
 
-diskBRawX2 = np.zeros((len(diskBParams[0]), len(diskBParams[1]),
-                       len(diskBParams[2]), len(diskBParams[3]),
-                       len(diskBParams[4]), len(diskBParams[5]),
-                       len(diskBParams[6]), len(diskBParams[7]),
-                       len(diskBParams[8]), len(diskBParams[9])
-                       ))
+diskA_shape = [len(diskAParams[p]) for p in param_names]
+diskB_shape = [len(diskBParams[p]) for p in param_names]
 
-diskARedX2 = np.zeros((len(diskAParams[0]), len(diskAParams[1]),
-                       len(diskAParams[2]), len(diskAParams[3]),
-                       len(diskAParams[4]), len(diskAParams[5]),
-                       len(diskAParams[6]), len(diskAParams[7]),
-                       len(diskAParams[8]), len(diskAParams[9])
-                       ))
-
-diskBRedX2 = np.zeros((len(diskBParams[0]), len(diskBParams[1]),
-                       len(diskBParams[2]), len(diskBParams[3]),
-                       len(diskBParams[4]), len(diskBParams[5]),
-                       len(diskBParams[6]), len(diskBParams[7]),
-                       len(diskBParams[8]), len(diskBParams[9])
-                       ))
+diskARawX2, diskARedX2 = np.zeros(diskA_shape), np.zeros(diskA_shape)
+diskBRawX2, diskBRedX2 = np.zeros(diskB_shape), np.zeros(diskB_shape)
 
 
 # GRID SEARCH OVER ONE DISK HOLDING OTHER CONSTANT
@@ -75,10 +52,10 @@ def gridSearch(VariedDiskParams,
         StaticDiskParams (list of floats) Single vals for the static model.
         DI: Disk Index of varied disk (0 or 1).
             If 0, A is the varied disk and vice versa
-    Returns: 	[X2 min value, Coordinates of X2 min]
+    Returns: 	data-frame log of all the steps
     Creates:	Best fit two-disk model
     """
-    # Disk names should be the same as the output from makeModel()?
+    counter = steps_so_far
 
     # Initiate a list to hold the rows of the df
     df_rows = []
@@ -94,25 +71,23 @@ def gridSearch(VariedDiskParams,
     minRedX2 = 1e10
     minX2Vals = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-    counter = steps_so_far
-
     # Pull the params we're looping over.
     # All these are np.arrays (sometimes of length 1)
-    all_v_turb  = params['v_turb']
-    all_zq      = params['zq']
-    all_r_crit  = params['r_crit']
-    all_rho_p   = params['rho_p']
-    all_t_mid   = params['t_mid']
-    all_PA      = params['PA']
-    all_incl    = params['incl']
-    all_pos_x   = params['pos_x']
-    all_pos_y   = params['pos_y']
-    all_v_sys   = params['v_sys']
-    all_t_atms  = params['t_atms']
-    all_t_atms  = params['t_atms']
-    all_r_out   = params['r_out']
-    all_m_disk  = params['m_disk']
-    all_x_mol   = params['x_mol']
+    all_v_turb  = VariedDiskParams['v_turb']
+    all_zq      = VariedDiskParams['zq']
+    all_r_crit  = VariedDiskParams['r_crit']
+    all_rho_p   = VariedDiskParams['rho_p']
+    all_t_mid   = VariedDiskParams['t_mid']
+    all_PA      = VariedDiskParams['PA']
+    all_incl    = VariedDiskParams['incl']
+    all_pos_x   = VariedDiskParams['pos_x']
+    all_pos_y   = VariedDiskParams['pos_y']
+    all_v_sys   = VariedDiskParams['v_sys']
+    all_t_atms  = VariedDiskParams['t_atms']
+    all_t_qq    = VariedDiskParams['t_qq']
+    all_r_out   = VariedDiskParams['r_out']
+    all_m_disk  = VariedDiskParams['m_disk']
+    all_x_mol   = VariedDiskParams['x_mol']
 
     """ Grids by hand
         for i in range(0, len(Tatms)):
@@ -134,33 +109,33 @@ def gridSearch(VariedDiskParams,
                            range(len(all_r_crit)), range(len(all_rho_p)),
                            range(len(all_t_mid)),  range(len(all_PA)),
                            range(len(all_incl)),   range(len(all_pos_x)),
-                           range(len(all_pos_y)),  range(len(all_all_v_sys)),
+                           range(len(all_pos_y)),  range(len(all_v_sys)),
                            range(len(all_t_atms)), range(len(all_t_qq)),
                            range(len(all_r_out)),  range(len(all_m_disk)),
                            range(len(all_x_mol)))
     # Pull floats out of those lists.
     for i, j, k, l, m, n, o, p, q, r, s, t, u, v, w in ps:
         begin = time.time()
-        v_turb = all_v_turb[i]
-        zq = all_zq[j]
-        r_crit = all_r_crit[k]
-        rho_p = all_rho_p[l]
-        t_mid = all_t_mid[m]
-        PA = all_PA[n]
-        incl = all_incl[o]
-        pos_x = all_pos_x[p]
-        pos_y = all_pos_y[q]
-        v_sys = all_all_v_sys[r]
-        t_atms = all_t_atms[s]
-        t_qq = all_t_qq[t]
-        r_out = all_r_out[u]
-        m_disk = all_m_disk[v]
-        x_mol = all_x_mol[w]
+        v_turb  = all_v_turb[i]
+        zq      = all_zq[j]
+        r_crit  = all_r_crit[k]
+        rho_p   = all_rho_p[l]
+        t_mid   = all_t_mid[m]
+        PA      = all_PA[n]
+        incl    = all_incl[o]
+        pos_x   = all_pos_x[p]
+        pos_y   = all_pos_y[q]
+        v_sys   = all_v_sys[r]
+        t_atms  = all_t_atms[s]
+        t_qq    = all_t_qq[t]
+        r_out   = all_r_out[u]
+        m_disk  = all_m_disk[v]
+        x_mol   = all_x_mol[w]
 
         params = {'v_turb': v_turb,
                   'zq': zq,
                   'r_crit': r_crit,
-                  'rho_p': rho_p
+                  'rho_p': rho_p,
                   't_mid': t_mid,
                   'PA': PA,
                   'incl': incl,
@@ -179,18 +154,14 @@ def gridSearch(VariedDiskParams,
         #           t_atms, t_qq, r_out, m_disk, x_mol]
 
         # Things left to fix:
-        # - Chi2 grids (up top)
-        # - Chi2 grid population (below)
         # - df write out (maybe have it write out every step while we're at it)
-        # - printing stuff
-        # - param read-in in makeModel()
 
         # Print out some info
         print "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         print "Currently fitting for: " + outNameVaried
         print "Beginning model " + str(counter) + "/" + str(num_iters)
         print "Fit Params:"
-        for param in parans:
+        for param in params:
             print param, params[param]
         # This isn't really necessary to have
         print "\nStatic params:"
@@ -218,10 +189,11 @@ def gridSearch(VariedDiskParams,
         print "Raw Chi-Squared value:	 ", rawX2
         print "Reduced Chi-Squared value:", redX2
 
+        # This is just the params dict, but with chi2 vals and nicer names
         df_row = {'V Turb': v_turb,
                   'Zq': zq,
                   'R crit': r_crit,
-                  'Density Str': rho_p
+                  'Density Str': rho_p,
                   'T mid': t_mid,
                   'PA': PA,
                   'Incl': incl,
@@ -232,16 +204,17 @@ def gridSearch(VariedDiskParams,
                   'Temp Str': t_qq,
                   'Outer Radius': r_out,
                   'Disk Mass': m_disk,
-                  'Molecular Abundance': x_mol
+                  'Molecular Abundance': x_mol,
                   'Raw Chi2': rawX2,
-                  'Reduced Chi2': redX2,
+                  'Reduced Chi2': redX2
                   }
         df_rows.append(df_row)
         # Maybe want to re-export the df every time here?
 
+        # If this is the best fit so far, log it as such
         if redX2 > 0 and redX2 < minRedX2:
             minRedX2 = redX2
-            minX2Vals = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
+            minX2Vals = df_row
             sp.call(
                 'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath),
                 shell=True)
@@ -286,11 +259,11 @@ def fullRun(diskAParams, diskBParams,
 
     # Calculate the number of steps and consequent runtime
     na = 1
-    for a in range(0, len(diskAParams)):
+    for a in diskAParams:
         na *= len(diskAParams[a])
 
     nb = 1
-    for b in range(0, len(diskBParams)):
+    for b in diskBParams:
         nb *= len(diskBParams[b])
 
     n, dt = na + nb, 2.1
@@ -318,11 +291,11 @@ def fullRun(diskAParams, diskBParams,
     # Parameter Check:
     print "\nThis run will fit for", mol.upper()
     print "It will iterate through these parameters for Disk A:"
-    for p in range(len(diskAParams)):
-        print param_names[p], ': ', diskAParams[p]
+    for p in diskAParams:
+        print p, ': ', diskAParams[p]
     print "\nAnd these values for Disk B:"
-    for p in range(len(diskBParams)):
-        print param_names[p], ': ', diskBParams[p]
+    for p in diskBParams:
+        print p, ': ', diskBParams[p]
 
 
     print "\nThis run will take", n, "steps, spanning about", t
@@ -360,7 +333,9 @@ def fullRun(diskAParams, diskBParams,
 
     # STARTING THE RUN #
     # Make the initial static model (B), just with the first parameter values
-    dBInit = [i[0] for i in diskBParams]
+    dBInit = {}
+    for p in diskBParams:
+        dBInit[p] = diskBParams[p][0]
 
     # Grid search over Disk A, retrieve the resulting pd.DataFrame
     if to_skip != 'A':
@@ -373,8 +348,9 @@ def fullRun(diskAParams, diskBParams,
     print "Index of Best Fit, A is ", idx_of_BF_A
 
     # Make a list of those parameters to pass the next round of grid searching.
-    Ps_A = [df_A_fit[param][idx_of_BF_A] for param in  df_A_fit.columns]
-    fit_A_params = np.array(Ps_A)
+    fit_A_params = {}
+    for param in df_A_fit.columns:
+        fit_A_params[param] = df_A_fit[param][idx_of_BF_A]
 
     print "First disk has been fit\n"
 
@@ -386,8 +362,10 @@ def fullRun(diskAParams, diskBParams,
     idx_of_BF_B = df_B_fit.index[df_B_fit['Reduced Chi2'] == np.min(
         df_B_fit['Reduced Chi2'])][0]
 
-    Ps_B = [df_B_fit[param][idx_of_BF_B] for param in  df_B_fit.columns]
-    fit_B_params = np.array(Ps_B)
+    fit_B_params = {}
+    for param in df_B_fit.columns:
+        fit_B_params[param] = df_B_fit[param][idx_of_BF_B]
+
 
 
     # Bind the data frames, output them.
