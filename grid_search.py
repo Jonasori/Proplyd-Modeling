@@ -29,7 +29,6 @@ param_names = ['v_turb', 'zq', 'r_crit', 'rho_p', 't_mid', 'PA', 'incl',
                'r_out', 'm_disk', 'x_mol']
 
 # Prep some storage space for all the chisq vals
-
 diskA_shape = [len(diskAParams[p]) for p in param_names]
 diskB_shape = [len(diskBParams[p]) for p in param_names]
 
