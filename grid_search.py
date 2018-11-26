@@ -1,16 +1,18 @@
 """Run a grid search."""
 
 
+import csv
+import time
+import itertools
 import numpy as np
-import subprocess as sp
 import pandas as pd
 import cPickle as pickle
-import time
-import csv
+import subprocess as sp
+
 
 # Local package files
 from utils import makeModel, sumDisks, chiSq
-from tools import icr, sample_model_in_uvplane, already_exists, already_exists_old, remove
+from tools import icr, sample_model_in_uvplane, already_exists, remove
 from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
 from constants import mol, today, dataPath
 from run_params import diskAParams, diskBParams
@@ -106,6 +108,7 @@ def gridSearch(VariedDiskParams,
     counter = steps_so_far
 
     # GRIDLIFE
+    """
     for i in range(0, len(Tatms)):
         for j in range(0, len(Tqq)):
             for l in range(0, len(R_out)):
@@ -117,107 +120,116 @@ def gridSearch(VariedDiskParams,
                                     for q in range(0, len(V_sys)):
                                         for r in range(0, len(M_disk)):
                                             # Create a list of floats to feed makeModel()
-                                            begin = time.time()
-                                            ta = Tatms[i]
-                                            tqq = Tqq[j]
-                                            xmol = Xmol[k]
-                                            r_out = R_out[l]
-                                            pa = PA[m]
-                                            incl = Incl[n]
-                                            pos_x = Pos_X[o]
-                                            pos_y = Pos_Y[p]
-                                            vsys = V_sys[q]
-                                            m_disk = M_disk[r]
-                                            params = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
 
-                                            print "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-                                            print "Currently fitting for: ", outNameVaried
-                                            print "Beginning model ", str(
-                                                counter) + "/" + str(num_iters)
-                                            print "ta:", ta
-                                            print "tqq", tqq
-                                            print "xmol:", xmol
-                                            print "r_out:", r_out
-                                            print "pa:", pa
-                                            print "incl:", incl
-                                            print "pos_x:", pos_x
-                                            print "pos_y:", pos_y
-                                            print "vsys:", vsys
-                                            print "m_disk:", m_disk
+    """
 
-                                            print "Static params: ", StaticDiskParams
+    # I think that itertools.product does the same thing as the nested loops above
+    ps = itertools.product(range(0, len(Tatms)), range(0, len(Tqq)),
+                           range(0, len(Xmol)), range(0, len(R_out)),
+                           range(0, len(PA)), range(0, len(Incl)),
+                           range(0, len(Pos_X)), range(0, len(Pos_Y)),
+                           range(0, len(V_sys)), range(0, len(M_disk)))
+    for i, j, k, l, m, n, o, p, q, r in ps:
+        begin = time.time()
+        ta = Tatms[i]
+        tqq = Tqq[j]
+        xmol = Xmol[k]
+        r_out = R_out[l]
+        pa = PA[m]
+        incl = Incl[n]
+        pos_x = Pos_X[o]
+        pos_y = Pos_Y[p]
+        vsys = V_sys[q]
+        m_disk = M_disk[r]
+        params = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
+        print "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "Currently fitting for: ", outNameVaried
+        print "Beginning model ", str(
+            counter) + "/" + str(num_iters)
+        print "ta:", ta
+        print "tqq", tqq
+        print "xmol:", xmol
+        print "r_out:", r_out
+        print "pa:", pa
+        print "incl:", incl
+        print "pos_x:", pos_x
+        print "pos_y:", pos_y
+        print "vsys:", vsys
+        print "m_disk:", m_disk
 
-                                            # Make a new disk, sum them, sample in vis-space.
-                                            makeModel(params, outNameVaried, DI)
-                                            sumDisks(outNameVaried, outNameStatic, modelPath)
-                                            sample_model_in_uvplane(modelPath, mol=mol)
+        print "Static params: ", StaticDiskParams
 
-                                            # Visibility-domain chi-squared evaluation
-                                            rawX2, redX2 = chiSq(modelPath,
-                                                                 cut_central_chans=cut_central_chans)
+        # Make a new disk, sum them, sample in vis-space.
+        makeModel(params, outNameVaried, DI)
+        sumDisks(outNameVaried, outNameStatic, modelPath)
+        sample_model_in_uvplane(modelPath, mol=mol)
 
-                                            # It's ok to split these up by disk since disk B's
-                                            # best params are independent of where disk A is.
-                                            if DI == 0:
-                                                diskARawX2[i, j, k, l, m, n, o, p, q, r] = rawX2
-                                                diskARedX2[i, j, k, l, m, n, o, p, q, r] = redX2
-                                            else:
-                                                diskBRawX2[i, j, k, l, m, n, o, p, q, r] = rawX2
-                                                diskBRedX2[i, j, k, l, m, n, o, p, q, r] = redX2
+        # Visibility-domain chi-squared evaluation
+        rawX2, redX2 = chiSq(modelPath,
+                             cut_central_chans=cut_central_chans)
 
-                                            counter += 1
+        # It's ok to split these up by disk since disk B's
+        # best params are independent of where disk A is.
+        if DI == 0:
+            diskARawX2[i, j, k, l, m, n, o, p, q, r] = rawX2
+            diskARedX2[i, j, k, l, m, n, o, p, q, r] = redX2
+        else:
+            diskBRawX2[i, j, k, l, m, n, o, p, q, r] = rawX2
+            diskBRedX2[i, j, k, l, m, n, o, p, q, r] = redX2
 
-                                            print "\n\n"
-                                            print "Raw Chi-Squared value:	 ", rawX2
-                                            print "Reduced Chi-Squared value:", redX2
+        counter += 1
 
-                                            df_row = {'Atms Temp': ta,
-                                                      'Temp Struct': tqq,
-                                                      'Molecular Abundance': xmol,
-                                                      'Outer Radius': r_out,
-                                                      'Pos. Angle': pa,
-                                                      'Incl.': incl,
-                                                      'Raw Chi2': rawX2,
-                                                      'Reduced Chi2': redX2,
-                                                      'Offset X': pos_x,
-                                                      'Offset Y': pos_y,
-                                                      'Systemic Velocity': vsys,
-                                                      'Disk Mass': m_disk
-                                                      }
-                                            df_rows.append(df_row)
-                                            # Maybe want to re-export the df every time here?
+        print "\n\n"
+        print "Raw Chi-Squared value:	 ", rawX2
+        print "Reduced Chi-Squared value:", redX2
 
-                                            if redX2 > 0 and redX2 < minRedX2:
-                                                minRedX2 = redX2
-                                                minX2Vals = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
-                                                # minX2Location = [i, j, k, l, m, n]
-                                                sp.call(
-                                                    'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath), shell=True)
-                                                print "Best fit happened; moved file"
+        df_row = {'Atms Temp': ta,
+                  'Temp Struct': tqq,
+                  'Molecular Abundance': xmol,
+                  'Outer Radius': r_out,
+                  'Pos. Angle': pa,
+                  'Incl.': incl,
+                  'Raw Chi2': rawX2,
+                  'Reduced Chi2': redX2,
+                  'Offset X': pos_x,
+                  'Offset Y': pos_y,
+                  'Systemic Velocity': vsys,
+                  'Disk Mass': m_disk
+                  }
+        df_rows.append(df_row)
+        # Maybe want to re-export the df every time here?
 
-                                            # Now clear out all the files (im, vis, uvf, fits)
-                                            remove(modelPath + ".*")
-                                            # sp.call('rm -rf {}.*'.format(modelPath),
-                                            #         shell=True)
+        if redX2 > 0 and redX2 < minRedX2:
+            minRedX2 = redX2
+            minX2Vals = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
+            # minX2Location = [i, j, k, l, m, n]
+            sp.call(
+                'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath), shell=True)
+            print "Best fit happened; moved file"
 
-                                            # Loop this.
-                                            print "Min. Chi-Squared value so far:", minRedX2
-                                            print "which happened at: "
-                                            print "ta:", minX2Vals[0]
-                                            print "tqq:", minX2Vals[1]
-                                            print "xmol:", minX2Vals[2]
-                                            print "r_out:", minX2Vals[3]
-                                            print "pa:", minX2Vals[4]
-                                            print "incl:", minX2Vals[5]
-                                            print "pos_x:", minX2Vals[6]
-                                            print "pos_y:", minX2Vals[7]
-                                            print "Systemic Velocity:", minX2Vals[8]
-                                            print "Disk Mass:", minX2Vals[9]
+        # Now clear out all the files (im, vis, uvf, fits)
+        remove(modelPath + ".*")
+        # sp.call('rm -rf {}.*'.format(modelPath),
+        #         shell=True)
+
+        # Loop this.
+        print "Min. Chi-Squared value so far:", minRedX2
+        print "which happened at: "
+        print "ta:", minX2Vals[0]
+        print "tqq:", minX2Vals[1]
+        print "xmol:", minX2Vals[2]
+        print "r_out:", minX2Vals[3]
+        print "pa:", minX2Vals[4]
+        print "incl:", minX2Vals[5]
+        print "pos_x:", minX2Vals[6]
+        print "pos_y:", minX2Vals[7]
+        print "Systemic Velocity:", minX2Vals[8]
+        print "Disk Mass:", minX2Vals[9]
 
 
 
-                                            finish = time.time()
-                                            times.append([counter, finish - begin])
+        finish = time.time()
+        times.append([counter, finish - begin])
 
     # Finally, make the best-fit model for this disk
     makeModel(minX2Vals, outNameVaried, DI)
