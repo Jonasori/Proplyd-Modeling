@@ -14,19 +14,18 @@ import disk_model.raytrace as rt
 # Local package files
 from constants import mol, obs_stuff, other_params, dataPath
 
-
 ######################
 # CONSTANTS & PARAMS #
 ######################
 
 
-# Default params
-col_dens, Tfo, Tmid, m_star, r_in, rotHand, offsets = other_params
+# Default observational params
 vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=True)
 
-distance = 1/(2.569750671443057 * 10**(-3))
-# Maybe this is error? I don't remember.
-error = 0.0526 * distance**(-2)
+# Some other constants
+col_dens, Tfo, m_star, r_in, rotHand, offsets, distance = other_params
+
+
 
 
 ####################
@@ -38,9 +37,9 @@ def makeModel(diskParams, outputPath, DI):
     """Make a single model disk.
 
     Args:
-        diskParams (list of floats): the physical parameters for the model.
-        outputPath (str): The path to where created files should go, including
-                          filename.
+        diskParams (dict of floats): the physical parameters for the model.
+        outputPath (str): The path to where created files should go,
+                          including filename.
         DI (0 or 1): the index of the disk being modeled.
     Creates:
         {outputPath}.fits, a single model disk.
@@ -52,33 +51,38 @@ def makeModel(diskParams, outputPath, DI):
 
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
-    # To just make a model (no grid search), add [0] after each param. Not sure why.
-    Tatms  = diskParams[0]
-    Tqq    = diskParams[1]
-    Xmol   = diskParams[2]
-    Rout   = diskParams[3]
-    PA     = diskParams[4]
-    Incl   = diskParams[5]
-    Pos_X  = diskParams[6]
-    Pos_Y  = diskParams[7]
-    v_sys  = diskParams[8]
-    m_disk = diskParams[9]
 
-    a = Disk(params=[Tqq,
+    v_turb  = diskParams['v_turb']
+    zq      = diskParams['zq']
+    r_crit  = diskParams['r_crit']
+    rho_p   = diskParams['rho_p']
+    t_mid   = diskParams['t_mid']
+    PA      = diskParams['PA']
+    incl    = diskParams['incl']
+    pos_x   = diskParams['pos_x']
+    pos_y   = diskParams['pos_y']
+    v_sys   = diskParams['v_sys']
+    t_atms  = diskParams['t_atms']
+    t_qq    = diskParams['t_qq']
+    r_out   = diskParams['r_out']
+    m_disk  = diskParams['m_disk']
+    x_mol   = diskParams['x_mol']
+
+    a = Disk(params=[t_qq,
                      10**m_disk,
-                     1.,
+                     rho_p,
                      r_in[DI],
-                     Rout,
-                     100,
-                     Incl,
-                     m_star[DI],
-                     10**Xmol,
-                     0.081,
-                     70.,
-                     Tmid,
-                     Tatms,
+                     r_out,
+                     r_crit,
+                     incl,
+                     m_star[DI],    # Where does this get defined?
+                     10**x_mol,
+                     v_turb,
+                     zq,
+                     t_mid,
+                     t_atms,
                      col_dens,
-                     [1., Rout],
+                     [1., r_out],
                      rotHand[DI]])
 
     # The data have 51 channels (from the casa split()), so n_chans must be 51
@@ -91,7 +95,7 @@ def makeModel(diskParams, outputPath, DI):
                    xnpix=256,
                    vsys=v_sys,
                    PA=PA,
-                   offs=[Pos_X, Pos_Y],
+                   offs=[pos_x, pos_y],
                    modfile=outputPath,
                    isgas=True,
                    flipme=False,

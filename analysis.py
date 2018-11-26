@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import subprocess as sp
 import matplotlib.pyplot as plt
-import matplotlib.rcParams as rcParams
+# import matplotlib.pyplot.RcParams
 import matplotlib.gridspec as gridspec
 
 from astropy.io import fits
@@ -24,8 +24,8 @@ from astropy.visualization import astropy_mpl_style
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 
 plt.style.use(astropy_mpl_style)
-rcParams['font.sans-serif'] = 'Times'
-rcParams['font.family'] = 'serif'
+matplotlib.rcParams['font.sans-serif'] = 'Times'
+matplotlib.rcParams['font.family'] = 'serif'
 
 resultsPath = '/Volumes/disks/jonas/modeling/gridsearch_results/'
 

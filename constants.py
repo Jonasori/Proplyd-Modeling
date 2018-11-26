@@ -26,12 +26,6 @@ today = months[td.month - 1] + str(td.day)
 col_dens = [1.3e21/(1.59e21), 1e30/(1.59e21)]
 # Freeze out temp (K)
 Tfo = 19
-# Midplane temperature (K)
-Tmid = 15
-# Atmospheric temperature (K)
-Tatm = 100
-# Temp structure power law index ( T(r) ~ r^qq )
-Tqq = -0.5
 # Stellar mass, in solar masses [a,b]
 m_star = [3.5, 0.4]
 # Inner disk radius, in AU
@@ -48,8 +42,11 @@ offsets = [[0.0002, 0.082], [-1.006, -0.3]]
 # Williams vals: vsys = [10.55, 10.85]
 vsys = [10., 10.75]
 
+distance = 1/(2.569750671443057 * 10**(-3))
+# Maybe this is error? I don't remember.
+error = 0.0526 * distance**(-2)
 
-other_params = [col_dens, Tfo, Tmid, m_star, r_in, rotHand, offsets]
+other_params = [col_dens, Tfo, m_star, r_in, rotHand, offsets, distance]
 
 
 

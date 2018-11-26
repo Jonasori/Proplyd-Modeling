@@ -20,13 +20,15 @@ from run_params import diskAParams, diskBParams
 
 # A little silly, but an easy way to name disks by their disk index (DI)
 dnames = ['A', 'B']
-# Set up a list to keep track of how long each iteration takes.
+# Set up the header of a list to keep track of how long each iteration takes.
 times = [['step', 'duration']]
 
 # An up-to-date list of the params being queried.
-param_names = ['ta', 'tqq', 'xmol', 'r_out', 'pa', 'incl',
-               'pos_x', 'pos_y', 'vsys', 'm_disk']
+param_names = ['v_turb', 'zq', 'r_crit', 'rho_p', 't_mid', 'PA', 'incl',
+               'pos_x', 'pos_y', 'v_sys', 't_atms', 't_atms',
+               'r_out', 'm_disk', 'x_mol']
 
+shape = [len(diskBParams[p]) for p in param_names]
 
 # Prep some storage space for all the chisq vals
 diskARawX2 = np.zeros((len(diskAParams[0]), len(diskAParams[1]),
@@ -78,19 +80,6 @@ def gridSearch(VariedDiskParams,
     """
     # Disk names should be the same as the output from makeModel()?
 
-    # Pull the params we're looping over
-    Tatms = VariedDiskParams[0]
-    Tqq = VariedDiskParams[1]
-    Xmol = VariedDiskParams[2]
-    R_out = VariedDiskParams[3]
-    PA = VariedDiskParams[4]
-    Incl = VariedDiskParams[5]
-    Pos_X = VariedDiskParams[6]
-    Pos_Y = VariedDiskParams[7]
-    V_sys = VariedDiskParams[8]
-    M_disk = VariedDiskParams[9]
-
-
     # Initiate a list to hold the rows of the df
     df_rows = []
 
@@ -102,62 +91,111 @@ def gridSearch(VariedDiskParams,
     makeModel(StaticDiskParams, outNameStatic, DIs)
 
     # Set up huge initial chi squared values so that they can be improved upon.
-    minRedX2 = 10000000000
+    minRedX2 = 1e10
     minX2Vals = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     counter = steps_so_far
 
-    # GRIDLIFE
-    """
-    for i in range(0, len(Tatms)):
-        for j in range(0, len(Tqq)):
-            for l in range(0, len(R_out)):
-                for k in range(0, len(Xmol)):
-                    for m in range(0, len(PA)):
-                        for n in range(0, len(Incl)):
-                            for o in range(0, len(Pos_X)):
-                                for p in range(0, len(Pos_Y)):
-                                    for q in range(0, len(V_sys)):
-                                        for r in range(0, len(M_disk)):
-                                            # Create a list of floats to feed makeModel()
+    # Pull the params we're looping over.
+    # All these are np.arrays (sometimes of length 1)
+    all_v_turb  = params['v_turb']
+    all_zq      = params['zq']
+    all_r_crit  = params['r_crit']
+    all_rho_p   = params['rho_p']
+    all_t_mid   = params['t_mid']
+    all_PA      = params['PA']
+    all_incl    = params['incl']
+    all_pos_x   = params['pos_x']
+    all_pos_y   = params['pos_y']
+    all_v_sys   = params['v_sys']
+    all_t_atms  = params['t_atms']
+    all_t_atms  = params['t_atms']
+    all_r_out   = params['r_out']
+    all_m_disk  = params['m_disk']
+    all_x_mol   = params['x_mol']
 
-    """
+    """ Grids by hand
+        for i in range(0, len(Tatms)):
+            for j in range(0, len(Tqq)):
+                for l in range(0, len(R_out)):
+                    for k in range(0, len(Xmol)):
+                        for m in range(0, len(PA)):
+                            for n in range(0, len(Incl)):
+                                for o in range(0, len(Pos_X)):
+                                    for p in range(0, len(Pos_Y)):
+                                        for q in range(0, len(V_sys)):
+                                            for r in range(0, len(M_disk)):
+                                                # Create a list of floats to feed makeModel()
+                                                """
 
     # I think that itertools.product does the same thing as the nested loops above
-    ps = itertools.product(range(0, len(Tatms)), range(0, len(Tqq)),
-                           range(0, len(Xmol)), range(0, len(R_out)),
-                           range(0, len(PA)), range(0, len(Incl)),
-                           range(0, len(Pos_X)), range(0, len(Pos_Y)),
-                           range(0, len(V_sys)), range(0, len(M_disk)))
-    for i, j, k, l, m, n, o, p, q, r in ps:
+    # Loop over everything, even though only most params aren't varied.
+    ps = itertools.product(range(len(all_v_turb)), range(len(all_zq)),
+                           range(len(all_r_crit)), range(len(all_rho_p)),
+                           range(len(all_t_mid)),  range(len(all_PA)),
+                           range(len(all_incl)),   range(len(all_pos_x)),
+                           range(len(all_pos_y)),  range(len(all_all_v_sys)),
+                           range(len(all_t_atms)), range(len(all_t_qq)),
+                           range(len(all_r_out)),  range(len(all_m_disk)),
+                           range(len(all_x_mol)))
+    # Pull floats out of those lists.
+    for i, j, k, l, m, n, o, p, q, r, s, t, u, v, w in ps:
         begin = time.time()
-        ta = Tatms[i]
-        tqq = Tqq[j]
-        xmol = Xmol[k]
-        r_out = R_out[l]
-        pa = PA[m]
-        incl = Incl[n]
-        pos_x = Pos_X[o]
-        pos_y = Pos_Y[p]
-        vsys = V_sys[q]
-        m_disk = M_disk[r]
-        params = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
-        print "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print "Currently fitting for: ", outNameVaried
-        print "Beginning model ", str(
-            counter) + "/" + str(num_iters)
-        print "ta:", ta
-        print "tqq", tqq
-        print "xmol:", xmol
-        print "r_out:", r_out
-        print "pa:", pa
-        print "incl:", incl
-        print "pos_x:", pos_x
-        print "pos_y:", pos_y
-        print "vsys:", vsys
-        print "m_disk:", m_disk
+        v_turb = all_v_turb[i]
+        zq = all_zq[j]
+        r_crit = all_r_crit[k]
+        rho_p = all_rho_p[l]
+        t_mid = all_t_mid[m]
+        PA = all_PA[n]
+        incl = all_incl[o]
+        pos_x = all_pos_x[p]
+        pos_y = all_pos_y[q]
+        v_sys = all_all_v_sys[r]
+        t_atms = all_t_atms[s]
+        t_qq = all_t_qq[t]
+        r_out = all_r_out[u]
+        m_disk = all_m_disk[v]
+        x_mol = all_x_mol[w]
 
-        print "Static params: ", StaticDiskParams
+        params = {'v_turb': v_turb,
+                  'zq': zq,
+                  'r_crit': r_crit,
+                  'rho_p': rho_p
+                  't_mid': t_mid,
+                  'PA': PA,
+                  'incl': incl,
+                  'pos_x': pos_x,
+                  'pos_y': pos_y,
+                  'v_sys': v_sys,
+                  't_atms': t_atms,
+                  't_qq': t_qq,
+                  'r_out': r_out,
+                  'm_disk': m_disk,
+                  'x_mol': x_mol
+                  }
+
+
+        # params = [zq, r_crit, rho_p, t_mid, PA, incl, pos_x, pos_y, v_sys,
+        #           t_atms, t_qq, r_out, m_disk, x_mol]
+
+        # Things left to fix:
+        # - Chi2 grids (up top)
+        # - Chi2 grid population (below)
+        # - df write out (maybe have it write out every step while we're at it)
+        # - printing stuff
+        # - param read-in in makeModel()
+
+        # Print out some info
+        print "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "Currently fitting for: " + outNameVaried
+        print "Beginning model " + str(counter) + "/" + str(num_iters)
+        print "Fit Params:"
+        for param in parans:
+            print param, params[param]
+        # This isn't really necessary to have
+        print "\nStatic params:"
+        for static in StaticDiskParams:
+            print static, StaticDiskParams[static]
 
         # Make a new disk, sum them, sample in vis-space.
         makeModel(params, outNameVaried, DI)
@@ -165,36 +203,38 @@ def gridSearch(VariedDiskParams,
         sample_model_in_uvplane(modelPath, mol=mol)
 
         # Visibility-domain chi-squared evaluation
-        rawX2, redX2 = chiSq(modelPath,
-                             cut_central_chans=cut_central_chans)
+        rawX2, redX2 = chiSq(modelPath, cut_central_chans=cut_central_chans)
 
         # It's ok to split these up by disk since disk B's
         # best params are independent of where disk A is.
         if DI == 0:
-            diskARawX2[i, j, k, l, m, n, o, p, q, r] = rawX2
-            diskARedX2[i, j, k, l, m, n, o, p, q, r] = redX2
+            diskARawX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = rawX2
+            diskARedX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = redX2
         else:
-            diskBRawX2[i, j, k, l, m, n, o, p, q, r] = rawX2
-            diskBRedX2[i, j, k, l, m, n, o, p, q, r] = redX2
-
-        counter += 1
+            diskBRawX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = rawX2
+            diskBRedX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = redX2
 
         print "\n\n"
         print "Raw Chi-Squared value:	 ", rawX2
         print "Reduced Chi-Squared value:", redX2
 
-        df_row = {'Atms Temp': ta,
-                  'Temp Struct': tqq,
-                  'Molecular Abundance': xmol,
+        df_row = {'V Turb': v_turb,
+                  'Zq': zq,
+                  'R crit': r_crit,
+                  'Density Str': rho_p
+                  'T mid': t_mid,
+                  'PA': PA,
+                  'Incl': incl,
+                  'Pos x': pos_x,
+                  'Pos Y': pos_y,
+                  'V Sys': v_sys,
+                  'T atms': t_atms,
+                  'Temp Str': t_qq,
                   'Outer Radius': r_out,
-                  'Pos. Angle': pa,
-                  'Incl.': incl,
+                  'Disk Mass': m_disk,
+                  'Molecular Abundance': x_mol
                   'Raw Chi2': rawX2,
                   'Reduced Chi2': redX2,
-                  'Offset X': pos_x,
-                  'Offset Y': pos_y,
-                  'Systemic Velocity': vsys,
-                  'Disk Mass': m_disk
                   }
         df_rows.append(df_row)
         # Maybe want to re-export the df every time here?
@@ -202,9 +242,9 @@ def gridSearch(VariedDiskParams,
         if redX2 > 0 and redX2 < minRedX2:
             minRedX2 = redX2
             minX2Vals = [ta, tqq, xmol, r_out, pa, incl, pos_x, pos_y, vsys, m_disk]
-            # minX2Location = [i, j, k, l, m, n]
             sp.call(
-                'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath), shell=True)
+                'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath),
+                shell=True)
             print "Best fit happened; moved file"
 
         # Now clear out all the files (im, vis, uvf, fits)
@@ -214,22 +254,11 @@ def gridSearch(VariedDiskParams,
 
         # Loop this.
         print "Min. Chi-Squared value so far:", minRedX2
-        print "which happened at: "
-        print "ta:", minX2Vals[0]
-        print "tqq:", minX2Vals[1]
-        print "xmol:", minX2Vals[2]
-        print "r_out:", minX2Vals[3]
-        print "pa:", minX2Vals[4]
-        print "incl:", minX2Vals[5]
-        print "pos_x:", minX2Vals[6]
-        print "pos_y:", minX2Vals[7]
-        print "Systemic Velocity:", minX2Vals[8]
-        print "Disk Mass:", minX2Vals[9]
 
-
-
+        counter += 1
         finish = time.time()
         times.append([counter, finish - begin])
+
 
     # Finally, make the best-fit model for this disk
     makeModel(minX2Vals, outNameVaried, DI)
@@ -239,7 +268,7 @@ def gridSearch(VariedDiskParams,
     step_log = pd.DataFrame(df_rows)
     print "Shape of long-log data frame is ", step_log.shape
 
-    # Return the min value and where that value is
+    # Give the min value and where that value is
     print "Minimum Chi2 value and where it happened: ", [minRedX2, minX2Vals]
     return step_log
 
