@@ -7,7 +7,8 @@ import argparse
 import subprocess as sp
 
 # Local package files
-from grid_search import fullRun
+# import four_line_gridsearch
+import grid_search
 from run_params import diskAParams, diskBParams
 from constants import today
 from tools import already_exists, remove
@@ -16,21 +17,27 @@ from tools import already_exists, remove
 # If running MCMC, how many processors?
 np = 10
 
-#"""
 # Which fitting method?
+# method = 'four-line'
 method = 'gs'
 
 
 if method == 'gs':
-    fullRun(diskAParams, diskBParams, cut_central_chans=False)
+    grid_search.fullRun(diskAParams, diskBParams, cut_central_chans=False)
 
 
-if method == 'mc':
+# elif method == 'four-line':
+    # four_line_gridsearch.fullRun(diskAParams, diskBParams, cut_central_chans=False)
+
+
+elif method == 'mc':
     sp.call(['mpirun', '-np', '12', 'python', 'run_driver.py', '-r'])
-    print "Puppies are nice!\n\n\n"
-"""
 
-# ARGPARSE STUFF
+
+
+
+"""
+# Argparse stuff, if you want.
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process the data.')
     parser.add_argument('-gs', '--gridsearch', action='store_true',

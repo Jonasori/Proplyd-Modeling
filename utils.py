@@ -12,7 +12,7 @@ from disk_model.disk import Disk
 import disk_model.raytrace as rt
 
 # Local package files
-from constants import mol, obs_stuff, other_params, dataPath
+from constants import mol, obs_stuff, other_params, get_data_path
 
 ######################
 # CONSTANTS & PARAMS #
@@ -33,7 +33,7 @@ col_dens, Tfo, m_star, r_in, rotHand, offsets, distance = other_params
 ####################
 
 
-def makeModel(diskParams, outputPath, DI):
+def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     """Make a single model disk.
 
     Args:
@@ -46,8 +46,10 @@ def makeModel(diskParams, outputPath, DI):
     """
     # DI = Disk Index: the index for the tuples below. 0=A, 1=B
 
-    print "[Entering makeModel()]"
-    # print outputPath
+    print "[ Entering makeModel() ]"
+
+    # Get line-specific stuff
+    vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=short_vis_only)
 
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
@@ -75,7 +77,7 @@ def makeModel(diskParams, outputPath, DI):
                      r_out,
                      r_crit,
                      incl,
-                     m_star[DI],    # Where does this get defined?
+                     m_star[DI],
                      10**x_mol,
                      v_turb,
                      zq,
@@ -107,7 +109,7 @@ def makeModel(diskParams, outputPath, DI):
 
 
 # SUM TWO MODEL DISKS #
-def sumDisks(filePathA, filePathB, outputPath):
+def sumDisks(filePathA, filePathB, outputPath, mol):
     """Sum two model disks.
 
     Args:
@@ -117,6 +119,10 @@ def sumDisks(filePathA, filePathB, outputPath):
                     Don't include the filetype extension.
     Creates:	outputPath.[fits, im, vis, uvf]
     """
+
+    dataPath = get_data_path(mol)
+    vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=True)
+
     # Now sum them up and make a new fits file
     a = fits.getdata(filePathA + '.fits')
     b = fits.getdata(filePathB + '.fits')
@@ -154,8 +160,7 @@ def sumDisks(filePathA, filePathB, outputPath):
     # im.header['SPECSYS'] = 'LSRK'
     # im.header['EPOCH'] = data_header['EPOCH']
 
-    fitsout = outputPath + '.fits'
-    im.writeto(fitsout, overwrite=True)
+    im.writeto(outputPath + '.fits', overwrite=True)
 
     # Clear out the old files to make room for the new
     sp.call('rm -rf {}.im'.format(outputPath), shell=True)
@@ -164,7 +169,7 @@ def sumDisks(filePathA, filePathB, outputPath):
     print "Deleted .im, .uvf, and .vis\n"
 
 
-def chiSq(infile, cut_central_chans=False):
+def chiSq(infile, mol, cut_central_chans=False):
     """Calculate chi-squared metric between model and data.
 
     Args:
@@ -172,6 +177,8 @@ def chiSq(infile, cut_central_chans=False):
     Returns:	[Raw X2, Reduced X2]
     Creates: 	None
     """
+
+    dataPath = get_data_path(mol)
     # GET VISIBILITIES
     with fits.open(dataPath + '.uvf') as data:
         data_vis = data[0].data['data'].squeeze()

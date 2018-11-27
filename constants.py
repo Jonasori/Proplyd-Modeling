@@ -55,7 +55,7 @@ def obs_stuff(mol, short_vis_only=True):
 
     Just putting this stuff in a function because it's ugly and line-dependent.
     """
-    dataPath = get_data_path(mol, short_vis_only)
+    dataPath = get_data_path(mol, short_vis_only=short_vis_only)
 
     jnum = lines[mol]['jnum']
 
@@ -131,6 +131,7 @@ lines = {'hco': {'restfreq': 356.73422300,
 # DATA FILE NAME
 def get_data_path(mol, short_vis_only=True):
     """Get the path to the data files for a given line."""
+    print mol
     dataPath = './data/' + mol + '/' + mol
     if short_vis_only is True:
         dataPath += '-short' + str(lines[mol]['baseline_cutoff'])

@@ -1,4 +1,22 @@
-"""Run a grid search."""
+"""Run a grid search.
+
+The only part of this that changes for the four-line fit is in the model making
+itself, deep in the grid search.
+
+It's gonna be really hard to fit for some parameters individually in a grid search without a significant rewrite. Right?
+
+
+
+
+- Common temperature structure (may have to vary zq?  try fixed first? *Would varying this happen line-by-line?)
+- Vary abundance and radius for each molecule separately
+- Keep disk geometry the same for all molecules
+- Sum raw chi^2 for each of four molecules
+
+If you don't get a reasonable solution, check what Sam did, but I think maybe we wound up having to vary T_atm separately for each molecule?  Important to try with a consistent temperature structure first so that we can find out how badly it does.
+
+Also check Sam's paper to see if there are descriptions of number density thresholds for upper/lower molecular boundaries, based on photodissociation cross-sections and/or freeze-out.
+"""
 
 
 import csv
@@ -14,8 +32,8 @@ import subprocess as sp
 from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, already_exists, remove
 from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
-from constants import mol, today, dataPath
-from run_params import diskAParams, diskBParams
+from constants import today, dataPath
+from run_params import diskAParams_fourline, diskBParams_fourline
 
 
 # A little silly, but an easy way to name disks by their disk index (DI)
@@ -23,11 +41,10 @@ dnames = ['A', 'B']
 # Set up the header of a list to keep track of how long each iteration takes.
 times = [['step', 'duration']]
 
-# An up-to-date list of the params being queried.
-param_names = ['v_turb', 'zq', 'r_crit', 'rho_p', 't_mid', 'PA', 'incl',
-               'pos_x', 'pos_y', 'v_sys', 't_atms', 't_qq',
-               'r_out', 'm_disk', 'x_mol']
+mols = ['hco', 'hcn', 'cs', 'co']
 
+# An up_to_date list of the params being queried.
+param_names = diskAParams_fourline.keys()
 # Prep some storage space for all the chisq vals
 diskA_shape = [len(diskAParams[p]) for p in param_names]
 diskB_shape = [len(diskBParams[p]) for p in param_names]
@@ -36,11 +53,9 @@ diskARawX2, diskARedX2 = np.zeros(diskA_shape), np.zeros(diskA_shape)
 diskBRawX2, diskBRedX2 = np.zeros(diskB_shape), np.zeros(diskB_shape)
 
 
-# GRID SEARCH OVER ONE DISK HOLDING OTHER CONSTANT
 def gridSearch(VariedDiskParams,
                StaticDiskParams,
-               DI,
-               modelPath,
+               DI, modelPath,
                num_iters, steps_so_far=1,
                cut_central_chans=False):
     """
@@ -61,10 +76,13 @@ def gridSearch(VariedDiskParams,
 
     # Get the index of the static disk, name the outputs
     DIs = abs(DI - 1)
-    outNameVaried = modelPath + 'fitted_' + dnames[DI]
-    outNameStatic = modelPath + 'static_' + dnames[DIs]
+    outNameVaried = modelPath + '-fitted_' + dnames[DI]
+    outNameStatic = modelPath + '-static_' + dnames[DIs]
 
-    makeModel(StaticDiskParams, outNameStatic, DIs, mol)
+    # Make four static disks
+    print "Making static disks"
+    [makeModel(StaticDiskParams, outNameStatic + '_' + mol, DIs, mol) for mol in mols]
+    print "Finished making static disks"
 
     # Set up huge initial chi squared values so that they can be improved upon.
     minRedX2 = 1e10
@@ -75,7 +93,6 @@ def gridSearch(VariedDiskParams,
     # Pull the params we're looping over.
     # All these are np.arrays (sometimes of length 1)
     all_v_turb  = VariedDiskParams['v_turb']
-    all_zq      = VariedDiskParams['zq']
     all_r_crit  = VariedDiskParams['r_crit']
     all_rho_p   = VariedDiskParams['rho_p']
     all_t_mid   = VariedDiskParams['t_mid']
@@ -84,57 +101,101 @@ def gridSearch(VariedDiskParams,
     all_pos_x   = VariedDiskParams['pos_x']
     all_pos_y   = VariedDiskParams['pos_y']
     all_v_sys   = VariedDiskParams['v_sys']
-    all_t_atms  = VariedDiskParams['t_atms']
     all_t_qq    = VariedDiskParams['t_qq']
-    all_r_out   = VariedDiskParams['r_out']
-    all_m_disk  = VariedDiskParams['m_disk']
-    all_x_mol   = VariedDiskParams['x_mol']
+    all_zq      = VariedDiskParams['zq']
 
-    """ Grids by hand
-        for i in range(0, len(Tatms)):
-            for j in range(0, len(Tqq)):
-                for l in range(0, len(R_out)):
-                    for k in range(0, len(Xmol)):
-                        for m in range(0, len(PA)):
-                            for n in range(0, len(Incl)):
-                                for o in range(0, len(Pos_X)):
-                                    for p in range(0, len(Pos_Y)):
-                                        for q in range(0, len(V_sys)):
-                                            for r in range(0, len(M_disk)):
-                                                # Create a list of floats to feed makeModel()
-                                                """
+    all_t_atms_co  = VariedDiskParams['t_atms_co']
+    all_t_atms_cs  = VariedDiskParams['t_atms_cs']
+    all_t_atms_hco  = VariedDiskParams['t_atms_hco']
+    all_t_atms_hcn  = VariedDiskParams['t_atms_hcn']
 
-    # I think that itertools.product does the same thing as the nested loops above
-    # Loop over everything, even though only most params aren't varied.
-    ps = itertools.product(range(len(all_v_turb)), range(len(all_zq)),
-                           range(len(all_r_crit)), range(len(all_rho_p)),
-                           range(len(all_t_mid)),  range(len(all_PA)),
-                           range(len(all_incl)),   range(len(all_pos_x)),
-                           range(len(all_pos_y)),  range(len(all_v_sys)),
-                           range(len(all_t_atms)), range(len(all_t_qq)),
-                           range(len(all_r_out)),  range(len(all_m_disk)),
-                           range(len(all_x_mol)))
+    all_r_out_co   = VariedDiskParams['r_out_co']
+    all_r_out_cs   = VariedDiskParams['r_out_cs']
+    all_r_out_hco   = VariedDiskParams['r_out_hco']
+    all_r_out_hcn   = VariedDiskParams['r_out_hcn']
+
+    all_m_disk_co  = VariedDiskParams['m_disk_co']
+    all_m_disk_cs  = VariedDiskParams['m_disk_cs']
+    all_m_disk_hco  = VariedDiskParams['m_disk_hco']
+    all_m_disk_hcn  = VariedDiskParams['m_disk_hcn']
+
+    all_x_mol_co   = VariedDiskParams['x_mol_co']
+    all_x_mol_cs   = VariedDiskParams['x_mol_cs']
+    all_x_mol_hco   = VariedDiskParams['x_mol_hco']
+    all_x_mol_hcn   = VariedDiskParams['x_mol_hcn']
+
+
+    # This is horrendous good Lord.
+    ps = itertools.product(range(len(VariedDiskParams.keys()[0])),
+                           range(len(VariedDiskParams.keys()[1])),
+                           range(len(VariedDiskParams.keys()[2])),
+                           range(len(VariedDiskParams.keys()[3])),
+                           range(len(VariedDiskParams.keys()[4])),
+                           range(len(VariedDiskParams.keys()[5])),
+                           range(len(VariedDiskParams.keys()[6])),
+                           range(len(VariedDiskParams.keys()[7])),
+                           range(len(VariedDiskParams.keys()[8])),
+                           range(len(VariedDiskParams.keys()[9])),
+                           range(len(VariedDiskParams.keys()[10])),
+                           range(len(VariedDiskParams.keys()[11])),
+                           range(len(VariedDiskParams.keys()[12])),
+                           range(len(VariedDiskParams.keys()[13])),
+                           range(len(VariedDiskParams.keys()[14])),
+                           range(len(VariedDiskParams.keys()[15])),
+                           range(len(VariedDiskParams.keys()[16])),
+                           range(len(VariedDiskParams.keys()[17])),
+                           range(len(VariedDiskParams.keys()[18])),
+                           range(len(VariedDiskParams.keys()[19])),
+                           range(len(VariedDiskParams.keys()[20])),
+                           range(len(VariedDiskParams.keys()[21])),
+                           range(len(VariedDiskParams.keys()[22])),
+                           range(len(VariedDiskParams.keys()[23])),
+                           range(len(VariedDiskParams.keys()[24])),
+                           range(len(VariedDiskParams.keys()[25])),
+                           range(len(VariedDiskParams.keys()[26])),
+                           range(len(VariedDiskParams.keys()[27])),
+                           range(len(VariedDiskParams.keys()[28])),
+                           range(len(VariedDiskParams.keys()[29])),
+                           range(len(VariedDiskParams.keys()[30]))
+                           )
+
     # Pull floats out of those lists.
-    for i, j, k, l, m, n, o, p, q, r, s, t, u, v, w in ps:
+    for a, b, c, d, e, f, g, h, i, j, rco, rcs, rhco, rhcn, tco, tcs, thco, thcn, xco, xcs, xhco, xhcn, mco, mcs, mhco, mhcn in ps:
         begin = time.time()
-        v_turb  = all_v_turb[i]
-        zq      = all_zq[j]
-        r_crit  = all_r_crit[k]
-        rho_p   = all_rho_p[l]
-        t_mid   = all_t_mid[m]
-        PA      = all_PA[n]
-        incl    = all_incl[o]
-        pos_x   = all_pos_x[p]
-        pos_y   = all_pos_y[q]
-        v_sys   = all_v_sys[r]
-        t_atms  = all_t_atms[s]
-        t_qq    = all_t_qq[t]
-        r_out   = all_r_out[u]
-        m_disk  = all_m_disk[v]
-        x_mol   = all_x_mol[w]
+        v_turb  = all_v_turb[a]
+        zq      = all_zq[b]
+        r_crit  = all_r_crit[c]
+        rho_p   = all_rho_p[d]
+        t_mid   = all_t_mid[e]
+        PA      = all_PA[f]
+        incl    = all_incl[f]
+        pos_x   = all_pos_x[g]
+        pos_y   = all_pos_y[h]
+        v_sys   = all_v_sys[i]
+        t_qq    = all_t_qq[j]
+        zq      = all_zq[k]
+
+        r_out_co = all_r_out_co[rco]
+        r_out_cs = all_r_out_cs[rcs]
+        r_out_hco = all_r_out_hco[rhco]
+        r_out_hcn = all_r_out_hcn[rhcn]
+
+        t_atms_co = all_t_atms_co[tco]
+        t_atms_cs = all_t_atms_cs[tcs]
+        t_atms_hco = all_t_atms_hco[thco]
+        t_atms_hcn = all_t_atms_hcn[thcn]
+
+        x_mol_co = all_x_mol_co[xco]
+        x_mol_cs = all_x_mol_cs[xcs]
+        x_mol_hco = all_x_mol_hco[xhco]
+        x_mol_hcn = all_x_mol_hcn[xhcn]
+
+        m_disk_co = all_m_disk_co[mco]
+        m_disk_cs = all_m_disk_cs[mcs]
+        m_disk_hco = all_m_disk_hco[mhco]
+        m_disk_hcn = all_m_disk_hcn[mhcn]
 
         params = {'v_turb': v_turb,
-                  'zq': zq,
                   'r_crit': r_crit,
                   'rho_p': rho_p,
                   't_mid': t_mid,
@@ -143,11 +204,33 @@ def gridSearch(VariedDiskParams,
                   'pos_x': pos_x,
                   'pos_y': pos_y,
                   'v_sys': v_sys,
-                  't_atms': t_atms,
                   't_qq': t_qq,
-                  'r_out': r_out,
-                  'm_disk': m_disk,
-                  'x_mol': x_mol
+                  'zq': zq,
+
+                  'r_out_co': r_out_co,
+                  'r_out_cs': r_out_cs,
+                  'r_out_hco': r_out_hco,
+                  'r_out_hcn': r_out_hcn,
+
+                  't_atms_co': t_atms_co,
+                  't_atms_cs': t_atms_cs,
+                  't_atms_hco': t_atms_hco,
+                  't_atms_hcn': t_atms_hcn,
+
+                  'x_mol_co': x_mol_co,
+                  'x_mol_cs': x_mol_cs,
+                  'x_mol_hco': x_mol_hco,
+                  'x_mol_hcn': x_mol_hcn,
+
+                  # 'zq_co': zq_co,
+                  # 'zq_cs': zq_cs,
+                  # 'zq_hco': zq_hco,
+                  # 'zq_hcn': zq_hcn,
+
+                  'm_disk_co': m_disk_co,
+                  'm_disk_cs': m_disk_cs,
+                  'm_disk_hco': m_disk_hco,
+                  'm_disk_hcn': m_disk_hcn,
                   }
 
 
@@ -169,46 +252,48 @@ def gridSearch(VariedDiskParams,
         for static in StaticDiskParams:
             print static, StaticDiskParams[static]
 
-        # Make a new disk, sum them, sample in vis-space.
-        makeModel(params, outNameVaried, DI, mol)
-        sumDisks(outNameVaried, outNameStatic, modelPath, mol)
-        sample_model_in_uvplane(modelPath, mol)
 
-        # Visibility-domain chi-squared evaluation
-        rawX2, redX2 = chiSq(modelPath, mol, cut_central_chans=cut_central_chans)
+        ### FOUR LINES
+        # Make a new disk, sum them, sample in vis-space.
+        rawX2, redX2 = 0, 0
+        for mol in mols:
+            print "Making model and calculating X2 for " + mol
+            makeModel(params, outNameVaried + '_' + mol, DI, mol)
+            sumDisks(outNameVaried + '_' + mol, outNameStatic + '_' + mol,
+                     modelPath, mol)
+            sample_model_in_uvplane(modelPath, mol)
+
+            # Visibility-domain chi-squared evaluation
+            X2s = chiSq(modelPath, mol, cut_central_chans=cut_central_chans)
+            rawX2 += X2s[0]
+            redX2 += X2s[1]
+
+
+
+
+
 
         # It's ok to split these up by disk since disk B's
         # best params are independent of where disk A is.
         if DI == 0:
-            diskARawX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = rawX2
-            diskARedX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = redX2
+            diskARawX2[a, b, c, d, e, f, g, h, i, j,
+                       rco, rcs, rhco, rhcn, tco, tcs, thco, thcn,
+                       xco, xcs, xhco, xhcn, mco, mcs, mhco, mhcn] = rawX2
+            diskARedX2[a, b, c, d, e, f, g, h, i, j,
+                       rco, rcs, rhco, rhcn, tco, tcs, thco, thcn,
+                       xco, xcs, xhco, xhcn, mco, mcs, mhco, mhcn] = redX2
         else:
-            diskBRawX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = rawX2
-            diskBRedX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = redX2
+            diskBRawX2[a, b, c, d, e, f, g, h, i, j,
+                       rco, rcs, rhco, rhcn, tco, tcs, thco, thcn,
+                       xco, xcs, xhco, xhcn, mco, mcs, mhco, mhcn] = rawX2
+            diskBRedX2[a, b, c, d, e, f, g, h, i, j,
+                       rco, rcs, rhco, rhcn, tco, tcs, thco, thcn,
+                       xco, xcs, xhco, xhcn, mco, mcs, mhco, mhcn] = redX2
 
         print "\n\n"
         print "Raw Chi-Squared value:	 ", rawX2
         print "Reduced Chi-Squared value:", redX2
 
-        # This is just the params dict, but with chi2 vals and nicer names
-        df_row_old = {'V Turb': v_turb,
-                      'Zq': zq,
-                      'R crit': r_crit,
-                      'Density Str': rho_p,
-                      'T mid': t_mid,
-                      'PA': PA,
-                      'Incl': incl,
-                      'Pos x': pos_x,
-                      'Pos Y': pos_y,
-                      'V Sys': v_sys,
-                      'T atms': t_atms,
-                      'Temp Str': t_qq,
-                      'Outer Radius': r_out,
-                      'Disk Mass': m_disk,
-                      'Molecular Abundance': x_mol,
-                      'Raw Chi2': rawX2,
-                      'Reduced Chi2': redX2
-                      }
         df_row = params
         df_row['Raw Chi2'] = rawX2
         df_row['Reduced Chi2'] = redX2
@@ -219,17 +304,15 @@ def gridSearch(VariedDiskParams,
         if redX2 > 0 and redX2 < minRedX2:
             minRedX2 = redX2
             minX2Vals = params
-            sp.call(
-                'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath),
-                shell=True)
-            print "Best fit happened; moved file"
+            for mol in mols:
+                sp.call(
+                    'mv {}.fits {}_bestFit-' + mol + '.fits'.format(modelPath, modelPath),
+                    shell=True)
+                print "Best fit happened; moved file"
 
         # Now clear out all the files (im, vis, uvf, fits)
         remove(modelPath + ".*")
-        # sp.call('rm -rf {}.*'.format(modelPath),
-        #         shell=True)
 
-        # Loop this.
         print "Min. Chi-Squared value so far:", minRedX2
 
         counter += 1
@@ -238,7 +321,9 @@ def gridSearch(VariedDiskParams,
 
 
     # Finally, make the best-fit model for this disk
-    makeModel(minX2Vals, outNameVaried, DI, mol)
+    # I don't think this is actually necessary
+    # [makeModel(minX2Vals, outNameVaried + '_' + mol, DI, mol) for mol in mols]
+
     print "Best-fit model for disk", dnames[DI], " created: ", modelPath, ".fits\n\n"
 
     # Knit the dataframe
@@ -270,7 +355,7 @@ def fullRun(diskAParams, diskBParams,
     for b in diskBParams:
         nb *= len(diskBParams[b])
 
-    n, dt = na + nb, 2.1
+    n, dt = na + nb, 10.
     t = n * dt
     if t <= 60:
         t = str(round(n * dt, 2)) + " minutes."
@@ -281,7 +366,7 @@ def fullRun(diskAParams, diskBParams,
 
 
     # Begin setting up symlink and get directory paths lined up
-    this_run_basename = today + '_' + mol
+    this_run_basename = today + '_four-line-fit'
     this_run = this_run_basename
     modelPath = './gridsearch_runs/' + this_run + '/' + this_run
     run_counter = 2
@@ -292,7 +377,7 @@ def fullRun(diskAParams, diskBParams,
         run_counter += 1
 
     # Parameter Check:
-    print "\nThis run will fit for", mol.upper()
+    print "\nThis run will fit for all four lines simultaneously"
     print "It will iterate through these parameters for Disk A:"
     for p in diskAParams:
         print p, ': ', diskAParams[p]
@@ -312,27 +397,6 @@ def fullRun(diskAParams, diskBParams,
     new_dir = '/Volumes/disks/jonas/modeling/gridsearch_runs/' + this_run
     sp.call(['mkdir', 'gridsearch_runs/' + this_run])
 
-    # CHECK FOR REUSE
-    """This is a little bit janky looking but makes sense. Since we are
-    treating the two disks as independent, then if, in one run, we find good
-    fits (no edge values), then it doesn't make sense to run that grid again;
-    it would be better to just grab the relevant information from that run
-    and only fit the disk that needs fitting. That's what this is for."""
-    to_skip = ''
-    if use_a_previous_result is True:
-        response2 = raw_input(
-            'Please enter the path to the .fits file to use from a previous',
-            'run (should be ./models/date/run_date/datefitted_[A/B].fits)\n')
-        if 'A' in response2:
-            to_skip = 'fitted_A'
-        elif 'B' in response2:
-            to_skip = 'fitted_B'
-        else:
-            print "Bad path; must have 'fitted_A or fitted_B' in it. Try again"
-            return
-
-
-
 
     # STARTING THE RUN #
     # Make the initial static model (B), just with the first parameter values
@@ -341,9 +405,9 @@ def fullRun(diskAParams, diskBParams,
         dBInit[p] = diskBParams[p][0]
 
     # Grid search over Disk A, retrieve the resulting pd.DataFrame
-    if to_skip != 'A':
-        df_A_fit = gridSearch(diskAParams, dBInit, 0, modelPath, n,
-                              cut_central_chans=cut_central_chans)
+    df_A_fit = gridSearch(diskAParams, dBInit, 0,
+                          modelPath, n,
+                          cut_central_chans=cut_central_chans)
 
     # Find where the chi2 is minimized and save it
     idx_of_BF_A = df_A_fit.index[df_A_fit['Reduced Chi2'] == np.min(
@@ -358,7 +422,8 @@ def fullRun(diskAParams, diskBParams,
     print "First disk has been fit\n"
 
     # Now search over the other disk
-    df_B_fit = gridSearch(diskBParams, fit_A_params, 1, modelPath,
+    df_B_fit = gridSearch(diskBParams, fit_A_params,
+                          1, modelPath,
                           n, steps_so_far=na,
                           cut_central_chans=cut_central_chans)
 
@@ -383,14 +448,15 @@ def fullRun(diskAParams, diskBParams,
 
     # Finally, Create the final best-fit model and residuals
     print "\n\nCreating best fit model now"
-    sample_model_in_uvplane(modelPath + '_bestFit', mol=mol)
-    sample_model_in_uvplane(modelPath + '_bestFit', option='subtract', mol=mol)
-    icr(modelPath + '_bestFit', mol=mol)
-    icr(modelPath + '_bestFit_resid', mol=mol)
-    print "Best-fit model created: " + modelPath + "_bestFit.im\n\n"
+    for mol in mols:
+        sample_model_in_uvplane(modelPath + '_bestFit-' + mol, mol)
+        sample_model_in_uvplane(modelPath + '_bestFit-' + mol, mol, option='subtract')
+        icr(modelPath + '_bestFit-' + mol, mol=mol)
+        icr(modelPath + '_bestFit_resid-' + mol, mol=mol)
+    print "Best-fit models created: " + modelPath + "_bestFit-[mol].im\n\n"
 
     # Calculate and present the final X2 values.
-    finalX2s = chiSq(modelPath + '_bestFit')
+    finalX2s = chiSq(modelPath + '_bestFit', mol)
     print "Final Raw Chi-Squared Value: ", finalX2s[0]
     print "Final Reduced Chi-Squared Value: ", finalX2s[1]
 
@@ -409,7 +475,7 @@ def fullRun(diskAParams, diskBParams,
 
     # log file w/ best fit vals, range queried, indices of best vals, best chi2
     with open(modelPath + '_summary.log', 'w') as f:
-        s0 = '\nLOG FOR RUN ON' + today + ' FOR THE ' + mol + ' LINE'
+        s0 = '\nLOG FOR RUN ON' + today + ' FOR THE A FOUR LINE FIT'
         s1 = '\nBest Chi-Squared values [raw, reduced]:\n' + str(finalX2s)
         s2 = '\n\n\nParameter ranges queried:\n'
         s3 = '\nDisk A:\n'

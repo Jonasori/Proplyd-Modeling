@@ -204,7 +204,7 @@ def icr(visPath, mol='hco', min_baseline=0, niters=1e4):
              cwd=filepath).wait()
 
 
-def sample_model_in_uvplane(modelPath, mol='hco', option='replace'):
+def sample_model_in_uvplane(modelPath, mol, option='replace'):
     """Sample a model image in the uvplane given by the data.
 
     .fits -> {.im, .uvf, .vis}
