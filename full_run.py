@@ -7,7 +7,7 @@ import argparse
 import subprocess as sp
 
 # Local package files
-# import four_line_gridsearch
+import four_line_gridsearch
 import grid_search
 from run_params import diskAParams, diskBParams
 from constants import today
@@ -18,16 +18,16 @@ from tools import already_exists, remove
 np = 10
 
 # Which fitting method?
-# method = 'four-line'
-method = 'gs'
+method = 'four-line'
+# method = 'gs'
 
 
 if method == 'gs':
     grid_search.fullRun(diskAParams, diskBParams, cut_central_chans=False)
 
 
-# elif method == 'four-line':
-    # four_line_gridsearch.fullRun(diskAParams, diskBParams, cut_central_chans=False)
+elif method == 'four-line':
+    four_line_gridsearch.fullRun(diskAParams, diskBParams, cut_central_chans=False)
 
 
 elif method == 'mc':

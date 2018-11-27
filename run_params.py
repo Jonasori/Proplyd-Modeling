@@ -153,6 +153,7 @@ diskBParams = make_diskB_params(mol=mol, run_length='mid')
 
 # FOUR LINE PARAMS
 
+
 def make_diskA_params_fourline(mol='hco'):
     # Params that are constant but could be fit
     v_turb       = np.array([0.081])
@@ -167,7 +168,8 @@ def make_diskA_params_fourline(mol='hco'):
     m_disk       = np.array([-1.552842])
 
     # Params that are fit
-    t_qq        = -1 * np.array([-0.5, 0, 0.5])
+    t_qq = -1 * np.array([-0.5, 0, 0.5])
+    zq = np.array([70.])
 
     # Line-specific vals
     zq_co = np.array([70.])
@@ -206,6 +208,7 @@ def make_diskA_params_fourline(mol='hco'):
               'pos_y': pos_y,
               'v_sys': v_sys,
               't_qq': t_qq,
+              'zq': zq,
 
               'r_out_co': r_out_co,
               'r_out_cs': r_out_cs,
@@ -222,10 +225,10 @@ def make_diskA_params_fourline(mol='hco'):
               'x_mol_hco': x_mol_hco,
               'x_mol_hcn': x_mol_hcn,
 
-              'zq_co': zq_co,
-              'zq_cs': zq_cs,
-              'zq_hco': zq_hco,
-              'zq_hcn': zq_hcn,
+              # 'zq_co': zq_co,
+              # 'zq_cs': zq_cs,
+              # 'zq_hco': zq_hco,
+              # 'zq_hcn': zq_hcn,
 
               'm_disk_co': m_disk_co,
               'm_disk_cs': m_disk_cs,
@@ -233,6 +236,7 @@ def make_diskA_params_fourline(mol='hco'):
               'm_disk_hcn': m_disk_hcn,
               }
     return params
+
 
 
 def make_diskB_params_fourline(mol='hco'):
@@ -317,6 +321,11 @@ def make_diskB_params_fourline(mol='hco'):
               'm_disk_hcn': m_disk_hcn,
               }
     return params
+
+
+
+
+
 
 
 diskAParams_fourline = make_diskA_params_fourline(mol=mol)
