@@ -347,7 +347,6 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
     plt.gca()
 
 
-
 def plot_model_and_data():
     """Plot a triptych of data, model, and residuals.
 

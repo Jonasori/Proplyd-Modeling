@@ -56,6 +56,7 @@ def push():
             print f
 
     [sp.call(['git', 'add', '{}'.format(i)]) for i in files]
+    sp.call(['git', 'add', '*.py'])
 
     commit_message = raw_input('Enter commit message:\n')
     commit_message = 'Updated' if commit_message == '' else commit_message

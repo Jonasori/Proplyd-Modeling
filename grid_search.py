@@ -68,8 +68,10 @@ def gridSearch(VariedDiskParams,
 
     # Set up huge initial chi squared values so that they can be improved upon.
     minRedX2 = 1e10
-    minX2Vals = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+    # Initiate a best-fit param dict
+    minX2Vals = {}
+    for p in VariedDiskParams:
+        minX2Vals[p] = VariedDiskParams[p][0]
     # Pull the params we're looping over.
     # All these are np.arrays (sometimes of length 1)
     all_v_turb  = VariedDiskParams['v_turb']
@@ -189,31 +191,34 @@ def gridSearch(VariedDiskParams,
         print "Reduced Chi-Squared value:", redX2
 
         # This is just the params dict, but with chi2 vals and nicer names
-        df_row = {'V Turb': v_turb,
-                  'Zq': zq,
-                  'R crit': r_crit,
-                  'Density Str': rho_p,
-                  'T mid': t_mid,
-                  'PA': PA,
-                  'Incl': incl,
-                  'Pos x': pos_x,
-                  'Pos Y': pos_y,
-                  'V Sys': v_sys,
-                  'T atms': t_atms,
-                  'Temp Str': t_qq,
-                  'Outer Radius': r_out,
-                  'Disk Mass': m_disk,
-                  'Molecular Abundance': x_mol,
-                  'Raw Chi2': rawX2,
-                  'Reduced Chi2': redX2
-                  }
+        df_row_old = {'V Turb': v_turb,
+                      'Zq': zq,
+                      'R crit': r_crit,
+                      'Density Str': rho_p,
+                      'T mid': t_mid,
+                      'PA': PA,
+                      'Incl': incl,
+                      'Pos x': pos_x,
+                      'Pos Y': pos_y,
+                      'V Sys': v_sys,
+                      'T atms': t_atms,
+                      'Temp Str': t_qq,
+                      'Outer Radius': r_out,
+                      'Disk Mass': m_disk,
+                      'Molecular Abundance': x_mol,
+                      'Raw Chi2': rawX2,
+                      'Reduced Chi2': redX2
+                      }
+        df_row = params
+        df_row['Raw Chi2'] = rawX2
+        df_row['Reduced Chi2'] = redX2
         df_rows.append(df_row)
         # Maybe want to re-export the df every time here?
 
         # If this is the best fit so far, log it as such
         if redX2 > 0 and redX2 < minRedX2:
             minRedX2 = redX2
-            minX2Vals = df_row
+            minX2Vals = params
             sp.call(
                 'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath),
                 shell=True)
@@ -284,7 +289,6 @@ def fullRun(diskAParams, diskBParams,
     while already_exists(modelPath) is True:
         this_run = this_run_basename + '-' + str(run_counter)
         modelPath = './gridsearch_runs/' + this_run + '/' + this_run
-
         run_counter += 1
 
     # Parameter Check:
@@ -380,7 +384,7 @@ def fullRun(diskAParams, diskBParams,
     # Finally, Create the final best-fit model and residuals
     print "\n\nCreating best fit model now"
     sample_model_in_uvplane(modelPath + '_bestFit', mol=mol)
-    sample_model_in_uvplane(modelPath + '_bestFit', options='subtract', mol=mol)
+    sample_model_in_uvplane(modelPath + '_bestFit', option='subtract', mol=mol)
     icr(modelPath + '_bestFit', mol=mol)
     icr(modelPath + '_bestFit_resid', mol=mol)
     print "Best-fit model created: " + modelPath + "_bestFit.im\n\n"
