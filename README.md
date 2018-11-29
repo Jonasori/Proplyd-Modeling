@@ -80,6 +80,8 @@ data/ -- |        |
          |
          cs/etc
 
+(Woops, that didn't render well on GitHub)
+
 
 ## The Flow: Grid Search
 A grid search is initiated by running full_run.py, which doesn't do too much more than just calling fullRun() from grid_search.py and providing it with run parameters (basically, lists of the values that we want to query for each fit param) from run_params.py.
@@ -121,6 +123,6 @@ Once this chain is built, run_emcee.py's main() function becomes useful, includi
 
 ## THOUGHTS and COMMENTS
 
-The fitting assumes that the two disks are not interacting, which may be a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within the realm of interaction, although we don't know their relative z-axis distances from us. However, right now the grid search is refusing to settle well, and it's looking like the MCMC runs are as well. Hopefully the four line fit will shed some light on things.
+The fitting assumes that the two disks are not interacting, which may be a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within their realm of interaction if the line connecting them is perpendicular to our line of sight, although we don't know their relative z-axis distances from us. However, right now the grid search is refusing to settle well, and it's looking like the MCMC runs are as well. Hopefully the four line fit will shed some light on things.
 
 Grid search is mostly done, MCMC is not but is at least vaguely functional right now.
