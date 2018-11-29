@@ -490,7 +490,7 @@ def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
         ax_r.plot(offsets_dB[0], offsets_dB[1], '+g')
 
         # Add info
-        ax_d.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+        ax_d.text(0.1, -0.3 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
         ax_m.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')

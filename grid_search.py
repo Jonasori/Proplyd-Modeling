@@ -1,4 +1,33 @@
-"""Run a grid search."""
+"""Run a grid search.
+
+
+One atmospheric temp, one midplace
+
+abundance, outer radius,
+
+MCMC: starting away from best fit with wide spread
+
+Four line fit through MCMC only
+
+
+Send Meredith:
+
+- Data/model/residual
+- Walker evolution (single line fits), plus walker initial position, dispersions, etc.
+- For four line fit, write up what I'm actually doing
+
+Can write observations section, results (flux, radial extent, velocity, etc), introduction
+
+Intro, obs, results, analysis (grid search, MCMC), discussion, (future work), summary/conclusion
+
+Start with observations
+
+cgcurse (for integrated flux) (pick out channels with flux in them, trace out shape around flux (i.e. 2sigma around moment-zero map))
+
+For intro, write out paragraph by paragraph plan of what needs to be there: what is a proplyd
+
+
+"""
 
 
 import csv

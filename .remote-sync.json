@@ -1,0 +1,20 @@
+{
+  "logger": {
+    "title": "Remote Sync"
+  },
+  "uploadOnSave": true,
+  "useAtomicWrites": false,
+  "deleteLocal": false,
+  "hostname": "iorek.astro.wesleyan.edu",
+  "port": "22",
+  "target": "/Volumes/disks/jonas/modeling",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "jpowell",
+  "password": "!Jonas1230",
+  "watch": [],
+  "transport": "ftp",
+  "keyboardInteractive": "true"
+}
