@@ -28,7 +28,8 @@ if method == 'gs':
 
 
 elif method == 'four-line':
-    four_line_gridsearch.fullRun(diskAParams, diskBParams, cut_central_chans=False)
+    four_line_gridsearch.fullRun(diskAParams_fourline, diskBParams_fourline,
+                                 cut_central_chans=False)
 
 
 elif method == 'mc':
