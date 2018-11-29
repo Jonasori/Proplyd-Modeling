@@ -67,8 +67,8 @@ param_dict = {
     'r_ins':               1,                 # AU
     'r_ins':               [1, 1],            # AU
     'T_freezeout':         19,                # Freezeout temperature
-    'm_disk_A':            -1.10791,        # Disk Gas Masses (log10 solar masses)
-    'm_disk_B':            -1.552842,       # Disk Gas Masses (log10 solar masses)
+    'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
+    'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
     'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
     'surf_dens_str_A':     1.,                # Surface density power law index
@@ -135,15 +135,7 @@ def main():
 
     This is called when we run the whole thing: run_driver.py -r does a run.
     """
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Python commands associated with emcee run25, which has 50 walkers and varies the following parameters for each disk:
-    1)  outer disk radius
-    2)  atmospheric temperature
-    3)  relative molecular abundance
-    4)  temperature structure power law index (tqq in Kevin's code)
-    5)  outer radius (really inner radius + dr)
-    6)  inclination
-    7)  position angle
-    This run is the first of Jonas' runs.''')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Python commands associated with emcee run25, which has 50 walkers and varies the the parameters given param_info.''')
 
     parser.add_argument('-r', '--run', action='store_true',
                         help='begin or resume eemcee run.')

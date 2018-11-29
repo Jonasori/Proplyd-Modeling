@@ -14,7 +14,7 @@ import subprocess as sp
 from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, already_exists, remove
 from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
-from constants import mol, today, dataPath
+from constants import today, dataPath   #, mol
 from run_params import diskAParams, diskBParams
 
 
@@ -252,6 +252,7 @@ def gridSearch(VariedDiskParams,
 
 # PERFORM A FULL RUN USING FUNCTIONS ABOVE #
 def fullRun(diskAParams, diskBParams,
+            mol='hco',
             use_a_previous_result=False,
             cut_central_chans=False):
     """Run it all.
@@ -390,7 +391,7 @@ def fullRun(diskAParams, diskBParams,
     print "Best-fit model created: " + modelPath + "_bestFit.im\n\n"
 
     # Calculate and present the final X2 values.
-    finalX2s = chiSq(modelPath + '_bestFit')
+    finalX2s = chiSq(modelPath + '_bestFit', mol)
     print "Final Raw Chi-Squared Value: ", finalX2s[0]
     print "Final Reduced Chi-Squared Value: ", finalX2s[1]
 

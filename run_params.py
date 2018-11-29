@@ -107,7 +107,7 @@ def make_diskB_params(mol='hco', run_length='mid'):
         t_atms      = np.arange(10, 500, 50)
         t_qq        = -1 * np.array([-0.5, 0, 0.5])
         r_out       = np.arange(50, 400, 50)
-        x_mol       = -1 * np.array([4.])
+        x_mol       = -1 * np.array([6., 8., 10.])
 
     else:
         return "Please choose 'short', 'mid', or 'long'"

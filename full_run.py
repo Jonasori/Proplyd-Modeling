@@ -23,7 +23,8 @@ method = 'four-line'
 
 
 if method == 'gs':
-    grid_search.fullRun(diskAParams, diskBParams, cut_central_chans=False)
+    grid_search.fullRun(diskAParams, diskBParams,
+                        mol='hco', cut_central_chans=False)
 
 
 elif method == 'four-line':

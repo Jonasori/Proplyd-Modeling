@@ -66,7 +66,7 @@ def depickleLogFile(fname):
     return (both_disks, X2s)
 
 
-def plot_gridSearch_log(fname, show=False):
+def plot_gridSearch_log(fname, save=False):
     """Plot where the best-fit values from a grid search fall.
 
     Plot where the best-fit value(s) stand(s) relative to the range queried in
@@ -76,40 +76,69 @@ def plot_gridSearch_log(fname, show=False):
         fname (str): Name of the pickled step log from the grid search.
         Assumes fname is './models/dateofrun/dateofrun'
     """
+    plt.close()
+
     run_date = fname.split('/')[-1]
     both_disks, X2s = depickleLogFile(fname)
-    disk_A, disk_B = both_disks
+
+    # Don't plot the parameters that weren't fit.
+    # Keep the statics in case we want to do something with them later
+    disk_A_full, disk_B_full = both_disks
+    disk_A, disk_B = [], []
+    disk_A_statics, disk_B_statics = [], []
+    for param in disk_A_full:
+        if len(param['xvals_queried']) > 1:
+            disk_A.append(param)
+        else:
+            disk_A_statics.append(param)
+
+    for param in disk_B_full:
+        if len(param['xvals_queried']) > 1:
+            disk_B.append(param)
+        else:
+            disk_B_statics.append(param)
+    both_disks = [disk_A, disk_B]
+
     raw_x2, red_x2 = X2s
-    colors = [
-     'red', 'blue']
-    f, axarr = plt.subplots(len(disk_A) + 1, 2, figsize=[8, 8])
+    colors = ['red', 'blue']
+    height = max(len(disk_A), len(disk_B)) + 1
+    f, axarr = plt.subplots(height, 2, figsize=[8, height])
     axarr[(0, 0)].axis('off')
     axarr[(0, 1)].axis('off')
     axarr[(0, 0)].text(0.2, -0.2, 'Summary of\n' + run_date + ' Run',
                        fontsize=16, fontweight='bold')
-    chi_str = 'Min. Raw Chi2: ' + str(min(raw_x2)) + '\nMin. Reduced Chi2: ' + str(min(red_x2))
+    str_rawX2 = str(round(min(raw_x2), 2))
+    str_redX2 = str(round(min(red_x2), 6))
+    chi_str = '       Min. Raw Chi2: ' + str_rawX2 + '\nMin. Reduced Chi2: ' + str_redX2
     axarr[(0, 1)].text(0, 0, chi_str, fontsize=10)
     for d in [0, 1]:
         params = both_disks[d]
         for i, p in enumerate(params, 1):
             xs = np.linspace(p['p_min'], p['p_max'], 2)
-            axarr[(i, d)].set_title(p['name'], fontsize=10)
+            axarr[(i, d)].set_title(p['name'], fontsize=10, weight='bold')
             axarr[(i, d)].yaxis.set_ticks([])
             axarr[(i, d)].xaxis.set_ticks(p['xvals_queried'])
+            if len(p['xvals_queried']) > 5:
+                axarr[(i, d)].set_xticklabels(p['xvals_queried'],
+                                              rotation=45)
             axarr[(i, d)].plot(xs, [0] * 2, '-k')
             for bf in p['best_fits']:
+                # Make the opacity proportional to how many best fits there are.
                 a = 1 / (2 * len(p['best_fits']))
                 axarr[(i, d)].plot(bf, 0, marker='o', markersize=10,
                                    color='black', alpha=a)
                 axarr[(i, d)].plot(bf, 0, marker='o', markersize=9,
                                    color=colors[d], markerfacecolor='none',
                                    markeredgewidth=3)
+            # It'd be nice to not have it fill empty spaces with blank grids.
+            # if len(params) < height:
+
 
     plt.tight_layout()
-    plt.savefig(resultsPath + run_date + '_results.png', dpi=200)
-    if show is True:
+    if save is True:
+        plt.savefig(resultsPath + run_date + '_results.pdf')
+    else:
         plt.show()
-    plt.clf()
 
 
 def plot_step_duration(dataPath, ns=[10, 20, 50], show=False):
@@ -347,19 +376,29 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
     plt.gca()
 
 
-def plot_model_and_data():
+def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
+                        mol='cs', save=False, cmap='rainbow'):
     """Plot a triptych of data, model, and residuals.
 
     It would be nice to have an option to also plot the grid search results.
     Still need to:
     - Get the beam to plot
     - Get the velocity labels in the right places
+
+    Some nice cmaps: magma, rainbow
     """
     # Read in the data
+    """
     modeling = '/Volumes/disks/jonas/modeling/'
-    model_path = modeling + 'gridsearch_runs/nov8_hco/nov8_hco_bestFit.fits'
-    resid_path = modeling + 'gridsearch_runs/nov8_hco/nov8_hco_bestFit_resid.fits'
-    data_path = modeling + 'data/hco/hco-short110.fits'
+    model_path = modeling + 'gridsearch_runs/nov27_cs/nov27_cs_bestFit.fits'
+    resid_path = modeling + 'gridsearch_runs/nov27_cs/nov27_cs_bestFit_resid.fits'
+    data_path = modeling + 'data/cs/cs-short0.fits'
+    """
+
+    model_path = modelPath + '_bestFit.fits'
+    resid_path = modelPath + '_bestFit_resid.fits'
+    out_path = './gridsearch_results/' + modelPath.split('/')[-1] + '_triptych.pdf'
+    data_path = './data/' + mol + '/' + mol + '-short' + str(lines[mol]['baseline_cutoff']) + '.fits'
 
     real_data = fits.getdata(data_path, ext=0).squeeze()
     image_header = fits.getheader(data_path, ext=0)
@@ -371,7 +410,6 @@ def plot_model_and_data():
     # Define some plotting params
     hspace = -0.2
     wspace = -0.1
-    cmap = 'rainbow'
 
     # Set up some physical params
     vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
@@ -473,7 +511,11 @@ def plot_model_and_data():
     fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.9)
     print "Finished plotting; showing"
     plt.close()
-    fig.show()
+
+    if save is True:
+        fig.savefig(out_path)
+    else:
+        fig.show()
 
 
 def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0):
