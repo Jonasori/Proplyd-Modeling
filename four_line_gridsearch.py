@@ -33,7 +33,7 @@ from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, already_exists, remove
 from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
 from constants import today, dataPath
-from run_params import diskAParams_fourline, diskBParams_fourline
+# from run_params import diskAParams_fourline, diskBParams_fourline
 
 
 # A little silly, but an easy way to name disks by their disk index (DI)
@@ -81,16 +81,19 @@ def gridSearch(VariedDiskParams,
 
     # Make four static disks
     print "Making static disks"
-    [makeModel(StaticDiskParams, outNameStatic + '_' + mol, DIs, mol) for mol in mols]
+    for mol in mols:
+        makeModel(StaticDiskParams[mol], outNameStatic + '_' + mol, DIs, mol)
     print "Finished making static disks"
 
     ### FOUR LINES
     # Make a new disk, sum them, sample in vis-space.
+    # Not sure why this is here.
+    """
     makeModel(params_hco, outNameVaried + '_hco', DI, mol)
     makeModel(params_hcn, outNameVaried + '_hcn', DI, mol)
     makeModel(params_co, outNameVaried + '_co', DI, mol)
     makeModel(params_cs, outNameVaried + '_cs', DI, mol)
-
+    """
 
 
 
@@ -100,9 +103,15 @@ def gridSearch(VariedDiskParams,
     # Set up huge initial chi squared values so that they can be improved upon.
     minRedX2 = 1e10
     # Initiate a best-fit param dict
-    minX2Vals = {}
-    for p in VariedDiskParams:
-        minX2Vals[p] = VariedDiskParams[p][0]
+    minX2Vals = {'co': {}, 'cs': {}, 'hco': {}, 'hcn': {}}
+    for mol in mols:
+        for p in VariedDiskParams:
+            # Elements of paramdicts are sometimes arrays and sometimes dicts
+            if type(VariedDiskParams[p]) == dict:
+                minX2Vals[mol][p] = VariedDiskParams[p][mol][0]
+            else:
+                minX2Vals[mol][p] = VariedDiskParams[p][0]
+
     # Pull the params we're looping over.
     # All these are np.arrays (sometimes of length 1)
     all_v_turb  = VariedDiskParams['v_turb']
@@ -117,25 +126,25 @@ def gridSearch(VariedDiskParams,
     all_t_qq    = VariedDiskParams['t_qq']
     all_zq      = VariedDiskParams['zq']
 
-    all_t_atms_co  = VariedDiskParams['t_atms_co']
-    all_t_atms_cs  = VariedDiskParams['t_atms_cs']
-    all_t_atms_hco  = VariedDiskParams['t_atms_hco']
-    all_t_atms_hcn  = VariedDiskParams['t_atms_hcn']
+    all_t_atms_co  = VariedDiskParams['t_atms']['co']
+    all_t_atms_cs  = VariedDiskParams['t_atms']['cs']
+    all_t_atms_hco  = VariedDiskParams['t_atms']['hco']
+    all_t_atms_hcn  = VariedDiskParams['t_atms']['hcn']
 
-    all_r_out_co   = VariedDiskParams['r_out_co']
-    all_r_out_cs   = VariedDiskParams['r_out_cs']
-    all_r_out_hco   = VariedDiskParams['r_out_hco']
-    all_r_out_hcn   = VariedDiskParams['r_out_hcn']
+    all_r_out_co   = VariedDiskParams['r_out']['co']
+    all_r_out_cs   = VariedDiskParams['r_out']['cs']
+    all_r_out_hco   = VariedDiskParams['r_out']['hco']
+    all_r_out_hcn   = VariedDiskParams['r_out']['hcn']
 
-    all_m_disk_co  = VariedDiskParams['m_disk_co']
-    all_m_disk_cs  = VariedDiskParams['m_disk_cs']
-    all_m_disk_hco  = VariedDiskParams['m_disk_hco']
-    all_m_disk_hcn  = VariedDiskParams['m_disk_hcn']
+    all_m_disk_co  = VariedDiskParams['m_disk']['co']
+    all_m_disk_cs  = VariedDiskParams['m_disk']['cs']
+    all_m_disk_hco  = VariedDiskParams['m_disk']['hco']
+    all_m_disk_hcn  = VariedDiskParams['m_disk']['hcn']
 
-    all_x_mol_co   = VariedDiskParams['x_mol_co']
-    all_x_mol_cs   = VariedDiskParams['x_mol_cs']
-    all_x_mol_hco   = VariedDiskParams['x_mol_hco']
-    all_x_mol_hcn   = VariedDiskParams['x_mol_hcn']
+    all_x_mol_co   = VariedDiskParams['x_mol']['co']
+    all_x_mol_cs   = VariedDiskParams['x_mol']['cs']
+    all_x_mol_hco   = VariedDiskParams['x_mol']['hco']
+    all_x_mol_hcn   = VariedDiskParams['x_mol']['hcn']
 
 
     # This is horrendous good Lord.
@@ -367,7 +376,7 @@ def gridSearch(VariedDiskParams,
 
 
 # PERFORM A FULL RUN USING FUNCTIONS ABOVE #
-def fullRun(diskAParams, diskBParams,
+def fullRun(diskAParams_fourline, diskBParams_fourline,
             use_a_previous_result=False,
             cut_central_chans=False):
     """Run it all.
@@ -431,76 +440,14 @@ def fullRun(diskAParams, diskBParams,
 
     # STARTING THE RUN #
     # Make the initial static model (B), just with the first parameter values
-    dBInit = {}
-    for p in diskBParams_fourline:
-        dBInit[p] = diskBParams_fourline[p][0]
-
-        # This is trash. Yikes
-        # Bundle them up into lines
-        params_hco = {'v_turb': v_turb,
-                      'r_crit': r_crit,
-                      'rho_p': rho_p,
-                      't_mid': t_mid,
-                      'PA': PA,
-                      'incl': incl,
-                      'pos_x': pos_x,
-                      'pos_y': pos_y,
-                      'v_sys': v_sys,
-                      't_qq': t_qq,
-                      'zq': zq,
-                      'r_out': r_out_hco,
-                      'x_mol': x_mol_hco,
-                      't_atms': t_atms_hco,
-                      'm_disk': m_disk_hco
-                      }
-        params_hcn = {'v_turb': v_turb,
-                      'r_crit': r_crit,
-                      'rho_p': rho_p,
-                      't_mid': t_mid,
-                      'PA': PA,
-                      'incl': incl,
-                      'pos_x': pos_x,
-                      'pos_y': pos_y,
-                      'v_sys': v_sys,
-                      't_qq': t_qq,
-                      'zq': zq,
-                      'r_out': r_out_hcn,
-                      't_atms': t_atms_hcn,
-                      'x_mol': x_mol_hcn,
-                      'm_disk': m_disk_hcn
-                      }
-        params_co = {'v_turb': v_turb,
-                      'r_crit': r_crit,
-                      'rho_p': rho_p,
-                      't_mid': t_mid,
-                      'PA': PA,
-                      'incl': incl,
-                      'pos_x': pos_x,
-                      'pos_y': pos_y,
-                      'v_sys': v_sys,
-                      't_qq': t_qq,
-                      'zq': zq,
-                      'r_out': r_out_co,
-                      't_atms': t_atms_co,
-                      'x_mol': x_mol_co,
-                      'm_disk': m_disk_co
-                      }
-        params_cs = {'v_turb': v_turb,
-                      'r_crit': r_crit,
-                      'rho_p': rho_p,
-                      't_mid': t_mid,
-                      'PA': PA,
-                      'incl': incl,
-                      'pos_x': pos_x,
-                      'pos_y': pos_y,
-                      'v_sys': v_sys,
-                      't_qq': t_qq,
-                      'zq': zq,
-                      'r_out': r_out_cs,
-                      't_atms': t_atms_cs,
-                      'x_mol': x_mol_cs,
-                      'm_disk': m_disk_cs
-                      }
+    dBInit = {'co': {}, 'cs': {}, 'hco': {}, 'hcn': {}}
+    for mol in mols:
+        for p in diskBParams_fourline:
+            # Since some of the values are line-specific, stored in dicts, dig those out.
+            if type(diskBParams_fourline[p]) == dict:
+                dBInit[mol][p] = diskBParams_fourline[p][mol][0]
+            else:
+                dBInit[mol][p] = diskBParams_fourline[p][0]
 
 
     # Grid search over Disk A, retrieve the resulting pd.DataFrame
