@@ -386,6 +386,8 @@ def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
     - Get the velocity labels in the right places
 
     Some nice cmaps: magma, rainbow
+
+    Somethings really screwy with the offsets. Fuck
     """
     # Read in the data
     """
@@ -395,6 +397,7 @@ def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
     data_path = modeling + 'data/cs/cs-short0.fits'
     """
 
+    # modelPath = './gridsearch_runs/' + date + '_' + mol + '/' + date + '_' + mol
     model_path = modelPath + '_bestFit.fits'
     resid_path = modelPath + '_bestFit_resid.fits'
     out_path = './gridsearch_results/' + modelPath.split('/')[-1] + '_triptych.pdf'
@@ -418,6 +421,10 @@ def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
     crop_arcsec = 2
     crop_pix = int(crop_arcsec / 0.045)
     xmin, xmax = x_center - crop_pix, x_center + crop_pix
+    offsets_dA_pix = [44 - offsets_dA[0]/0.045,
+                      44 - offsets_dA[1]/0.045]
+    offsets_dB_pix = [44 + offsets_dB[0]/0.045,
+                      44 + offsets_dB[1]/0.045]
 
     chanstep_vel = image_header['CDELT3'] * 0.001
     chan0_vel = image_header['CRVAL3'] * 0.001 - image_header['CRPIX3'] * chanstep_vel
@@ -474,31 +481,35 @@ def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
                     cmap=cmap, vmin=vmin, vmax=vmax)
 
         # Aesthetic stuff
+        # This is all in arcsecs right now. Should be in pix
+        # crop_arcsec of 2 translates to 88 pixels across
+        # 0, 0 in upper left
         ax_d.grid(False)
         ax_d.set_xticklabels([])
         ax_d.set_yticklabels([])
-        ax_d.plot(offsets_dA[0], offsets_dA[1], '+g')
+        ax_d.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
+        ax_d.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
         ax_m.grid(False)
         ax_m.set_xticklabels([])
         ax_m.set_yticklabels([])
-        ax_m.plot(offsets_dA[0], offsets_dA[1], '+g')
-        ax_m.plot(offsets_dB[0], offsets_dB[1], '+g')
+        ax_m.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
+        ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
         ax_r.grid(False)
         ax_r.set_xticklabels([])
         ax_r.set_yticklabels([])
-        ax_r.plot(offsets_dA[0], offsets_dA[1], '+g')
-        ax_r.plot(offsets_dB[0], offsets_dB[1], '+g')
+        ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
+        ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
         # Add info
-        ax_d.text(0.1, -0.3 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+        ax_d.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
-        ax_m.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+        ax_m.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
-        ax_r.text(0, -0.8 * crop_arcsec, velocity + ' km/s', fontsize=6, color='w',
+        ax_r.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
 
         if i == n_rows * (n_cols - 1) and add_beam_d is True:
-            el = ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_arcsec],
+            el = ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_pix],
                          width=bmin, height=bmaj, angle=-bpa,
                          fc='k', ec='w', fill=False, hatch='////////')
             ax_d.add_artist(el)
@@ -594,6 +605,9 @@ def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0):
     plt.show(block=False)
     return mat
 
+
+
+# The End
 
 
 # The End
