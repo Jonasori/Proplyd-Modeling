@@ -431,7 +431,7 @@ def make_fits(model, param_dict, mol=mol, testing=False):
 
 
 # Define likelehood functions
-def lnprob(theta, run_name, param_info, mol=mol):
+def lnprob(theta, run_name, param_info):
     """Evaluate a set of parameters by making a model and getting its chi2.
 
     From the emcee docs: a function that takes a vector in the
@@ -481,7 +481,7 @@ def lnprob(theta, run_name, param_info, mol=mol):
                               run_name=run_name,
                               model_name=model_name)
 
-        # Remove all the non-mol entries. This is kinda gross
+        # Remove all the non-mol entries. This is kinda gross, but maybe works?
         other_mols = deepcopy(mols)
         other_mols.pop(other_mols.index(mol))
 
