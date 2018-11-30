@@ -20,6 +20,7 @@ import subprocess as sp
 import matplotlib.pyplot as plt
 from astropy.constants import M_sun
 from astropy.io import fits
+from copy import deepcopy
 plt.switch_backend('agg')
 M_sun = M_sun.value
 
@@ -75,8 +76,8 @@ param_dict = {
     'r_ins':               1,                 # AU
     'r_ins':               [1, 1],            # AU
     'T_freezeout':         19,                # Freezeout temperature
-    'm_disk_A':            -1.10791,        # Disk Gas Masses (log10 solar masses)
-    'm_disk_B':            -1.552842,       # Disk Gas Masses (log10 solar masses)
+    'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
+    'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
     'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
     'surf_dens_str_A':     1.,                # Surface density power law index
@@ -96,7 +97,26 @@ param_dict = {
     'chanmins':            chanmins,
     'nchans':              n_chans,
     'imres':               0.045,             # arcsec/pixel
-    'imwidth':             256                # width of image (pixels)
+    'imwidth':             256,                # width of image (pixels)
+    'r_out_A-cs':          300,
+    'r_out_A-co':          300,
+    'r_out_A-hco':         300,
+    'r_out_A-hcn':         300,
+
+    'r_out_B-cs':          300,
+    'r_out_B-co':          300,
+    'r_out_B-hco':         300,
+    'r_out_B-hcn':         300,
+
+    'mol_abundance_A-cs':  -4.,
+    'mol_abundance_A-co':  -4.,
+    'mol_abundance_A-hco': -4.,
+    'mol_abundance_A-hcn': -4.,
+
+    'mol_abundance_B-cs':  -4.,
+    'mol_abundance_B-co':  -4.,
+    'mol_abundance_B-hco': -4.,
+    'mol_abundance_B-hcn': -4.
     }
 
 
@@ -110,8 +130,8 @@ if mol != 'co':
                   ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
                   ('incl_A',            65.,     30.,      (0, 90.)),
                   ('pos_angle_A',       70,      45,       (0, 360)),
+
                   ('atms_temp_B',       200,     150,      (0, np.inf)),
-                  ('mol_abundance_B',   -8,      3,        (-13, -3)),
                   ('temp_struct_B',     0.,      1,        (-3., 3.)),
                   ('incl_B',            45.,     30,       (0, 90.)),
                   ('pos_angle_B',       136.0,   45,       (0, 360)),
@@ -124,7 +144,7 @@ if mol != 'co':
                   ('r_out_B-cs',        500,     300,      (10, 1000)),
                   ('r_out_B-co',        500,     300,      (10, 1000)),
                   ('r_out_B-hco',       500,     300,      (10, 1000)),
-                  ('r_out_B-hcn',       500,     300,      (10, 1000))
+                  ('r_out_B-hcn',       500,     300,      (10, 1000)),
 
                   ('mol_abundance_A-cs',  -8,      3,        (-13, -3)),
                   ('mol_abundance_A-co',  -8,      3,        (-13, -3)),
@@ -134,23 +154,39 @@ if mol != 'co':
                   ('mol_abundance_B-cs',  -8,      3,        (-13, -3)),
                   ('mol_abundance_B-co',  -8,      3,        (-13, -3)),
                   ('mol_abundance_B-hco', -8,      3,        (-13, -3)),
-                  ('mol_abundance_B-hcn', -8,      3,        (-13, -3)),
-
+                  ('mol_abundance_B-hcn', -8,      3,        (-13, -3))
                   ]
 
 else:
-    param_info = [('r_out_A',           500,     300,      (10, 1000)),
-                  ('atms_temp_A',       300,     150,      (0, np.inf)),
-                  ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
+    param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
                   ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
                   ('incl_A',            65.,     30.,      (0, 90.)),
                   ('pos_angle_A',       70,      45,       (0, 360)),
-                  ('r_out_B',           500,     300,      (10, 1000)),
+
                   ('atms_temp_B',       200,     150,      (0, np.inf)),
-                  ('m_disk_B',          -1.,      1.,      (-2.5, 0))
                   ('temp_struct_B',     0.,      1,        (-3., 3.)),
                   ('incl_B',            45.,     30,       (0, 90.)),
-                  ('pos_angle_B',       136.0,   45,       (0, 360))
+                  ('pos_angle_B',       136.0,   45,       (0, 360)),
+
+                  ('r_out_A-cs',        500,     300,      (10, 1000)),
+                  ('r_out_A-co',        500,     300,      (10, 1000)),
+                  ('r_out_A-hco',       500,     300,      (10, 1000)),
+                  ('r_out_A-hcn',       500,     300,      (10, 1000)),
+
+                  ('r_out_B-cs',        500,     300,      (10, 1000)),
+                  ('r_out_B-co',        500,     300,      (10, 1000)),
+                  ('r_out_B-hco',       500,     300,      (10, 1000)),
+                  ('r_out_B-hcn',       500,     300,      (10, 1000)),
+
+                  ('m_disk_A-cs',        -1.1,     1.,       (-3, 0)),
+                  ('m_disk_A-co',        -1.1,     1.,       (-3, 0)),
+                  ('m_disk_A-hco',       -1.1,     1.,       (-3, 0)),
+                  ('m_disk_A-hcn',       -1.1,     1.,       (-3, 0)),
+
+                  ('m_disk_B-cs',        -1.5,     1.,       (-3, 0)),
+                  ('m_disk_B-co',        -1.5,     1.,       (-3, 0)),
+                  ('m_disk_B-hco',       -1.5,     1.,       (-3, 0)),
+                  ('m_disk_B-hcn',       -1.5,     1.,       (-3, 0))
                   ]
 
 
@@ -391,6 +427,84 @@ def make_fits(model, param_dict, mol=mol, testing=False):
     # Clear out the individual disk models now that we've got the data.
     remove([model.modelfiles_path + '-d1.fits',
             model.modelfiles_path + '-d2.fits'])
+
+
+
+# Define likelehood functions
+def lnprob(theta, run_name, param_info, mol=mol):
+    """Evaluate a set of parameters by making a model and getting its chi2.
+
+    From the emcee docs: a function that takes a vector in the
+    parameter space as input and returns the natural logarithm of the
+    posterior probability for that position.
+
+    Args:
+        theta (list): The proposed steps for each parameter, given by emcee.
+        run_name (str): name of run's home directory.
+        param_info (list): a single list of tuples of parameter information.
+                            Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
+                            and with length = total number of free params
+    """
+    #print "Evaluating lnprob"
+    # Check that the proposed value, theta, is within priors for each var.
+    for i, free_param in enumerate(param_info):
+        # print '\n', i, free_param
+        lower_bound, upper_bound = free_param[-1]
+        # If it is, put it into the dict that make_fits calls from
+        if lower_bound < theta[i] < upper_bound:
+            # print "Taking if"
+            name = free_param[0]
+            param_dict[name] = theta[i]
+            #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
+                #print name, theta[i], param_dict[name]
+        else:
+            # print "Taking else, returning -inf"
+            return -np.inf
+
+
+    mols = ['hco', 'hcn', 'co', 'cs']
+    lnprobs = 0
+    for mol in mols:
+        # Still need to set change whether we're varying Xmol or m_disk here.
+        if mol == 'co':
+            param_dict['mol_abundance_A'] = 10**(-4)
+            param_dict['mol_abundance_B'] = 10**(-4)
+        else:
+            param_dict['m_disk_A'] = -1.10791
+            param_dict['m_disk_B'] = -1.552842
+        # Set up an observation
+        obs = fitting.Observation(mol=mol)
+
+        # Make model and the resulting fits image
+        model_name = run_name + '_' + str(np.random.randint(1e10))
+        model = fitting.Model(observation=obs,
+                              run_name=run_name,
+                              model_name=model_name)
+
+        # Remove all the non-mol entries. This is kinda gross
+        other_mols = deepcopy(mols)
+        other_mols.pop(other_mols.index(mol))
+
+        concise_param_dict = deepcopy(param_dict)
+        for p in param_dict.keys():
+            for m in other_mols:
+                if m in p:
+                    concise_param_dict.pop(p)
+
+
+
+        # Make the actual model fits files.
+        make_fits(model, concise_param_dict, mol)
+
+        model.obs_sample()
+        model.chiSq()
+        # model.delete()
+        lnp = -0.5 * sum(model.raw_chis)
+        lnp_total += lnp
+
+    print "Lnprob val: ", lnp_total
+    print '\n'
+    return lnp_total
 
 
 
