@@ -488,8 +488,11 @@ def lnprob(theta, run_name, param_info):
         concise_param_dict = deepcopy(param_dict)
         for p in param_dict.keys():
             for m in other_mols:
-                if m in p:
+                if '-' + m in p:
                     concise_param_dict.pop(p)
+                else:
+                    new_key = p.split('-')[0]
+                    concise_param_dict[new_key] = concise_param_dict.pop(p)
 
 
 
