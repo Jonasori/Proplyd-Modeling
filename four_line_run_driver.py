@@ -475,7 +475,7 @@ def lnprob(theta, run_name, param_info):
                         concise_param_dict.pop(p)
                     # Otherwise, update the dictionary with just the param name.
                     else:
-                        new_key = p.split('-')[0]
+                        new_key = p.split('_')[0]
                         concise_param_dict[new_key] = concise_param_dict.pop(p)
 
 
