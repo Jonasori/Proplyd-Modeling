@@ -423,16 +423,14 @@ def lnprob(theta, run_name, param_info):
         param_info (list): a single list of tuples of parameter information.
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
                             and with length = total number of free params.
-                            I don't think the order here actually matters.
+                            The order matters because of thetas construction.
     """
     # PROPOSE NEW STEP, UPDATE
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
-        # print '\n', i, free_param
         lower_bound, upper_bound = free_param[-1]
         # If it is, put it into the dict that make_fits calls from
         if lower_bound < theta[i] < upper_bound:
-            # print "Taking if"
             name = free_param[0]
             param_dict[name] = theta[i]
             #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
@@ -442,7 +440,6 @@ def lnprob(theta, run_name, param_info):
             return -np.inf
 
 
-    mols = ['hco', 'hcn', 'co', 'cs']
     lnprobs = 0
     for mol in mols:
         # Notice that right now we're not doing the m_disk for co/Xmol for others thing.
@@ -462,10 +459,11 @@ def lnprob(theta, run_name, param_info):
 
         # Want to make a param dict that only has the relevant values for this specific line.
         concise_param_dict = deepcopy(param_dict)
-        for p in param_dict.keys():
+        for p in concise_param_dict.keys():
+
             # Unbind the dictionaries holding the multiple line info
-            if type(param_dict[p]) == dict:
-                param_dict[p] = param_dict[p][mol]
+            if type(concise_param_dict[p]) == dict:
+                concise_param_dict[p] = concise_param_dict[p][mol]
 
             # If its not one with multiple lines, check if it is still line specific.
             else:
@@ -473,11 +471,12 @@ def lnprob(theta, run_name, param_info):
                     # Get rid of other lines in the fit params
                     if '-' + m in p:
                         concise_param_dict.pop(p)
-                    # Otherwise, update the dictionary with just the param name.
-                    else:
-                        new_key = p.split('-')[0]
-                        concise_param_dict[new_key] = concise_param_dict.pop(p)
+                        break
 
+                # If we haven't removed it yet, just leave it
+                if p in concise_param_dict:
+                    new_key = p.split('-')[0]
+                    concise_param_dict[new_key] = concise_param_dict.pop(p)
 
 
         # Make the actual model fits files.
