@@ -101,15 +101,15 @@ param_dict = {
     'r_out_B-hco':         300,
     'r_out_B-hcn':         300,
 
-    'mol_abundance_A_cs':  -4.,
-    'mol_abundance_A_co':  -4.,
-    'mol_abundance_A_hco': -4.,
-    'mol_abundance_A_hcn': -4.,
+    'mol_abundance_A-cs':  -4.,
+    'mol_abundance_A-co':  -4.,
+    'mol_abundance_A-hco': -4.,
+    'mol_abundance_A-hcn': -4.,
 
-    'mol_abundance_B_cs':  -4.,
-    'mol_abundance_B_co':  -4.,
-    'mol_abundance_B_hco': -4.,
-    'mol_abundance_B_hcn': -4.,
+    'mol_abundance_B-cs':  -4.,
+    'mol_abundance_B-co':  -4.,
+    'mol_abundance_B-hco': -4.,
+    'mol_abundance_B-hcn': -4.,
 
     # These get populated in the loop below.
     'vsys':                {},              # km/s
@@ -147,25 +147,25 @@ param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
               ('incl_B',            45.,     30,       (0, 90.)),
               ('pos_angle_B',       136.0,   45,       (0, 360)),
 
-              ('r_out_A_cs',        500,     300,      (10, 1000)),
-              ('r_out_A_co',        500,     300,      (10, 1000)),
-              ('r_out_A_hco',       500,     300,      (10, 1000)),
-              ('r_out_A_hcn',       500,     300,      (10, 1000)),
+              ('r_out_A-cs',        500,     300,      (10, 1000)),
+              ('r_out_A-co',        500,     300,      (10, 1000)),
+              ('r_out_A-hco',       500,     300,      (10, 1000)),
+              ('r_out_A-hcn',       500,     300,      (10, 1000)),
 
-              ('r_out_B_cs',        500,     300,      (10, 1000)),
-              ('r_out_B_co',        500,     300,      (10, 1000)),
-              ('r_out_B_hco',       500,     300,      (10, 1000)),
-              ('r_out_B_hcn',       500,     300,      (10, 1000)),
+              ('r_out_B-cs',        500,     300,      (10, 1000)),
+              ('r_out_B-co',        500,     300,      (10, 1000)),
+              ('r_out_B-hco',       500,     300,      (10, 1000)),
+              ('r_out_B-hcn',       500,     300,      (10, 1000)),
 
-              ('mol_abundance_A_cs',  -8,      3,        (-13, -3)),
-              ('mol_abundance_A_co',  -8,      3,        (-13, -3)),
-              ('mol_abundance_A_hco', -8,      3,        (-13, -3)),
-              ('mol_abundance_A_hcn', -8,      3,        (-13, -3)),
+              ('mol_abundance_A-cs',  -8,      3,        (-13, -3)),
+              ('mol_abundance_A-co',  -8,      3,        (-13, -3)),
+              ('mol_abundance_A-hco', -8,      3,        (-13, -3)),
+              ('mol_abundance_A-hcn', -8,      3,        (-13, -3)),
 
-              ('mol_abundance_B_cs',  -8,      3,        (-13, -3)),
-              ('mol_abundance_B_co',  -8,      3,        (-13, -3)),
-              ('mol_abundance_B_hco', -8,      3,        (-13, -3)),
-              ('mol_abundance_B_hcn', -8,      3,        (-13, -3))
+              ('mol_abundance_B-cs',  -8,      3,        (-13, -3)),
+              ('mol_abundance_B-co',  -8,      3,        (-13, -3)),
+              ('mol_abundance_B-hco', -8,      3,        (-13, -3)),
+              ('mol_abundance_B-hcn', -8,      3,        (-13, -3))
               ]
 
 
@@ -475,7 +475,7 @@ def lnprob(theta, run_name, param_info):
                         concise_param_dict.pop(p)
                     # Otherwise, update the dictionary with just the param name.
                     else:
-                        new_key = p.split('_')[0]
+                        new_key = p.split('-')[0]
                         concise_param_dict[new_key] = concise_param_dict.pop(p)
 
 
