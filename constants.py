@@ -40,7 +40,8 @@ rotHand = [-1, -1]
 # Fit values:
 offsets = [[0.0002, 0.082], [-1.006, -0.3]]
 # Williams vals: vsys = [10.55, 10.85]
-vsys = [[10.], [10.75]]
+# vsys = [[10.], [10.75]]
+vsys = [10., 10.75]
 
 distance = 1/(2.569750671443057 * 10**(-3))
 # Maybe this is error? I don't remember.
