@@ -29,7 +29,7 @@ import mcmc
 import fitting
 import plotting
 from tools import remove, already_exists, already_exists_old
-from constants import mol, obs_stuff, lines, today, offsets
+from constants import obs_stuff, lines, today, offsets
 
 # Import some files from Kevin's modeling code
 from disk_model import raytrace as rt
@@ -37,7 +37,7 @@ from disk_model.disk import Disk
 
 nwalkers = 50
 nsteps = 400
-
+mols = ['hco', 'hcn', 'cs', 'co']
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
 run_name = today
@@ -53,31 +53,26 @@ while already_exists(run_path) is True:
 
 run_w_pool = True
 
-# I hid the process of getting these bc they're ugly.
-vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
+
 
 # A list of parameters needed to make a model. These get dynamically updated
 # in lnprob (line 348). Nothing that is being fit for can be in a tuple
+# Static things can be stored in dicts.
+
 param_dict = {
-    'r_out_A':              400,        # AU
-    'r_out_B':              200,        # AU
-    'atms_temp_A':          300,
-    'atms_temp_B':          200,
-    'mol_abundance_A':      -10,
-    'mol_abundance_B':      -10,
-    'temp_struct_A':        -0.2,
-    'temp_struct_B':        -0.2,
-    'incl_A':               65.,
-    'incl_B':               45,
-    'pos_angle_A':          69.7,
-    'pos_angle_B':          136.,
+    'atms_temp_A':         300,
+    'atms_temp_B':         200,
+    'temp_struct_A':       -0.2,
+    'temp_struct_B':       -0.2,
+    'incl_A':              65.,
+    'incl_B':              45,
+    'pos_angle_A':         69.7,
+    'pos_angle_B':         136.,
     'T_mids':              [15, 15],          # Kelvin
     'r_ins':               1,                 # AU
     'r_ins':               [1, 1],            # AU
     'T_freezeout':         19,                # Freezeout temperature
-    'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
-    'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
     'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
     'surf_dens_str_A':     1.,                # Surface density power law index
@@ -87,17 +82,15 @@ param_dict = {
     'r_crit':              100.,              # Critical radius (AU)
     'rot_hands':           [-1, -1],          # disk rotation direction
     'distance':            389.143,           # parsec, errors of 3ish
-    'offsets':             [pos_A, pos_B],    # from center (")
-    'offsets':             [pos_A, pos_B],    # from center (")
-    'vsys':                vsys,              # km/s
-    'restfreq':            restfreq,		  # GHz
-    'obsv':                obsv,              # km/s?
-    'jnum':                lines[mol]['jnum'],
-    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
-    'chanmins':            chanmins,
-    'nchans':              n_chans,
     'imres':               0.045,             # arcsec/pixel
-    'imwidth':             256,                # width of image (pixels)
+    'imwidth':             256,               # width of image (pixels)
+
+    'offsets':             [pos_A, pos_B],    # from center (")
+    'offsets':             [pos_A, pos_B],    # from center (")
+
+    'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
+    'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
+
     'r_out_A-cs':          300,
     'r_out_A-co':          300,
     'r_out_A-hco':         300,
@@ -108,16 +101,35 @@ param_dict = {
     'r_out_B-hco':         300,
     'r_out_B-hcn':         300,
 
-    'mol_abundance_A-cs':  -4.,
-    'mol_abundance_A-co':  -4.,
-    'mol_abundance_A-hco': -4.,
-    'mol_abundance_A-hcn': -4.,
+    'mol_abundance_A_cs':  -4.,
+    'mol_abundance_A_co':  -4.,
+    'mol_abundance_A_hco': -4.,
+    'mol_abundance_A_hcn': -4.,
 
-    'mol_abundance_B-cs':  -4.,
-    'mol_abundance_B-co':  -4.,
-    'mol_abundance_B-hco': -4.,
-    'mol_abundance_B-hcn': -4.
+    'mol_abundance_B_cs':  -4.,
+    'mol_abundance_B_co':  -4.,
+    'mol_abundance_B_hco': -4.,
+    'mol_abundance_B_hcn': -4.,
+
+    # These get populated in the loop below.
+    'vsys':                {},              # km/s
+    'jnum':                {},
+    'restfreq':            {},
+    'obsv':                {},
+    'chanstep':            {},
+    'chanmins':            {},
+    'nchans':              {}
     }
+for mol in mols:
+    vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+    param_dict['vsys'][mol] = vsys
+    param_dict['restfreq'][mol] = restfreq
+    param_dict['obsv'][mol] = obsv
+    param_dict['chanstep'][mol] = (1) * np.abs(obsv[1] - obsv[0])
+    param_dict['chanmins'][mol] = chanmins
+    param_dict['nchans'][mol] = n_chans
+    param_dict['jnum'][mol] = lines[mol]['jnum']
+
 
 
 # Note that this is what is fed to MCMC to dictate how the walkers move, not
@@ -125,70 +137,36 @@ param_dict = {
 # The order matters here (for comparing in lnprob)
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
-if mol != 'co':
-    param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
-                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-                  ('incl_A',            65.,     30.,      (0, 90.)),
-                  ('pos_angle_A',       70,      45,       (0, 360)),
+param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
+              ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+              ('incl_A',            65.,     30.,      (0, 90.)),
+              ('pos_angle_A',       70,      45,       (0, 360)),
 
-                  ('atms_temp_B',       200,     150,      (0, np.inf)),
-                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
-                  ('incl_B',            45.,     30,       (0, 90.)),
-                  ('pos_angle_B',       136.0,   45,       (0, 360)),
+              ('atms_temp_B',       200,     150,      (0, np.inf)),
+              ('temp_struct_B',     0.,      1,        (-3., 3.)),
+              ('incl_B',            45.,     30,       (0, 90.)),
+              ('pos_angle_B',       136.0,   45,       (0, 360)),
 
-                  ('r_out_A-cs',        500,     300,      (10, 1000)),
-                  ('r_out_A-co',        500,     300,      (10, 1000)),
-                  ('r_out_A-hco',       500,     300,      (10, 1000)),
-                  ('r_out_A-hcn',       500,     300,      (10, 1000)),
+              ('r_out_A_cs',        500,     300,      (10, 1000)),
+              ('r_out_A_co',        500,     300,      (10, 1000)),
+              ('r_out_A_hco',       500,     300,      (10, 1000)),
+              ('r_out_A_hcn',       500,     300,      (10, 1000)),
 
-                  ('r_out_B-cs',        500,     300,      (10, 1000)),
-                  ('r_out_B-co',        500,     300,      (10, 1000)),
-                  ('r_out_B-hco',       500,     300,      (10, 1000)),
-                  ('r_out_B-hcn',       500,     300,      (10, 1000)),
+              ('r_out_B_cs',        500,     300,      (10, 1000)),
+              ('r_out_B_co',        500,     300,      (10, 1000)),
+              ('r_out_B_hco',       500,     300,      (10, 1000)),
+              ('r_out_B_hcn',       500,     300,      (10, 1000)),
 
-                  ('mol_abundance_A-cs',  -8,      3,        (-13, -3)),
-                  ('mol_abundance_A-co',  -8,      3,        (-13, -3)),
-                  ('mol_abundance_A-hco', -8,      3,        (-13, -3)),
-                  ('mol_abundance_A-hcn', -8,      3,        (-13, -3)),
+              ('mol_abundance_A_cs',  -8,      3,        (-13, -3)),
+              ('mol_abundance_A_co',  -8,      3,        (-13, -3)),
+              ('mol_abundance_A_hco', -8,      3,        (-13, -3)),
+              ('mol_abundance_A_hcn', -8,      3,        (-13, -3)),
 
-                  ('mol_abundance_B-cs',  -8,      3,        (-13, -3)),
-                  ('mol_abundance_B-co',  -8,      3,        (-13, -3)),
-                  ('mol_abundance_B-hco', -8,      3,        (-13, -3)),
-                  ('mol_abundance_B-hcn', -8,      3,        (-13, -3))
-                  ]
-
-else:
-    param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
-                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-                  ('incl_A',            65.,     30.,      (0, 90.)),
-                  ('pos_angle_A',       70,      45,       (0, 360)),
-
-                  ('atms_temp_B',       200,     150,      (0, np.inf)),
-                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
-                  ('incl_B',            45.,     30,       (0, 90.)),
-                  ('pos_angle_B',       136.0,   45,       (0, 360)),
-
-                  ('r_out_A-cs',        500,     300,      (10, 1000)),
-                  ('r_out_A-co',        500,     300,      (10, 1000)),
-                  ('r_out_A-hco',       500,     300,      (10, 1000)),
-                  ('r_out_A-hcn',       500,     300,      (10, 1000)),
-
-                  ('r_out_B-cs',        500,     300,      (10, 1000)),
-                  ('r_out_B-co',        500,     300,      (10, 1000)),
-                  ('r_out_B-hco',       500,     300,      (10, 1000)),
-                  ('r_out_B-hcn',       500,     300,      (10, 1000)),
-
-                  ('m_disk_A-cs',        -1.1,     1.,       (-3, 0)),
-                  ('m_disk_A-co',        -1.1,     1.,       (-3, 0)),
-                  ('m_disk_A-hco',       -1.1,     1.,       (-3, 0)),
-                  ('m_disk_A-hcn',       -1.1,     1.,       (-3, 0)),
-
-                  ('m_disk_B-cs',        -1.5,     1.,       (-3, 0)),
-                  ('m_disk_B-co',        -1.5,     1.,       (-3, 0)),
-                  ('m_disk_B-hco',       -1.5,     1.,       (-3, 0)),
-                  ('m_disk_B-hcn',       -1.5,     1.,       (-3, 0))
-                  ]
-
+              ('mol_abundance_B_cs',  -8,      3,        (-13, -3)),
+              ('mol_abundance_B_co',  -8,      3,        (-13, -3)),
+              ('mol_abundance_B_hco', -8,      3,        (-13, -3)),
+              ('mol_abundance_B_hcn', -8,      3,        (-13, -3))
+              ]
 
 
 
@@ -303,6 +281,7 @@ def make_fits(model, param_dict, mol=mol, testing=False):
         dir_list = model.modelfiles_path.split('/')[:-1]
         dir_to_make = '/'.join(dir_list) + '/'
         sp.call(['mkdir {}'.format(dir_to_make)])
+
 
     # Make Disk 1
     print "Entering make fits; exporting to", model.modelfiles_path
@@ -443,9 +422,10 @@ def lnprob(theta, run_name, param_info):
         run_name (str): name of run's home directory.
         param_info (list): a single list of tuples of parameter information.
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
-                            and with length = total number of free params
+                            and with length = total number of free params.
+                            I don't think the order here actually matters.
     """
-    #print "Evaluating lnprob"
+    # PROPOSE NEW STEP, UPDATE
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
         # print '\n', i, free_param
@@ -465,13 +445,8 @@ def lnprob(theta, run_name, param_info):
     mols = ['hco', 'hcn', 'co', 'cs']
     lnprobs = 0
     for mol in mols:
-        # Still need to set change whether we're varying Xmol or m_disk here.
-        if mol == 'co':
-            param_dict['mol_abundance_A'] = 10**(-4)
-            param_dict['mol_abundance_B'] = 10**(-4)
-        else:
-            param_dict['m_disk_A'] = -1.10791
-            param_dict['m_disk_B'] = -1.552842
+        # Notice that right now we're not doing the m_disk for co/Xmol for others thing.
+
         # Set up an observation
         obs = fitting.Observation(mol=mol)
 
@@ -485,14 +460,23 @@ def lnprob(theta, run_name, param_info):
         other_mols = deepcopy(mols)
         other_mols.pop(other_mols.index(mol))
 
+        # Want to make a param dict that only has the relevant values for this specific line.
         concise_param_dict = deepcopy(param_dict)
         for p in param_dict.keys():
-            for m in other_mols:
-                if '-' + m in p:
-                    concise_param_dict.pop(p)
-                else:
-                    new_key = p.split('-')[0]
-                    concise_param_dict[new_key] = concise_param_dict.pop(p)
+            # Unbind the dictionaries holding the multiple line info
+            if type(param_dict[p]) == dict:
+                param_dict[p] = param_dict[p][mol]
+
+            # If its not one with multiple lines, check if it is still line specific.
+            else:
+                for m in other_mols:
+                    # Get rid of other lines in the fit params
+                    if '-' + m in p:
+                        concise_param_dict.pop(p)
+                    # Otherwise, update the dictionary with just the param name.
+                    else:
+                        new_key = p.split('-')[0]
+                        concise_param_dict[new_key] = concise_param_dict.pop(p)
 
 
 
