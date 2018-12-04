@@ -440,7 +440,8 @@ def lnprob(theta, run_name, param_info):
             return -np.inf
 
 
-    lnprobs = 0
+    # If it's an OK step, make some models and get the total chi2 value.
+    lnp_total = 0
     for mol in mols:
         # Notice that right now we're not doing the m_disk for co/Xmol for others thing.
 
