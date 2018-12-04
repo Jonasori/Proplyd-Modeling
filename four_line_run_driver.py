@@ -425,6 +425,7 @@ def lnprob(theta, run_name, param_info):
                             and with length = total number of free params.
                             The order matters because of thetas construction.
     """
+    print "\nCalculating lnprob:"
     # PROPOSE NEW STEP, UPDATE
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
@@ -443,6 +444,7 @@ def lnprob(theta, run_name, param_info):
     # If it's an OK step, make some models and get the total chi2 value.
     lnp_total = 0
     for mol in mols:
+        print "Making model for " + mol
         # Notice that right now we're not doing the m_disk for co/Xmol for others thing.
 
         # Set up an observation
