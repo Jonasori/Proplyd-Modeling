@@ -143,8 +143,8 @@ def make_diskB_params(mol, run_length='long'):
     return params
 
 
-diskAParams = make_diskA_params(mol=mol, run_length='long')
-diskBParams = make_diskB_params(mol=mol, run_length='long')
+# diskAParams = make_diskA_params(mol=mol, run_length='long')
+# diskBParams = make_diskB_params(mol=mol, run_length='long')
 
 
 

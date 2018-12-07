@@ -49,7 +49,7 @@ import subprocess as sp
 from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, already_exists, remove
 from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
-from constants import today, dataPath   #, mol
+from constants import today, dataPath
 from run_params import diskAParams, diskBParams
 
 
