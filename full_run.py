@@ -15,25 +15,26 @@ from tools import already_exists, remove
 
 
 # If running MCMC, how many processors?
-np = 10
+np = 6
 
 # Which fitting method?
-method = 'four-line'
-# method = 'gs'
+method = 'gs'
 
 
 if method == 'gs':
-    grid_search.fullRun(diskAParams, diskBParams,
-                        mol='hco', cut_central_chans=False)
+    mol = raw_input('Which spectral line? (HCO, HCN, CS, or CO)').lower()
+    if mol in ['hco', 'hcn', 'co', 'cs']:
+        grid_search.fullRun(diskAParams, diskBParams,
+                            mol=mol, cut_central_chans=False)
 
 
-elif method == 'four-line':
-    four_line_gridsearch.fullRun(diskAParams_fourline, diskBParams_fourline,
-                                 cut_central_chans=False)
+elif method == 'fl':
+    sp.call(['mpirun', '-np', '4', 'python', 'four_line_run_driver.py', '-r'])
+
 
 
 elif method == 'mc':
-    sp.call(['mpirun', '-np', '12', 'python', 'run_driver.py', '-r'])
+    sp.call(['mpirun', '-np', '6', 'python', 'run_driver.py', '-r'])
 
 
 
