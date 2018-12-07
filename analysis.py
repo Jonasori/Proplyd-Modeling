@@ -529,7 +529,7 @@ def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
         fig.show()
 
 
-def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0):
+def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0, save=False):
     """Plot Chi2 as a function of two params.
 
     I think this works now.
@@ -599,10 +599,14 @@ def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0):
     plt.xticks(range(len_p2), sorted(list(set(df[param2]))))
     plt.yticks(range(len_p1), sorted(list(set(df[param1]))))
     plt.title('Chi2 Map Over Params')
-    plt.grid(True, color='k')  #, alpha=0.5)
+    plt.grid(False, color='k')  #, alpha=0.5)
     plt.colorbar()
     plt.gca().xaxis.tick_bottom()
-    plt.show(block=False)
+
+    if save is True:
+        plt.savefig('param_degens.pdf')
+    else:
+        plt.show(block=False)
     return mat
 
 

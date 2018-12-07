@@ -1,7 +1,7 @@
 """Run a grid search.
 
 
-One atmospheric temp, one midplace
+One atmospheric temp, one midplane
 
 abundance, outer radius,
 
@@ -22,10 +22,16 @@ Intro, obs, results, analysis (grid search, MCMC), discussion, (future work), su
 
 Start with observations
 
-cgcurse (for integrated flux) (pick out channels with flux in them, trace out shape around flux (i.e. 2sigma around moment-zero map))
+cgcurse (for integrated flux) (pick out channels with flux in them, trace out shape around flux (i.e. 2sigma around moment-zero map)
 
 For intro, write out paragraph by paragraph plan of what needs to be there: what is a proplyd
 
+
+12/6
+Varda, sonora, scout
+
+Nail down single-line fits for MC and grid search.
+what are the freeze out temps/what are the chemical assumptions
 
 """
 

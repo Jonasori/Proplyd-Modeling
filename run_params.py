@@ -13,7 +13,7 @@ pos_By = -0.1879
 
 # ONE LINE PARAMS
 
-def make_diskA_params(mol='hco', run_length='mid'):
+def make_diskA_params(mol, run_length='long'):
     # Params that are constant but could be fit
     v_turb       = np.array([0.081])
     zq           = np.array([70.])
@@ -39,10 +39,10 @@ def make_diskA_params(mol='hco', run_length='mid'):
         r_out       = np.array([10, 150, 400])
         x_mol       = -1 * np.array([6., 9.])
     elif run_length == 'long':
-        t_atms      = np.arange(10, 500, 100)
+        t_atms      = np.arange(10, 300, 50)
         t_qq        = -1 * np.array([-0.5, 0, 0.5])
-        r_out       = np.arange(50, 500, 50)
-        x_mol       = -1 * np.array([4.])
+        r_out       = np.arange(50, 500, 75)
+        x_mol       = -1 * np.array([6., 7., 8., 9., 11.])
 
     else:
         return "Please choose 'short', 'mid', or 'long'"
@@ -78,7 +78,7 @@ def make_diskA_params(mol='hco', run_length='mid'):
     return params
 
 
-def make_diskB_params(mol='hco', run_length='mid'):
+def make_diskB_params(mol, run_length='long'):
     # Params that are constant but could be fit
     v_turb       = np.array([0.081])
     zq           = np.array([70.])
@@ -104,10 +104,10 @@ def make_diskB_params(mol='hco', run_length='mid'):
         r_out       = np.arange(50, 400, 100)
         x_mol       = -1 * np.array([4.])
     elif run_length == 'long':
-        t_atms      = np.arange(10, 500, 50)
+        t_atms      = np.arange(10, 300, 50)
         t_qq        = -1 * np.array([-0.5, 0, 0.5])
         r_out       = np.arange(50, 400, 50)
-        x_mol       = -1 * np.array([6., 8., 10.])
+        x_mol       = -1 * np.array([6., 7., 8., 9., 11.])
 
     else:
         return "Please choose 'short', 'mid', or 'long'"
@@ -143,268 +143,10 @@ def make_diskB_params(mol='hco', run_length='mid'):
     return params
 
 
-diskAParams = make_diskA_params(mol=mol, run_length='mid')
-diskBParams = make_diskB_params(mol=mol, run_length='mid')
+diskAParams = make_diskA_params(mol=mol, run_length='long')
+diskBParams = make_diskB_params(mol=mol, run_length='long')
 
 
 
 
-
-
-# FOUR LINE PARAMS
-
-
-def make_diskA_params_fourline():
-    # Params that are constant but could be fit
-    v_turb       = np.array([0.081])
-    r_crit       = np.array([100.])
-    rho_p        = np.array([1.])
-    t_mid        = np.array([15.])
-    PA           = np.array([135])
-    incl         = np.array([30])
-    pos_x        = np.array([offsets[1][0]])
-    pos_y        = np.array([offsets[1][1]])
-    v_sys        = vsys[1]          # np.array([10.70])
-    m_disk       = np.array([-1.552842])
-
-    # Params that are fit
-    t_qq = -1 * np.array([-0.5, 0, 0.5])
-    zq = np.array([70.])
-
-    # Line-specific vals
-    zq_co = np.array([70.])
-    zq_cs = np.array([70.])
-    zq_hco = np.array([70.])
-    zq_hcn = np.array([70.])
-
-    t_atms_co = np.array([10, 100, 300])
-    t_atms_cs = np.array([10, 100, 300])
-    t_atms_hco = np.array([10, 100, 300])
-    t_atms_hcn = np.array([10, 100, 300])
-
-    r_out_co = np.array([10, 200, 500])
-    r_out_cs = np.array([10, 200, 500])
-    r_out_hco = np.array([10, 200, 500])
-    r_out_hcn = np.array([10, 200, 500])
-
-    x_mol_co = -1 * np.array([4.])
-    x_mol_cs = -1 * np.array([5., 9.])
-    x_mol_hco = -1 * np.array([5., 9.])
-    x_mol_hcn = -1 * np.array([5., 9.])
-
-    m_disk_co = np.array([-1.552, -1.553, -1.554])
-    m_disk_cs = np.array([-1.553])
-    m_disk_hco = np.array([-1.553])
-    m_disk_hcn = np.array([-1.553])
-
-    """Old, verbose way
-    params = {'v_turb': v_turb,
-              'r_crit': r_crit,
-              'rho_p': rho_p,
-              't_mid': t_mid,
-              'PA': PA,
-              'incl': incl,
-              'pos_x': pos_x,
-              'pos_y': pos_y,
-              'v_sys': v_sys,
-              't_qq': t_qq,
-              'zq': zq,
-
-              'r_out_co': r_out_co,
-              'r_out_cs': r_out_cs,
-              'r_out_hco': r_out_hco,
-              'r_out_hcn': r_out_hcn,
-
-              't_atms_co': t_atms_co,
-              't_atms_cs': t_atms_cs,
-              't_atms_hco': t_atms_hco,
-              't_atms_hcn': t_atms_hcn,
-
-              'x_mol_co': x_mol_co,
-              'x_mol_cs': x_mol_cs,
-              'x_mol_hco': x_mol_hco,
-              'x_mol_hcn': x_mol_hcn,
-
-              # 'zq_co': zq_co,
-              # 'zq_cs': zq_cs,
-              # 'zq_hco': zq_hco,
-              # 'zq_hcn': zq_hcn,
-
-              'm_disk_co': m_disk_co,
-              'm_disk_cs': m_disk_cs,
-              'm_disk_hco': m_disk_hco,
-              'm_disk_hcn': m_disk_hcn,
-              }
-    """
-
-    params = {'v_turb': v_turb,
-              'r_crit': r_crit,
-              'rho_p': rho_p,
-              't_mid': t_mid,
-              'PA': PA,
-              'incl': incl,
-              'pos_x': pos_x,
-              'pos_y': pos_y,
-              'v_sys': v_sys,
-              't_qq': t_qq,
-              'zq': zq,
-
-              'r_out': {'co': r_out_co,
-                        'cs': r_out_cs,
-                        'hco': r_out_hco,
-                        'hcn': r_out_hcn
-                        },
-
-              't_atms': {'co': t_atms_co,
-                         'cs': t_atms_cs,
-                         'hco': t_atms_hco,
-                         'hcn': t_atms_hcn
-                         },
-
-              'x_mol': {'co': x_mol_co,
-                        'cs': x_mol_cs,
-                        'hco': x_mol_hco,
-                        'hcn': x_mol_hcn
-                        },
-
-
-              'm_disk': {'co': m_disk_co,
-                         'cs': m_disk_cs,
-                         'hco': m_disk_hco,
-                         'hcn': m_disk_hcn
-                         },
-              }
-    return params
-
-
-
-def make_diskB_params_fourline():
-    # Params that are constant but could be fit
-    v_turb       = np.array([0.081])
-    r_crit       = np.array([100.])
-    rho_p        = np.array([1.])
-    t_mid        = np.array([15.])
-    PA           = np.array([135])
-    incl         = np.array([30])
-    pos_x        = np.array([offsets[1][0]])
-    pos_y        = np.array([offsets[1][1]])
-    v_sys        = vsys[1]          # np.array([10.70])
-    m_disk       = np.array([-1.552842])
-
-    # Params that are fit
-    t_qq = -1 * np.array([-0.5, 0, 0.5])
-    zq = np.array([70.])
-
-    # Line-specific vals
-    zq_co = np.array([70.])
-    zq_cs = np.array([70.])
-    zq_hco = np.array([70.])
-    zq_hcn = np.array([70.])
-
-    t_atms_co = np.array([10, 100, 300])
-    t_atms_cs = np.array([10, 100, 300])
-    t_atms_hco = np.array([10, 100, 300])
-    t_atms_hcn = np.array([10, 100, 300])
-
-    r_out_co = np.array([10, 200, 500])
-    r_out_cs = np.array([10, 200, 500])
-    r_out_hco = np.array([10, 200, 500])
-    r_out_hcn = np.array([10, 200, 500])
-
-    x_mol_co = -1 * np.array([4.])
-    x_mol_cs = -1 * np.array([5., 9.])
-    x_mol_hco = -1 * np.array([5., 9.])
-    x_mol_hcn = -1 * np.array([5., 9.])
-
-    m_disk_co = np.array([-1.552, -1.553, -1.554])
-    m_disk_cs = np.array([-1.553])
-    m_disk_hco = np.array([-1.553])
-    m_disk_hcn = np.array([-1.553])
-
-    """Old, verbose way
-    params = {'v_turb': v_turb,
-              'r_crit': r_crit,
-              'rho_p': rho_p,
-              't_mid': t_mid,
-              'PA': PA,
-              'incl': incl,
-              'pos_x': pos_x,
-              'pos_y': pos_y,
-              'v_sys': v_sys,
-              't_qq': t_qq,
-              'zq': zq,
-
-              'r_out_co': r_out_co,
-              'r_out_cs': r_out_cs,
-              'r_out_hco': r_out_hco,
-              'r_out_hcn': r_out_hcn,
-
-              't_atms_co': t_atms_co,
-              't_atms_cs': t_atms_cs,
-              't_atms_hco': t_atms_hco,
-              't_atms_hcn': t_atms_hcn,
-
-              'x_mol_co': x_mol_co,
-              'x_mol_cs': x_mol_cs,
-              'x_mol_hco': x_mol_hco,
-              'x_mol_hcn': x_mol_hcn,
-
-              # 'zq_co': zq_co,
-              # 'zq_cs': zq_cs,
-              # 'zq_hco': zq_hco,
-              # 'zq_hcn': zq_hcn,
-
-              'm_disk_co': m_disk_co,
-              'm_disk_cs': m_disk_cs,
-              'm_disk_hco': m_disk_hco,
-              'm_disk_hcn': m_disk_hcn,
-              }
-    """
-
-    params = {'v_turb': v_turb,
-              'r_crit': r_crit,
-              'rho_p': rho_p,
-              't_mid': t_mid,
-              'PA': PA,
-              'incl': incl,
-              'pos_x': pos_x,
-              'pos_y': pos_y,
-              'v_sys': v_sys,
-              't_qq': t_qq,
-              'zq': zq,
-
-              'r_out': {'co': r_out_co,
-                        'cs': r_out_cs,
-                        'hco': r_out_hco,
-                        'hcn': r_out_hcn
-                        },
-
-              't_atms': {'co': t_atms_co,
-                         'cs': t_atms_cs,
-                         'hco': t_atms_hco,
-                         'hcn': t_atms_hcn
-                         },
-
-              'x_mol': {'co': x_mol_co,
-                        'cs': x_mol_cs,
-                        'hco': x_mol_hco,
-                        'hcn': x_mol_hcn
-                        },
-
-
-              'm_disk': {'co': m_disk_co,
-                         'cs': m_disk_cs,
-                         'hco': m_disk_hco,
-                         'hcn': m_disk_hcn
-                         },
-              }
-    return params
-
-
-
-
-
-
-
-diskAParams_fourline = make_diskA_params_fourline()
-diskBParams_fourline = make_diskB_params_fourline()
+# The End
