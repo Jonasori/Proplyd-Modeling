@@ -7,7 +7,6 @@ import argparse
 import subprocess as sp
 
 # Local package files
-import four_line_gridsearch
 import grid_search
 from run_params import diskAParams, diskBParams
 from constants import today
