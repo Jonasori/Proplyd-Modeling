@@ -24,7 +24,7 @@ def make_diskA_params(mol, run_length='long'):
     incl         = np.array([65])
     pos_x        = np.array([offsets[0][0]])
     pos_y        = np.array([offsets[0][1]])
-    v_sys        = vsys[0]          # np.array([10.70])
+    v_sys        = [vsys[0]]          # np.array([10.70])
     m_disk       = np.array([-1.10791])
 
     # Params that are fit
@@ -89,7 +89,7 @@ def make_diskB_params(mol, run_length='long'):
     incl         = np.array([30])
     pos_x        = np.array([offsets[1][0]])
     pos_y        = np.array([offsets[1][1]])
-    v_sys        = vsys[1]          # np.array([10.70])
+    v_sys        = [vsys[1]]          # np.array([10.70])
     m_disk       = np.array([-1.552842])
 
     # Params that are fit
