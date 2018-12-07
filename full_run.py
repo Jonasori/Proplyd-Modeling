@@ -8,7 +8,7 @@ import subprocess as sp
 
 # Local package files
 import grid_search
-from run_params import diskAParams, diskBParams
+from run_params import make_diskA_params, make_diskB_params
 from constants import today
 from tools import already_exists, remove
 
@@ -26,7 +26,7 @@ if method == 'gs':
     if mol in ['hco', 'hcn', 'co', 'cs']:
         diskAParams = make_diskA_params(mol=mol, run_length='long')
         diskBParams = make_diskB_params(mol=mol, run_length='long')
-        
+
         grid_search.fullRun(diskAParams, diskBParams,
                             mol=mol, cut_central_chans=False)
 
