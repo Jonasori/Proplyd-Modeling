@@ -72,10 +72,8 @@ diskBRawX2, diskBRedX2 = np.zeros(diskB_shape), np.zeros(diskB_shape)
 
 
 # GRID SEARCH OVER ONE DISK HOLDING OTHER CONSTANT
-def gridSearch(VariedDiskParams,
-               StaticDiskParams,
-               DI,
-               modelPath,
+def gridSearch(VariedDiskParams, StaticDiskParams,
+               mol, DI, modelPath,
                num_iters, steps_so_far=1,
                cut_central_chans=False):
     """
@@ -286,8 +284,7 @@ def gridSearch(VariedDiskParams,
 
 
 # PERFORM A FULL RUN USING FUNCTIONS ABOVE #
-def fullRun(diskAParams, diskBParams,
-            mol='hco',
+def fullRun(diskAParams, diskBParams, mol,
             use_a_previous_result=False,
             cut_central_chans=False):
     """Run it all.
@@ -378,7 +375,7 @@ def fullRun(diskAParams, diskBParams,
 
     # Grid search over Disk A, retrieve the resulting pd.DataFrame
     if to_skip != 'A':
-        df_A_fit = gridSearch(diskAParams, dBInit, 0, modelPath, n,
+        df_A_fit = gridSearch(diskAParams, dBInit, mol, 0, modelPath, n,
                               cut_central_chans=cut_central_chans)
 
     # Find where the chi2 is minimized and save it
@@ -394,7 +391,7 @@ def fullRun(diskAParams, diskBParams,
     print "First disk has been fit\n"
 
     # Now search over the other disk
-    df_B_fit = gridSearch(diskBParams, fit_A_params, 1, modelPath,
+    df_B_fit = gridSearch(diskBParams, fit_A_params, mol, 1, modelPath,
                           n, steps_so_far=na,
                           cut_central_chans=cut_central_chans)
 
