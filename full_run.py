@@ -42,21 +42,4 @@ elif method == 'mc':
 
 
 
-
-"""
-# Argparse stuff, if you want.
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process the data.')
-    parser.add_argument('-gs', '--gridsearch', action='store_true',
-                        help='Start a grid search.')
-
-    parser.add_argument('-mc', '--mcmc', action='store_true',
-                        help='Start an MCMC run.')
-
-    args = parser.parse_args()
-    if args.gridsearch:
-        fullRun(diskAParams, diskBParams, cut_central_chans=False)
-
-    if args.mcmc:
-        sp.call(['mpirun -np {} python run_driver.py -r'.format(np)])
-"""
+# The End
