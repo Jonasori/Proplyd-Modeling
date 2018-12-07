@@ -21,7 +21,7 @@ method = 'gs'
 
 
 if method == 'gs':
-    mol = raw_input('Which spectral line? (HCO, HCN, CS, or CO)').lower()
+    mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
     if mol in ['hco', 'hcn', 'co', 'cs']:
         grid_search.fullRun(diskAParams, diskBParams,
                             mol=mol, cut_central_chans=False)
