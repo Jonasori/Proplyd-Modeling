@@ -1,6 +1,6 @@
 """Basically just choose run method. This should be the last step in the chain.
 
-NOTE: To change molecular line, change mol in constants.py.
+Trying to get rid of the reliance on mol in constants.
 """
 
 import argparse
