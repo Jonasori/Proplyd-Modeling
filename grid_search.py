@@ -63,13 +63,15 @@ param_names = ['v_turb', 'zq', 'r_crit', 'rho_p', 't_mid', 'PA', 'incl',
                'pos_x', 'pos_y', 'v_sys', 't_atms', 't_qq',
                'r_out', 'm_disk', 'x_mol']
 
-# Prep some storage space for all the chisq vals
+# Prep some storage space for all the chisq vals.
+# These get updated to the correct shape in full_run()
+"""
 diskA_shape = [len(diskAParams[p]) for p in param_names]
 diskB_shape = [len(diskBParams[p]) for p in param_names]
 
 diskARawX2, diskARedX2 = np.zeros(diskA_shape), np.zeros(diskA_shape)
 diskBRawX2, diskBRedX2 = np.zeros(diskB_shape), np.zeros(diskB_shape)
-
+"""
 
 # GRID SEARCH OVER ONE DISK HOLDING OTHER CONSTANT
 def gridSearch(VariedDiskParams, StaticDiskParams,
@@ -311,6 +313,19 @@ def fullRun(diskAParams, diskBParams, mol,
         t = str(round(n * dt/60, 2)) + " hours."
     elif t >= 1440:
         t = str(round(n * dt/1440, 2)) + " days."
+
+
+    # Update the chi2 containers to be the right sizes.
+    diskA_shape = [len(diskAParams[p]) for p in param_names]
+    diskB_shape = [len(diskBParams[p]) for p in param_names]
+    global diskARawX2
+    diskARawX2 = np.zeros(diskA_shape)
+    global diskARedX2
+    diskARedX2 = np.zeros(diskA_shape)
+    global diskBRawX2
+    diskBRawX2 = np.zeros(diskB_shape)
+    global diskBRedX2
+    diskBRedX2 = np.zeros(diskB_shape)
 
 
     # Begin setting up symlink and get directory paths lined up
