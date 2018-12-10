@@ -157,8 +157,8 @@ class MCMCrun:
             #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
             amin = np.nanmin(main.lnprob[main.lnprob != -np.inf])
             amax = np.nanmax(main.lnprob)
-            # axes[-1].set_ylim(amin, amax)
-            axes[-1].set_ylim(-50000, -25000)
+            axes[-1].set_ylim(amin, amax)
+            # axes[-1].set_ylim(-50000, -25000)
 
         # if you want mean at each step over plotted:
         # main.index //= self.nwalkers
