@@ -50,7 +50,8 @@ from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, already_exists, remove
 from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
 from constants import today, dataPath
-from run_params import diskAParams, diskBParams
+# from run_params import diskAParams, diskBParams
+from run_params import make_diskA_params, make_diskB_params
 
 
 # A little silly, but an easy way to name disks by their disk index (DI)
