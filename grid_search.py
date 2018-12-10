@@ -476,9 +476,10 @@ def fullRun(diskAParams, diskBParams, mol,
         s = s0 + s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10
         f.write(s)
 
-    plot_gridSearch_log(modelPath, show=False)
-    plot_step_duration(modelPath, show=False)
-    plot_fits(modelPath + '_bestFit.fits', show=False)
+    plot_gridSearch_log(modelPath, save=True)
+    plot_step_duration(modelPath, save=True)
+    plot_fits(modelPath + '_bestFit.fits', mol=mol, save=True)
+    plot_model_and_data(modelpath=modelPath, mol=mol, save=True)
     print "Successfully finished everything."
 
 # The End

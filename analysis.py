@@ -141,7 +141,7 @@ def plot_gridSearch_log(fname, save=False):
         plt.show()
 
 
-def plot_step_duration(dataPath, ns=[10, 20, 50], show=False):
+def plot_step_duration(dataPath, ns=[10, 20, 50], save=False):
     """Plot how long each step took, plus some smoothing stuff.
 
     Args:
@@ -179,8 +179,9 @@ def plot_step_duration(dataPath, ns=[10, 20, 50], show=False):
     plt.ylabel('Time (minutes)', fontweight='bold')
     plt.title('Time per Step for Grid Search Run on ' + run_date,
               fontweight='bold', fontsize=14)
-    plt.savefig(resultsPath + run_date + '_durations.png', dpi=200)
-    if show is True:
+    if save is True:
+        plt.savefig(resultsPath + run_date + '_durations.png', dpi=200)
+    else:
         plt.show()
     plt.clf()
 
@@ -376,8 +377,7 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
     plt.gca()
 
 
-def plot_model_and_data(modelPath='./gridsearch_runs/nov27_cs/nov27_cs',
-                        mol='cs', save=False, cmap='rainbow'):
+def plot_model_and_data(modelPath, mol='cs', save=False, cmap='rainbow'):
     """Plot a triptych of data, model, and residuals.
 
     It would be nice to have an option to also plot the grid search results.
