@@ -383,6 +383,7 @@ def fullRun(diskAParams, diskBParams, mol,
 
 
 
+
     # STARTING THE RUN #
     # Make the initial static model (B), just with the first parameter values
     dBInit = {}
