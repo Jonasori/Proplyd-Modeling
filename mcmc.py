@@ -301,9 +301,9 @@ class MCMCrun:
         # Locate the best fit model from max'ed lnprob.
         max_lnp = subset_df['lnprob'].max()
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
-        return model_params
-        """
-        print 'Model parameters:\n', model_params.columns(), '\n\n'
+        #return model_params
+        #"""
+        print 'Model parameters:\n', list(s), '\n\n'
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
@@ -319,22 +319,38 @@ class MCMCrun:
         print 'Making model...'
         # This obviously has to be generalized.
 
-        # If it's a one line fit, it's easy.
-        # if not fourlinefit_tf:
-        obs = fitting.Observation(mol, cut_baselines=True)
-        model = fitting.Model(observation=obs,
-                              run_name=self.runpath,
-                              model_name=self.name + '_bestFit')
-        run_driver.make_fits(model, bf_param_dict)
-        analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
-                           bestFit=True,)
+        def make_model(param_dict):
+            obs = fitting.Observation(mol, cut_baselines=True)
+            model = fitting.Model(observation=obs,
+                                  run_name=self.runpath,
+                                  model_name=self.name + '_bestFit')
+            run_driver.make_fits(model, param_dict)
+            analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
+                               bestFit=True)
+            return model
 
-        # else:
-            # This assumes that
+        models = []
+        # If it's a one line fit, it's easy.
+        if not fourlinefit_tf:
+            models.append(make_model(bf_param_dict))
+
+        else:
+            # This assumes that outer radius and abundance are the only things
+            # being individually varied. Maybe coordinate better.
+            for m in ['cs', 'co', 'hco', 'hcn']:
+                # Shouldn't matter that we've still got the other lines' info here
+                bf_param_dict['r_out_A'] = int(bf_param_dict['r_out_A-{}'.format(m)])
+                bf_param_dict['r_out_B'] = int(bf_param_dict['r_out_B-{}'.format(m)])
+                bf_param_dict['mol_abundance_A'] = int(bf_param_dict['mol_abundance_A-{}'.format(m)])
+                bf_param_dict['mol_abundance_B'] = int(bf_param_dict['mol_abundance_B-{}'.format(m)])
+
+                models.append(make_model(bf_param_dict))
+
+
 
 
         # This seems cool but I need to get plotting.py going first.
-        """
+        #"""
         """
         fig = plotting.Figure(layout=(1, 3),
                               paths=[aumic_fitting.band6_fits_images[-1],
@@ -351,7 +367,7 @@ class MCMCrun:
         """
         # plot_fits(self.runpath)
 
-        # return (model, bf_param_dict)
+        return (models, bf_param_dict)
 
 
 
