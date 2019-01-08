@@ -303,7 +303,7 @@ class MCMCrun:
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
         #return model_params
         #"""
-        print 'Model parameters:\n', [str(mp + '\n') for mp in list(model_params)], '\n\n'
+        print 'Model parameters:\n', [mp + '\n' for mp in list(model_params)], '\n\n'
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
