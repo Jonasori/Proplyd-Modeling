@@ -303,7 +303,7 @@ class MCMCrun:
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
         #return model_params
         #"""
-        print 'Model parameters:\n', list(model_params), '\n\n'
+        print 'Model parameters:\n', [mp for mp in list(model_params)], '\n\n'
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
@@ -312,6 +312,7 @@ class MCMCrun:
             bf_param_dict[param] = model_params[param].values
 
         print bf_param_dict
+        print [(p, bf_param_dict[p]) for p in list(bf_param_dict)]
         bf_disk_params = bf_param_dict.keys()
 	    # return bf_disk_params
 
