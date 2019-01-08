@@ -309,7 +309,7 @@ class MCMCrun:
 
         print bf_param_dict
         bf_disk_params = bf_param_dict.keys()
-	return bf_disk_params
+	    # return bf_disk_params
 
         # intialize model and make fits image
         print 'Making model...'

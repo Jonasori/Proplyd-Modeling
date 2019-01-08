@@ -1,4 +1,7 @@
-"""Run a grid search."""
+"""Run a grid search.
+
+Outdated and removed as of 1/8/19. Just hiding it instead of deleting for kicks.
+"""
 
 
 import numpy as np
