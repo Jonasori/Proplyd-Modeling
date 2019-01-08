@@ -15,6 +15,7 @@ from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 from analysis import plot_fits, plot_model_and_data
 from run_driver import param_dict
+from four_line_run_driver import param_dict
 import fitting
 import plotting
 import run_driver
