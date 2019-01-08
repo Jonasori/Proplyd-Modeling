@@ -301,6 +301,8 @@ class MCMCrun:
         # Locate the best fit model from max'ed lnprob.
         max_lnp = subset_df['lnprob'].max()
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
+        return model_params
+        """
         print 'Model parameters:\n', model_params.columns(), '\n\n'
 
         # Check if we're looking at a one- or four-line fit.
@@ -333,6 +335,7 @@ class MCMCrun:
 
         # This seems cool but I need to get plotting.py going first.
         """
+        """
         fig = plotting.Figure(layout=(1, 3),
                               paths=[aumic_fitting.band6_fits_images[-1],
                                      paths[-1] + '.fits',
@@ -348,7 +351,7 @@ class MCMCrun:
         """
         # plot_fits(self.runpath)
 
-        return (model, bf_param_dict)
+        # return (model, bf_param_dict)
 
 
 
