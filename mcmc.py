@@ -301,8 +301,10 @@ class MCMCrun:
         # Locate the best fit model from max'ed lnprob.
         max_lnp = subset_df['lnprob'].max()
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
-        print 'Model parameters:\n', model_params.to_string(), '\n\n'
+        print 'Model parameters:\n', model_params.columns(), '\n\n'
 
+        # Check if we're looking at a one- or four-line fit.
+        fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
         bf_param_dict = {}
         for param in model_params.columns[:-1]:
             bf_param_dict[param] = model_params[param].values
@@ -315,7 +317,8 @@ class MCMCrun:
         print 'Making model...'
         # This obviously has to be generalized.
 
-
+        # If it's a one line fit, it's easy.
+        # if not fourlinefit_tf:
         obs = fitting.Observation(mol, cut_baselines=True)
         model = fitting.Model(observation=obs,
                               run_name=self.runpath,
@@ -323,6 +326,10 @@ class MCMCrun:
         run_driver.make_fits(model, bf_param_dict)
         analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
                            bestFit=True,)
+
+        # else:
+            # This assumes that
+
 
         # This seems cool but I need to get plotting.py going first.
         """
