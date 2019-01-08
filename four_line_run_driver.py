@@ -137,6 +137,10 @@ for mol in mols:
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
 
+# Should this have all the parameters in it or just the varied ones?
+# I think just the varied ones, but in that case have to get the others
+# from elsewhere when feeding params to make_fits
+"""
 [('r_out_A',           500,     300,      (10, 1000)),
     ('atms_temp_A',       300,     150,      (0, np.inf)),
     ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
@@ -150,7 +154,7 @@ for mol in mols:
     ('incl_B',            45.,     30,       (0, 90.)),
     ('pos_angle_B',       136.0,   45,       (0, 360))
     ]
-
+"""
 param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
               ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
               ('incl_A',            65.,     30.,      (0, 90.)),
