@@ -14,6 +14,7 @@ from emcee.utils import MPIPool
 from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 from analysis import plot_fits, plot_model_and_data
+from run_driver import param_dict
 import fitting
 import plotting
 import run_driver
@@ -303,11 +304,11 @@ class MCMCrun:
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
         #return model_params
         #"""
-        print 'Model parameters:\n', [mp + '\n' for mp in list(model_params)], '\n\n'
+        print 'Model parameters:\n', [mp for mp in list(model_params)], '\n\n'
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
-        bf_param_dict = {}
+        bf_param_dict = param_dict.copy()
         for param in model_params.columns[:-1]:
             bf_param_dict[param] = model_params[param].values
 

@@ -137,6 +137,21 @@ for mol in mols:
 # The order matters here (for comparing in lnprob)
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
+
+[('r_out_A',           500,     300,      (10, 1000)),
+    ('atms_temp_A',       300,     150,      (0, np.inf)),
+    ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
+    ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+    ('incl_A',            65.,     30.,      (0, 90.)),
+    ('pos_angle_A',       70,      45,       (0, 360)),
+    ('r_out_B',           500,     300,      (10, 1000)),
+    ('atms_temp_B',       200,     150,      (0, np.inf)),
+    ('m_disk_B',          -1.,      1.,      (-2.5, 0))
+    ('temp_struct_B',     0.,      1,        (-3., 3.)),
+    ('incl_B',            45.,     30,       (0, 90.)),
+    ('pos_angle_B',       136.0,   45,       (0, 360))
+    ]
+
 param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
               ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
               ('incl_A',            65.,     30.,      (0, 90.)),
