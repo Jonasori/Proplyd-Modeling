@@ -67,7 +67,8 @@ def depickleLogFile(fname):
 
 
 def plot_gridSearch_log(fname, save=False):
-    """Plot where the best-fit values from a grid search fall.
+    """
+    Plot where the best-fit values from a grid search fall.
 
     Plot where the best-fit value(s) stand(s) relative to the range queried in
     a given grid search run.

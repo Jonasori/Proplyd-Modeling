@@ -10,7 +10,7 @@ import datetime
 c = c.to('km/s').value
 
 
-mol = 'hco'
+mol = 'cs'
 nwalkers, nsteps = 50, 500
 
 
@@ -131,7 +131,10 @@ lines = {'hco': {'restfreq': 356.73422300,
 
 # DATA FILE NAME
 def get_data_path(mol, short_vis_only=True):
-    """Get the path to the data files for a given line."""
+    """Get the path to the data files for a given line.
+
+    To be run out of jonas/modeling only.
+    """
     print mol
     dataPath = './data/' + mol + '/' + mol
     if short_vis_only is True:
