@@ -38,7 +38,7 @@ class MCMCrun:
 
         Args:
             path (str): the file path to where to find the chain
-            name (str): the name of the run (for output files).
+            name (str): the name of the run (for output files; usually just '[today]-[run number of the day]').
             nwalkers (int): how many walkers to have.
             burn_in (int): how many of the first steps to ignore.
         """
@@ -321,12 +321,12 @@ class MCMCrun:
         print 'Making model...'
         # This obviously has to be generalized.
 
-        def make_model(param_dict):
+        def make_model(param_dict, mol):
             obs = fitting.Observation(mol, cut_baselines=True)
             model = fitting.Model(observation=obs,
-                                  run_name=self.runpath,
+                                  run_name=self.name,
                                   model_name=self.name + '_bestFit')
-            run_driver.make_fits(model, param_dict)
+            four_line_run_driver.make_fits(model, param_dict)
             analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
                                bestFit=True)
             return model
@@ -346,7 +346,7 @@ class MCMCrun:
                 bf_param_dict['mol_abundance_A'] = int(bf_param_dict['mol_abundance_A-{}'.format(m)])
                 bf_param_dict['mol_abundance_B'] = int(bf_param_dict['mol_abundance_B-{}'.format(m)])
 
-                models.append(make_model(bf_param_dict))
+                models.append(make_model(bf_param_dict, m))
 
 
 

@@ -369,7 +369,7 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
                 else:
                     return 'Failed to make image; specify save location.'
         run_name = image_path.split('/')[-2]
-        suffix += '_bestFit' if best_fit is True else ''
+        suffix += '_bestFit-' + mol if best_fit is True else ''
         outpath = resultsPath + run_name + suffix + '_image.pdf'
         plt.savefig(outpath)
         print 'Image saved to ' + outpath

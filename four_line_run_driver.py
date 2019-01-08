@@ -47,7 +47,6 @@ counter = 2
 while already_exists(run_path) is True:
     run_name = run_name_basename + '-' + str(counter)
     run_path = './mcmc_runs/' + run_name + '/'
-
     counter += 1
 
 
@@ -502,7 +501,7 @@ def lnprob(theta, run_name, param_info):
 
         model.obs_sample()
         model.chiSq()
-        # model.delete()
+        model.delete()
         lnp = -0.5 * sum(model.raw_chis)
         lnp_total += lnp
 

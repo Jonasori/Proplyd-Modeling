@@ -115,7 +115,11 @@ Once this chain is built, run_emcee.py's main() function becomes useful, includi
 
 
 
-
+## CONSTANTS, NAMES, and LAYOUT
+One thing that has kinda plagued this whole process is global variables. constants.py is kinda unavoidable, but keeping track of the different path names and so on is a nasty business. Here is an attempt at a summary of them:
+* run_name, run_path (in run_driver, four_line_run_driver): the name of the run (i.e. nov13-2), and the path from jonas/modeling/ to a specific run's directory, of the form './mcmc_runs/[run_name]/'. Called when initiating an MCMC object and in mcmc.run_emcee().
+  * Note that, in a stroke of genius, I made this different from MCMC.MCMCrun.runpath, which is defined as run_path + [run_name, i.e. today]
+* modelfiles_path (fitting.Model())
 
 
 
