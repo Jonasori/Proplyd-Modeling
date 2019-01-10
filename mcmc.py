@@ -321,10 +321,9 @@ class MCMCrun:
             # If we're doing four-line fitting, then some values are dictionaries of vals.
             # Just want the relevant line.
             param_dict_mol = param_dict.copy()
-            if fourlinefit_tf:
-                for p in param_dict_mol:
-                    if type(param_dict_mol[p]) == dict:
-                        param_dict_mol[p] = param_dict_mol[p][mol]
+            for p in param_dict_mol:
+                if type(param_dict_mol[p]) == dict:
+                    param_dict_mol[p] = param_dict_mol[p][mol]
 
             obs = fitting.Observation(mol, cut_baselines=True)
             model = fitting.Model(observation=obs,
@@ -344,11 +343,11 @@ class MCMCrun:
             # This assumes that outer radius and abundance are the only things
             # being individually varied. Maybe coordinate better.
             for m in ['cs', 'co', 'hco', 'hcn']:
-                # Shouldn't matter that we've still got the other lines' info here
-                bf_param_dict['r_out_A'] = int(bf_param_dict['r_out_A-{}'.format(m)])
-                bf_param_dict['r_out_B'] = int(bf_param_dict['r_out_B-{}'.format(m)])
-                bf_param_dict['mol_abundance_A'] = int(bf_param_dict['mol_abundance_A-{}'.format(m)])
-                bf_param_dict['mol_abundance_B'] = int(bf_param_dict['mol_abundance_B-{}'.format(m)])
+                # Doesn't matter that we've still got the other lines' info here
+                bf_param_dict['r_out_A'] = float(bf_param_dict['r_out_A-{}'.format(m)])
+                bf_param_dict['r_out_B'] = float(bf_param_dict['r_out_B-{}'.format(m)])
+                bf_param_dict['mol_abundance_A'] = float(bf_param_dict['mol_abundance_A-{}'.format(m)])
+                bf_param_dict['mol_abundance_B'] = float(bf_param_dict['mol_abundance_B-{}'.format(m)])
 
                 models.append(make_model(bf_param_dict, m))
 
