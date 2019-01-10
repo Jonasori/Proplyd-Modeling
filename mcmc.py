@@ -332,7 +332,7 @@ class MCMCrun:
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
             make_fits(model, param_dict_mol)
-            analysis.plot_fits(self.modelfiles_path + '_bestFit.fits', mol=mol,
+            analysis.plot_fits(model.modelfiles_path + '_bestFit.fits', mol=mol,
                                best_fit=True)
             return model
 

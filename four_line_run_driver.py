@@ -10,6 +10,12 @@ From Meredith:
 If you don't get a reasonable solution, check what Sam did, but I think maybe we wound up having to vary T_atm separately for each molecule?  Important to try with a consistent temperature structure first so that we can find out how badly it does.
 
 Also check Sam's paper to see if there are descriptions of number density thresholds for upper/lower molecular boundaries, based on photodissociation cross-sections and/or freeze-out.
+
+
+
+
+Do single line fits before full four line fit.
+Data/model/resid of grid search.
 """
 
 # Import some python packages
@@ -148,24 +154,7 @@ for mol in mols:
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
 
-# Should this have all the parameters in it or just the varied ones?
-# I think just the varied ones, but in that case have to get the others
-# from elsewhere when feeding params to make_fits
-"""
-[('r_out_A',           500,     300,      (10, 1000)),
-    ('atms_temp_A',       300,     150,      (0, np.inf)),
-    ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
-    ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-    ('incl_A',            65.,     30.,      (0, 90.)),
-    ('pos_angle_A',       70,      45,       (0, 360)),
-    ('r_out_B',           500,     300,      (10, 1000)),
-    ('atms_temp_B',       200,     150,      (0, np.inf)),
-    ('m_disk_B',          -1.,      1.,      (-2.5, 0))
-    ('temp_struct_B',     0.,      1,        (-3., 3.)),
-    ('incl_B',            45.,     30,       (0, 90.)),
-    ('pos_angle_B',       136.0,   45,       (0, 360))
-    ]
-"""
+
 param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
               ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
               ('incl_A',            65.,     30.,      (0, 90.)),
@@ -483,7 +472,7 @@ def lnprob(theta, run_name, param_info):
         model_name = run_name + '_' + str(np.random.randint(1e10))
         model = fitting.Model(observation=obs,
                               run_name=run_name,
-                              model_name=model_name)
+                              model_name=model_name + mol)
 
         # Remove all the non-mol entries. This is kinda gross, but maybe works?
         other_mols = deepcopy(mols)

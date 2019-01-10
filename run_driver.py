@@ -1,9 +1,5 @@
 """Cail's mcmc.py run wrapper.
 
-Note that this is all set up for Py3k (in argparse) so it might take a bunch of
-rewriting to get this down to Python2.
-
-
 RUN DRIVER ISNT WRITING OUT ALL THE PARAMETERS TO THE CHAIN. BAD. FIX ASAP
 HERE AND IN FOUR LINE DRIVER
 """

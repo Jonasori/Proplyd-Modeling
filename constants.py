@@ -10,7 +10,7 @@ import datetime
 c = c.to('km/s').value
 
 
-mol = 'cs'
+mol = 'hco'
 nwalkers, nsteps = 50, 500
 
 
@@ -69,7 +69,7 @@ def obs_stuff(mol, short_vis_only=True):
     chan_dir = lines[mol]['chanstep_freq']/np.abs(lines[mol]['chanstep_freq'])
 
     # Get the frequencies and velocities of each step
-    # {[arange(nchans) + 1 - chanNum] * chanStepFreq) + ChanNumFreq} * Hz2GHz
+    # {[range(nchans) + 1 - chanNum] * chanStepFreq) + ChanNumFreq} * Hz2GHz
     # [-25,...,25] * d_nu + ref_chan_freq
     chanstep = lines[mol]['chanstep_freq'] * 1e9
     freqs = ((np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * chanstep + hdr['crval4']) * 1e-9
