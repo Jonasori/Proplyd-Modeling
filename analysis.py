@@ -378,7 +378,7 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
     plt.gca()
 
 
-def plot_model_and_data(modelPath, mol='cs', save=False, cmap='rainbow'):
+def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     """Plot a triptych of data, model, and residuals.
 
     It would be nice to have an option to also plot the grid search results.
@@ -448,7 +448,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='rainbow'):
     n_cols = int(np.ceil(np.sqrt(nchans)))
 
     # Get the plots going
-    fig = plt.figure(figsize=(15, 5))
+    fig = plt.figure(figsize=(18, 5))
     big_fig = gridspec.GridSpec(1, 3)
     data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                 subplot_spec=big_fig[0],
@@ -520,7 +520,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='rainbow'):
         fig.add_subplot(ax_r)
 
     fig.tight_layout()
-    fig.subplots_adjust(wspace=0.0, hspace=0.0, top=0.9)
+    fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.9)
     print "Finished plotting; showing"
     plt.close()
 
