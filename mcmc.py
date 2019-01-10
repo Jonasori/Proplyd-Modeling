@@ -15,7 +15,7 @@ from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 from analysis import plot_fits, plot_model_and_data
 # from run_driver import param_dict
-from four_line_run_driver import param_dict
+from four_line_run_driver import param_dict, make_fits
 import fitting
 import plotting
 import run_driver
@@ -325,7 +325,7 @@ class MCMCrun:
             model = fitting.Model(observation=obs,
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
-            four_line_run_driver.make_fits(model, param_dict)
+            make_fits(model, param_dict)
             analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
                                bestFit=True)
             return model
