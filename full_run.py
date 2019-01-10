@@ -1,7 +1,6 @@
 """Basically just choose run method. This should be the last step in the chain.
 
 Trying to get rid of the reliance on mol in constants.
-b
 """
 
 import argparse
@@ -33,12 +32,14 @@ if method == 'gs':
 
 
 elif method == 'fl':
-    sp.call(['mpirun', '-np', '4', 'python', 'four_line_run_driver.py', '-r'])
+    np = raw_input('How many processors shall we use?\n[1-10]: ')
+    sp.call(['mpirun', '-np', np, 'python', 'four_line_run_driver.py', '-r'])
 
 
 
 elif method == 'mc':
-    sp.call(['mpirun', '-np', '6', 'python', 'run_driver.py', '-r'])
+    np = raw_input('How many processors shall we use?\n[1-10]: ')
+    sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
 
 
 
