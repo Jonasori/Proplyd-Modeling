@@ -110,6 +110,17 @@ param_dict = {
     'mol_abundance_B-hco': -4.,
     'mol_abundance_B-hcn': -4.,
 
+
+    'atms_temp_A-cs':  300.,
+    'atms_temp_A-co':  300.,
+    'atms_temp_A-hco': 300.,
+    'atms_temp_A-hcn': 300.,
+
+    'atms_temp_B-cs':  200.,
+    'atms_temp_B-co':  200.,
+    'atms_temp_B-hco': 200.,
+    'atms_temp_B-hcn': 200.,
+
     # These get populated in the loop below.
     'vsys':                {},              # km/s
     'jnum':                {},

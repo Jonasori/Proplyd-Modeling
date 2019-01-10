@@ -13,12 +13,13 @@ from emcee.utils import MPIPool
 #from run_driver import run_path #, run_name
 from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
-from analysis import plot_fits, plot_model_and_data
+#from analysis import plot_fits
 # from run_driver import param_dict
 from four_line_run_driver import param_dict, make_fits
 import fitting
 import plotting
 import run_driver
+import analysis
 
 
 
@@ -330,8 +331,8 @@ class MCMCrun:
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
             make_fits(model, param_dict_mol)
-            plot_fits(self.runpath + '_bestFit.fits', mol=mol,
-                               bestFit=True)
+            analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
+                               best_fit=True)
             return model
 
         models = []
