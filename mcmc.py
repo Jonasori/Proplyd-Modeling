@@ -307,25 +307,30 @@ class MCMCrun:
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
+
+        # Make a complete dictionary of all the parameters
         bf_param_dict = param_dict.copy()
         for param in model_params.columns[:-1]:
             bf_param_dict[param] = model_params[param].values
 
-        print bf_param_dict
-        print [(p, bf_param_dict[p], '\n') for p in list(bf_param_dict)]
         bf_disk_params = bf_param_dict.keys()
-	    # return bf_disk_params
 
-        # intialize model and make fits image
         print 'Making model...'
-        # This obviously has to be generalized.
 
-        def make_model(param_dict, mol):
+        def make_model(param_dict, mol, fourlinefit_tf=False):
+            # If we're doing four-line fitting, then some values are dictionaries of vals.
+            # Just want the relevant line.
+            param_dict_mol = param_dict.copy()
+            if fourlinefit_tf:
+                for p in param_dict_mol:
+                    if type(param_dict_mol[p]) == dict:
+                        param_dict_mol[p] = param_dict_mol[p][mol]
+
             obs = fitting.Observation(mol, cut_baselines=True)
             model = fitting.Model(observation=obs,
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
-            make_fits(model, param_dict)
+            make_fits(model, param_dict_mol)
             analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
                                bestFit=True)
             return model
