@@ -424,6 +424,7 @@ def make_fits(model, param_dict, mol=mol, testing=False):
     fitsout = model.modelfiles_path + '.fits'
     #print "Writing out model fits file to: ", fitsout
     im.writeto(fitsout, overwrite=True)
+    print "Model created; saved to " + fitsout
 
     """
     Not sure why this is commented out; seems like it's important.
