@@ -46,6 +46,7 @@ class MCMCrun:
         """
         self.name = name
         self.runpath = run_path + name
+        self.modelfiles_path = run_path + 'model_files/' + name
         self.image_outpath = './mcmc_results/' + name
 
         # having name/name_chain.csv makes sense
@@ -331,7 +332,7 @@ class MCMCrun:
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
             make_fits(model, param_dict_mol)
-            analysis.plot_fits(self.runpath + '_bestFit.fits', mol=mol,
+            analysis.plot_fits(self.modelfiles_path + '_bestFit.fits', mol=mol,
                                best_fit=True)
             return model
 
