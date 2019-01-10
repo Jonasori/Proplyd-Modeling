@@ -15,7 +15,7 @@ from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 from analysis import plot_fits, plot_model_and_data
 # from run_driver import param_dict
-# from four_line_run_driver import param_dict
+from four_line_run_driver import param_dict
 import fitting
 import plotting
 import run_driver
@@ -69,8 +69,6 @@ class MCMCrun:
         lnprob_vals = self.burnt_in.loc[:, 'lnprob']
         self.groomed = self.burnt_in.loc[lnprob_vals != -np.inf, :]
         print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
-
-
 
 
 

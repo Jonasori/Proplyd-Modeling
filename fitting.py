@@ -1,7 +1,4 @@
-"""Create Observation and Model class that can be read in other files.
-
-Unclear what the value of this is.
-"""
+"""Create Observation and Model class that can be read in other files."""
 
 import os
 import numpy as np
