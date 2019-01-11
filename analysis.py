@@ -323,7 +323,7 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
                          width=bmin, height=bmaj, angle=-bpa,
                          fc='k', ec='w', fill=False, hatch='////////')
             ax.add_artist(el)
-        do_countours = False
+        do_countours = True
         if do_countours is False:
             cmaps = imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                            cmap=cmap, vmin=vmin, vmax=vmax,
