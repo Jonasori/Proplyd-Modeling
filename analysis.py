@@ -526,11 +526,21 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     #cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
     #cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
 
+    im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                       cmap=cmap, vmin=vmin, vmax=vmax)
+
+    cmaps = imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                   cmap=cmap, vmin=vmin, vmax=vmax,
+                   extent=(crop_arcsec, -crop_arcsec,
+                           crop_arcsec, -crop_arcsec))
+
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
-    cax = plt.axes([0.55, 0.08, 0.38, 0.07])
+    cax = plt.axes([0.2, 0.08, 0.8, 0.07])
     cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
     cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
     cbar.set_ticks([vmin, vmax])
+
+
 
 
     fig.tight_layout()
