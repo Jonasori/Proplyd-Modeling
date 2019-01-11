@@ -387,9 +387,8 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     - Get the velocity labels in the right places
 
     Some nice cmaps: magma, rainbow
-
-    Somethings really screwy with the offsets. Fuck
     """
+
     # Read in the data
     """
     modeling = '/Volumes/disks/jonas/modeling/'
@@ -438,8 +437,6 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         bmin = image_header['bmin'] * 3600.0
         bmaj = image_header['bmaj'] * 3600.0
         bpa = image_header['bpa']
-
-
 
     # Set up which channels are getting plotted, checking to make sure its legal
     if real_data.shape[0] < nchans + chan_offset:
@@ -539,6 +536,8 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.93)
     print "Finished plotting; showing"
+
+    # No idea why this is here
     plt.close()
 
     if save is True:
