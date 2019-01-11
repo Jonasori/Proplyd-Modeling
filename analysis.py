@@ -447,7 +447,8 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     n_cols = int(np.ceil(np.sqrt(nchans)))
 
     # Get the plots going
-    fig = plt.figure(figsize=(n_rows * 3, 7))
+    # fig = plt.figure(figsize=(n_rows * 3, 7))
+    fig = plt.figure(figsize=(18, n_rows + 1))
     big_fig = gridspec.GridSpec(1, 3)
 
     data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
