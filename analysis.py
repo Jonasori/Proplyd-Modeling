@@ -521,6 +521,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.add_subplot(ax_m)
         fig.add_subplot(ax_d)
         fig.add_subplot(ax_r)
+        fig.tight_layout()
 
 
     im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
