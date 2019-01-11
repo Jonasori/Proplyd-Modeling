@@ -445,7 +445,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     n_cols = int(np.ceil(np.sqrt(nchans)))
 
     # Get the plots going
-    fig = plt.figure(figsize=(18, 6))
+    fig = plt.figure(figsize=(18, 8))
     big_fig = gridspec.GridSpec(1, 3)
 
     # Add an extra row for the colorbar
@@ -536,7 +536,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
 
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.93)
-    print "Finished plotting; showing"
+    print "Finished plotting"
 
     # No idea why this is here
     plt.close()
@@ -545,6 +545,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.savefig(out_path)
         print "Saved image to " + out_path
     else:
+        print "Showing: "
         fig.show()
 
 
