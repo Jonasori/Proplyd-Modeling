@@ -450,6 +450,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     # Get the plots going
     fig = plt.figure(figsize=(18, 6))
     big_fig = gridspec.GridSpec(1, 3)
+    # Add an extra row for the colorbar
     data_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
                                                 subplot_spec=big_fig[0],
                                                 wspace=wspace, hspace=hspace)
@@ -512,7 +513,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         ax_r.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
 
-        if i == n_rows * (n_cols - 1) and add_beam_d is True:
+        if i == n_rows * (n_cols - 2) and add_beam_d is True:
             el = ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_pix],
                          width=bmin, height=bmaj, angle=-bpa,
                          fc='k', ec='w', fill=False, hatch='////////')
@@ -524,18 +525,15 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.tight_layout()
 
 
-    # im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax], cmap=cmap, vmin=vmin, vmax=vmax)
-
     cmaps = imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                    cmap=cmap, vmin=vmin, vmax=vmax,
-                   extent=(crop_arcsec, -crop_arcsec,
-                           crop_arcsec, -crop_arcsec))
+                   extent=(crop_arcsec, -crop_arcsec, crop_arcsec, -crop_arcsec))
 
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
-    cax = plt.axes([0.2, 0.05, 0.6, 0.05])
+    cax = plt.axes([0.2, 0.1, 0.6, 0.05])
     cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
     cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
-    cbar.set_ticks([vmin, vmax])
+    cbar.set_ticks([vmin, 0, vmax])
 
 
     fig.tight_layout()
