@@ -65,6 +65,29 @@ def cgdisp(imageName, crop=True, contours=True, olay=True, rms=6.8e-3):
     sp.call(call_str)
 
 
+def imspec(imageName, source='both'):
+    """
+    Drop a sweet spectrum.
+
+    image_path (str): full path to image, in .im or .cm format.
+                      e.g. 'data/hco/hco-short.cm'
+    """
+
+    if source.lower() == 'both':
+        r = '(-2, -2, 2, 2)'
+    elif source.lower() == 'a':
+        r = '(-0.8,-0.8,1,0.8)'
+    elif source.lower() == 'b':
+        r = '(-1.6,-1.,-0.7,1)'
+    else:
+        return "Choose A, B, or Both"
+
+    sp.call(['imspec',
+             'in={}'.format(image_path),
+             'region=arcsec,box{}'.format(r),
+             'device=/xs, plot=sum'])
+
+
 def imstat(modelName, ext='.cm', plane_to_check=39):
     """Call imstat to find rms and mean.
 
@@ -246,23 +269,6 @@ def sample_model_in_uvplane(modelPath, mol, option='replace'):
 
     print "completed sampling uvplane; created .im, .vis, .uvf\n\n"
 
-
-def imspec(imageName, source='both'):
-    """Drop a sweet spectrum. Takes in a .im."""
-
-    if source.lower() == 'both':
-        r = '(-2, -2, 2, 2)'
-    elif source.lower() == 'a':
-        r = '(-0.8,-0.8,1,0.8)'
-    elif source.lower() == 'b':
-        r = '(-1.6,-1.,-0.7,1)'
-    else:
-        return "Choose A, B, or Both"
-
-    sp.call(['imspec',
-             'in={}'.format(imageName),
-             'region=arcsec,box{}'.format(r),
-             'device=/xs, plot=sum'])
 
 
 def already_exists(query):

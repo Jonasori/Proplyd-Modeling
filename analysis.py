@@ -187,73 +187,6 @@ def plot_step_duration(dataPath, ns=[10, 20, 50], save=False):
     plt.clf()
 
 
-def full_analysis_plot(pickleLog, timeLog):
-    """Make a plot with date, chi2 vals, number lines, and time costs.
-
-    Doesn't work right now.
-    """
-    run_date = pickleLog.split('/')[-1]
-    both_disks, X2s = depickleLogFile(pickleLog)
-    disk_A, disk_B = both_disks
-    raw_x2, red_x2 = X2s
-    colors = ['red', 'blue']
-    data = pd.read_csv(timeLog + '_stepDurations.csv', sep=',')
-    steps = data['step']
-    times = data['duration'] / 60
-    ns = [10, 20, 50]
-
-    def get_rolling_avg(xs, ys, n):
-        avg_ys = []
-        for i in range(n / 2, len(ys) - n / 2):
-            avg_y = sum(ys[i - n / 2:i + n / 2]) / n
-            avg_ys.append(avg_y)
-
-        return avg_ys
-
-    fig = plt.figure(figsize=(7, 15))
-    outer = gridspec.GridSpec(3, 1, height_ratios=[1, 8, 4], hspace=0.6, wspace=0.2)
-    ax_top = plt.Subplot(fig, outer[0])
-    ax_top.axis('off')
-    ax_top.axis('off')
-    ax_top.text(0.2, 0.2, run_date + ' Run Summary', fontsize=20, fontweight='bold')
-    fig.add_subplot(ax_top)
-    inner = gridspec.GridSpecFromSubplotSpec(len(both_disks[0]), 2,
-                                             subplot_spec=outer[1],
-                                             wspace=0.1, hspace=1)
-    for d in range(2):
-        params = both_disks[d]
-        for i, p in enumerate(params):
-            xs = np.linspace(p['p_min'], p['p_max'], 2)
-            ax = plt.Subplot(fig, inner[(i, d)])
-            ax.set_title(p['name'], fontsize=10)
-            ax.yaxis.set_ticks([])
-            ax.xaxis.set_ticks(p['xvals_queried'])
-            ax.plot(xs, [0] * len(xs), '-k')
-            for bf in p['best_fits']:
-                ax.plot(bf, 0, marker='o', markersize=9, color=colors[d],
-                        markerfacecolor='none', markeredgewidth=2)
-
-            fig.add_subplot(ax)
-
-    ax_bottom = plt.Subplot(fig, outer[2])
-    ax_bottom.plot(steps, times, '-k', linewidth=0.1, label='True time')
-    colors = [
-     'orange', 'red', 'blue', 'green', 'yellow']
-    for i in range(len(ns)):
-        n = ns[i]
-        avg_ys = get_rolling_avg(steps, times, n)
-        ax_bottom.plot(steps[n / 2:-n / 2], avg_ys, linestyle='-',
-                       color=colors[i], linewidth=0.1 * n,
-                       label=str(n) + '-step smoothing')
-
-    ax_bottom.legend()
-    ax_bottom.set_xlabel('Step', fontweight='bold')
-    ax_bottom.set_ylabel('Time (minutes)', fontweight='bold')
-    ax_bottom.set_title('Time per Step for Grid Search Run on ' + run_date,
-                        fontweight='bold', fontsize=14)
-    fig.add_subplot(ax_bottom)
-    fig.show()
-
 
 def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2,
               cmap='magma', save=True, show=True,
@@ -631,8 +564,21 @@ def plot_param_degeneracies(dataPath='gridsearch_runs/nov8_cs/nov8_cs', DI=0, sa
     return mat
 
 
+image_path = 'hco-short110.fits'
+def plot_spectrum(dataPath):
+    """
+    y-axis units: each pixel is in Jy/beam, so want to:
+        - Multiply each by beam
+        - Divide by number of pix (x*y)?
+    """
 
-# The End
+data = fits.getdata(dataPath, ext=0).squeeze()
+header = fits.getheader(image_path, ext=0)
+
+spec = [np.sum(data[i])/data.shape[1] for i in range(data.shape[0])]
+plt.plot(spec)
+plt.show()
+
 
 
 # The End
