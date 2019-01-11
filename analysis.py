@@ -506,9 +506,9 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         # Add info
         ax_d.text(44, 70, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
-        ax_m.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
+        ax_m.text(44, 70, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
-        ax_r.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
+        ax_r.text(44, 70, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
 
         if i == n_rows * (n_cols - 2) and add_beam_d is True:
