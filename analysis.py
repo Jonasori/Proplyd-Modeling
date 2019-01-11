@@ -447,6 +447,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     # Get the plots going
     fig = plt.figure(figsize=(18, 6))
     big_fig = gridspec.GridSpec(1, 3)
+
     # Add an extra row for the colorbar
     data_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
                                                 subplot_spec=big_fig[0],
@@ -503,7 +504,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
         # Add info
-        ax_d.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
+        ax_d.text(50, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
         ax_m.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
