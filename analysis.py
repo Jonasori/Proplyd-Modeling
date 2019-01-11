@@ -481,10 +481,6 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         im_r = ax_r.imshow(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
                            cmap=cmap, vmin=vmin, vmax=vmax)
 
-        # cb_d = fig.colorbar(im_d, ax=ax_d, shrink=0.8)
-        # cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
-        # cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
-
 
         # Aesthetic stuff
         # This is all in arcsecs right now. Should be in pix
@@ -525,6 +521,10 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.add_subplot(ax_m)
         fig.add_subplot(ax_d)
         fig.add_subplot(ax_r)
+
+    cb_d = fig.colorbar(im_d, ax=ax_d, shrink=0.8)
+    cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
+    cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
 
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.9)
