@@ -524,8 +524,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.tight_layout()
 
 
-    im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
-                       cmap=cmap, vmin=vmin, vmax=vmax)
+    # im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax], cmap=cmap, vmin=vmin, vmax=vmax)
 
     cmaps = imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                    cmap=cmap, vmin=vmin, vmax=vmax,
