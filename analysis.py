@@ -450,13 +450,13 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     # Get the plots going
     fig = plt.figure(figsize=(18, 5))
     big_fig = gridspec.GridSpec(1, 3)
-    data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
+    data_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
                                                 subplot_spec=big_fig[0],
                                                 wspace=wspace, hspace=hspace)
-    model_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
+    model_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
                                                  subplot_spec=big_fig[1],
                                                  wspace=wspace, hspace=hspace)
-    resid_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
+    resid_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
                                                  subplot_spec=big_fig[2],
                                                  wspace=wspace, hspace=hspace)
     # Populate the plots
@@ -522,9 +522,16 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.add_subplot(ax_d)
         fig.add_subplot(ax_r)
 
-    cb_d = fig.colorbar(im_d, ax=ax_d, shrink=0.8)
-    cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
-    cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
+    #cb_d = fig.colorbar(im_d, ax=ax_d, shrink=0.8)
+    #cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
+    #cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
+
+    fig.subplots_adjust(wspace=0.1, hspace=0.1)
+    cax = plt.axes([0.55, 0.08, 0.38, 0.07])
+    cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+    cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
+    cbar.set_ticks([vmin, vmax])
+
 
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.9)
