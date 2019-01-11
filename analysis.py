@@ -522,9 +522,6 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         fig.add_subplot(ax_d)
         fig.add_subplot(ax_r)
 
-    #cb_d = fig.colorbar(im_d, ax=ax_d, shrink=0.8)
-    #cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
-    #cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
 
     im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
                        cmap=cmap, vmin=vmin, vmax=vmax)
@@ -535,16 +532,14 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
                            crop_arcsec, -crop_arcsec))
 
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
-    cax = plt.axes([0.25, 0.07, 0.5, 0.05])
+    cax = plt.axes([0.25, 0.1, 0.5, 0.05])
     cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
     cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
     cbar.set_ticks([vmin, vmax])
 
 
-
-
     fig.tight_layout()
-    fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.9)
+    fig.subplots_adjust(wspace=0.1, hspace=0.0, top=0.8)
     print "Finished plotting; showing"
     plt.close()
 
