@@ -441,21 +441,22 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     # Set up which channels are getting plotted, checking to make sure its legal
     if real_data.shape[0] < nchans + chan_offset:
         return 'Aborting; not enough channels to satisfy chan_offset and nchans requested'
-    n_rows = int(np.floor(np.sqrt(nchans)))
+
+    # Add an extra row for the colorbar
+    n_rows = int(np.floor(np.sqrt(nchans))) + 1
     n_cols = int(np.ceil(np.sqrt(nchans)))
 
     # Get the plots going
-    fig = plt.figure(figsize=(18, 7))
+    fig = plt.figure(figsize=(n_rows * 3, 7))
     big_fig = gridspec.GridSpec(1, 3)
 
-    # Add an extra row for the colorbar
-    data_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
+    data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                 subplot_spec=big_fig[0],
                                                 wspace=wspace, hspace=hspace)
-    model_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
+    model_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                  subplot_spec=big_fig[1],
                                                  wspace=wspace, hspace=hspace)
-    resid_ims = gridspec.GridSpecFromSubplotSpec(n_rows + 1, n_cols,
+    resid_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                  subplot_spec=big_fig[2],
                                                  wspace=wspace, hspace=hspace)
     # Populate the plots
@@ -503,12 +504,12 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
         ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
-        # Add info
-        ax_d.text(44, 70, velocity + ' km/s', fontsize=6, color='w',
+        # Add velocity info
+        ax_d.text(44, 80, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
-        ax_m.text(44, 70, velocity + ' km/s', fontsize=6, color='w',
+        ax_m.text(44, 80, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
-        ax_r.text(44, 70, velocity + ' km/s', fontsize=6, color='w',
+        ax_r.text(44, 80, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
 
         if i == n_rows * (n_cols - 2) and add_beam_d is True:
