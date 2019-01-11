@@ -474,12 +474,17 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
             ax_r.set_title('Residuals', weight='bold')
 
         # Plot the data
-        ax_d.imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
-                    cmap=cmap, vmin=vmin, vmax=vmax)
-        ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
-                    cmap=cmap, vmin=vmin, vmax=vmax)
-        ax_r.imshow(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
-                    cmap=cmap, vmin=vmin, vmax=vmax)
+        im_d = ax_d.imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                           cmap=cmap, vmin=vmin, vmax=vmax)
+        im_m = ax_m.imshow(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                           cmap=cmap, vmin=vmin, vmax=vmax)
+        im_r = ax_r.imshow(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                           cmap=cmap, vmin=vmin, vmax=vmax)
+
+        # cb_d = fig.colorbar(im_d, ax=ax_d, shrink=0.8)
+        # cb_m = fig.colorbar(im_m, ax=ax_m, shrink=0.8)
+        # cb_r = fig.colorbar(im_r, ax=ax_r, shrink=0.8)
+
 
         # Aesthetic stuff
         # This is all in arcsecs right now. Should be in pix
@@ -490,11 +495,13 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         ax_d.set_yticklabels([])
         ax_d.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
         ax_d.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
+
         ax_m.grid(False)
         ax_m.set_xticklabels([])
         ax_m.set_yticklabels([])
         ax_m.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
         ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
+
         ax_r.grid(False)
         ax_r.set_xticklabels([])
         ax_r.set_yticklabels([])
