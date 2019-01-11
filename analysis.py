@@ -504,7 +504,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
         ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
         # Add info
-        ax_d.text(44, 98, velocity + ' km/s', fontsize=6, color='w',
+        ax_d.text(44, 58, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
         ax_m.text(44, 78, velocity + ' km/s', fontsize=6, color='w',
                 horizontalalignment='center', verticalalignment='center')
