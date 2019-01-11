@@ -530,7 +530,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
                    extent=(crop_arcsec, -crop_arcsec, crop_arcsec, -crop_arcsec))
 
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
-    cax = plt.axes([0.2, 0.1, 0.6, 0.08])
+    cax = plt.axes([0.2, 0.05, 0.6, 0.07])
     cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
     cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
     cbar.set_ticks([vmin, vmax])
