@@ -542,6 +542,7 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
 
     if save is True:
         fig.savefig(out_path)
+        print "Saved image to " + out_path
     else:
         fig.show()
 
