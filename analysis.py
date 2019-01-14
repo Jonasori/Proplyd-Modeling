@@ -37,13 +37,13 @@ class Run:
 
         self.run_date = path.split('/')[-1]
         self.out_path = './gridsearch_results/' + self.run_date
-        self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol, uv_cut)
+        self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol,
+                                                            str(lines[mol]['baseline_cutoff']))
 
         log = depickleLogFile()
         self.steps = log[0]
         self.raw_x2 = log[1][0]
         self.red_x2 = log[1][1]
-        uv_cut = str(lines[mol]['baseline_cutoff'])
 
 
         self.model_image = fits.getdata(self.path, ext=0).squeeze()
