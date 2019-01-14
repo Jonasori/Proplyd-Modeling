@@ -406,7 +406,7 @@ class Run:
                               for i in range(self.data_image.shape[0])])
         resid_spec = data_spec - model_spec
 
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(5, 15))
         ax1.plot(data_spec)
         ax2.plot(model_spec)
         ax3.plot(resid_spec)
@@ -417,7 +417,10 @@ class Run:
 
         ymin = min([max(l) for l in [model_spec, data_spec, resid_spec]])
         ymax = min([max(l) for l in [model_spec, data_spec, resid_spec]])
-        ax1.set_ylim()
+
+        ax1.set_ylim(ymin, ymax)
+        ax2.set_ylim(ymin, ymax)
+        ax3.set_ylim(ymin, ymax)
         plt.tight_layout()
 
         if save:
