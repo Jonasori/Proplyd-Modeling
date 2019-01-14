@@ -741,9 +741,6 @@ def plot_model_and_data(modelPath, mol='cs', save=False, cmap='magma'):
     resid_path = modeling + 'gridsearch_runs/nov27_cs/nov27_cs_bestFit_resid.fits'
     data_path = modeling + 'data/cs/cs-short0.fits'
     """
-    # Figure out which line we're looking at.
-    for mol in ['hco', 'cs', 'co', 'hcn']:
-        break if mol in modelPath
 
     # modelPath = './gridsearch_runs/' + date + '_' + mol + '/' + date + '_' + mol
     model_path = modelPath + '_bestFit.fits'
@@ -993,7 +990,6 @@ def plot_spectrum(dataPath):
     spec = [np.sum(data[i])/data.shape[1] for i in range(data.shape[0])]
     plt.plot(spec)
     plt.show()
-
 
 
 
