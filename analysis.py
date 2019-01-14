@@ -425,7 +425,8 @@ class Run:
 
         ymin = min([min(l) for l in [model_spec, data_spec, resid_spec]])
         ymax = max([max(l) for l in [model_spec, data_spec, resid_spec]])
-        ax1.xlabel('Channel')
+        ax1.set_xlabel('Channel')
+        ax1.set_ylabel('Jy/Beam')
         ax1.set_ylim(ymin, ymax)
         ax2.set_ylim(ymin, ymax)
         ax3.set_ylim(ymin, ymax)
