@@ -411,9 +411,9 @@ class Run:
         ax2.plot(model_spec)
         ax3.plot(resid_spec)
 
-        ax1.set_title('Data Spectrum', weight=bold)
-        ax2.set_title('Model Spectrum', weight=bold)
-        ax3.set_title('Resid Spectrum', weight=bold)
+        ax1.set_title('Data Spectrum', weight='bold')
+        ax2.set_title('Model Spectrum', weight='bold')
+        ax3.set_title('Resid Spectrum', weight='bold')
 
         ymin = min([max(l) for l in [model_spec, data_spec, resid_spec]])
         ymax = min([max(l) for l in [model_spec, data_spec, resid_spec]])
