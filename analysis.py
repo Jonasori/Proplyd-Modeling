@@ -410,7 +410,7 @@ class Run:
 
         chans = np.arange(len(model_spec))
 
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
         ax1.plot(data_spec)
         ax2.plot(model_spec)
         ax3.plot(resid_spec)
@@ -425,7 +425,7 @@ class Run:
 
         ymin = min([min(l) for l in [model_spec, data_spec, resid_spec]])
         ymax = max([max(l) for l in [model_spec, data_spec, resid_spec]])
-
+        ax1.xlabel('Channel')
         ax1.set_ylim(ymin, ymax)
         ax2.set_ylim(ymin, ymax)
         ax3.set_ylim(ymin, ymax)
