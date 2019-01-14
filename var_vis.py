@@ -88,13 +88,17 @@ def var_vis(path_to_source):
             print "IUV: ", iuv
             sys.stdout.write('\033[F')
 
+            # Boolean area (mask, basically) I think?
             w = (np.abs(u-u[iuv]) < uvwidth) & (np.abs(v-v[iuv]) < uvwidth)
-            s = np.argsort(np.sqrt((v[w]-v[iuv])**2+(u[w]-u[iuv])**2))
+            s = np.argsort(np.sqrt((v[w]-v[iuv])**2 + (u[w]-u[iuv])**2))
 
             # REALS
+            # real_wf = (real[w, 0][s] != 0)
             real_wf = (real[w][s] != 0)
             real_nclose_arr[iuv] = real_wf.sum()
             if real_wf.sum() > nclose:
+                # This is making all the channels the same.
+                # Need two dimensions for looping.
                 real_weight[iuv] = 1/np.std(real[w][s][real_wf][:nclose])**2
             else:
                 # print iuv,real_wf.sum(),np.sqrt(u[iuv]**2+v[iuv]**2)

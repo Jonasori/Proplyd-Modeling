@@ -30,6 +30,8 @@ nwalkers = 50
 nsteps = 400
 
 
+
+
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
 run_name = today
 run_name_basename = run_name
