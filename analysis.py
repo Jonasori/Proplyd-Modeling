@@ -40,7 +40,7 @@ class Run:
         self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol,
                                                             str(lines[mol]['baseline_cutoff']))
 
-        log = depickleLogFile()
+        log = self.depickleLogFile()
         self.steps = log[0]
         self.raw_x2 = log[1][0]
         self.red_x2 = log[1][1]
