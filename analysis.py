@@ -66,7 +66,7 @@ class Run:
 
         This can be cleaned up significantly, but is functional.
         """
-        df = pickle.load(open((self.path + '_step-log.pickle', 'rb'))
+        df = pickle.load(open(self.path + '_step-log.pickle', 'rb'))
         df_a, df_b = df.loc['A', :], df.loc['B', :]
         min_X2_a = min(df_a['Reduced Chi2'])
         min_X2_b = min(df_b['Reduced Chi2'])
