@@ -46,9 +46,9 @@ class Run:
         self.red_x2 = log[1][1]
 
 
-        self.model_image = fits.getdata(self.path, ext=0).squeeze()
+        self.model_image = fits.getdata(self.path + '_bestFit.fits', ext=0).squeeze()
+        self.model_header = fits.getheader(self.path + '_bestFit.fits', ext=0)
         self.data_image = fits.getdata(self.data_path, ext=0).squeeze()
-        self.model_header = fits.getheader(self.path, ext=0)
         self.data_header = fits.getheader(self.data_path, ext=0)
 
 
