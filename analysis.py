@@ -36,8 +36,8 @@ class Run:
         self.mol = self.get_line()
 
         self.run_date = path.split('/')[-1]
-        self.out_path = './gridsearch_results/' + run_date
-        self.data_path = './data/{}/{}-short{}.fits'.format(mol, mol, uv_cut)
+        self.out_path = './gridsearch_results/' + self.run_date
+        self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol, uv_cut)
 
         log = depickleLogFile()
         self.steps = log[0]
