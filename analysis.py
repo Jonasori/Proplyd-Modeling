@@ -33,18 +33,17 @@ resultsPath = '/Volumes/disks/jonas/modeling/gridsearch_results/'
 class Run:
     def __init__(self, path):
         self.path = path
-
         self.mol = get_line()
+
         self.run_date = path.split('/')[-1]
-        self.data_path = './data/{}/'
         self.out_path = './gridsearch_results/' + run_date
+        self.data_path = './data/{}/{}-short{}.fits'.format(mol, mol, uv_cut)
 
         log = depickleLogFile()
-        self.data = log[0]
+        self.steps = log[0]
         self.raw_x2 = log[1][0]
         self.red_x2 = log[1][1]
         uv_cut = str(lines[mol]['baseline_cutoff'])
-        self.data_path = './data/{}/{}-short{}.fits'.format(mol, mol, uv_cut)
 
 
         self.model_image = fits.getdata(self.path, ext=0).squeeze()
@@ -145,7 +144,83 @@ class Run:
         plt.clf()
 
 
-    def model_data_residual(self, save=False, cmap='magma'):
+    def plot_gridSearch_log(self, save=False):
+        """
+        Plot where the best-fit values from a grid search fall.
+
+        Plot where the best-fit value(s) stand(s) relative to the range queried in
+        a given grid search run.
+
+        Args:
+            fname (str): Name of the pickled step log from the grid search.
+            Assumes fname is './models/dateofrun/dateofrun'
+        """
+        plt.close()
+
+        run_date = self.run_date
+        both_disks, X2s = self.steps, (self.raw_x2, self.red_x2)
+
+        # Don't plot the parameters that weren't fit.
+        # Keep the statics in case we want to do something with them later
+        disk_A_full, disk_B_full = both_disks
+        disk_A, disk_B = [], []
+        disk_A_statics, disk_B_statics = [], []
+        for param in disk_A_full:
+            if len(param['xvals_queried']) > 1:
+                disk_A.append(param)
+            else:
+                disk_A_statics.append(param)
+
+        for param in disk_B_full:
+            if len(param['xvals_queried']) > 1:
+                disk_B.append(param)
+            else:
+                disk_B_statics.append(param)
+        both_disks = [disk_A, disk_B]
+
+        raw_x2, red_x2 = X2s
+        colors = ['red', 'blue']
+        height = max(len(disk_A), len(disk_B)) + 1
+        f, axarr = plt.subplots(height, 2, figsize=[8, height])
+        axarr[(0, 0)].axis('off')
+        axarr[(0, 1)].axis('off')
+        axarr[(0, 0)].text(0.2, -0.2, 'Summary of\n' + run_date + ' Run',
+                           fontsize=16, fontweight='bold')
+        str_rawX2 = str(round(min(raw_x2), 2))
+        str_redX2 = str(round(min(red_x2), 6))
+        chi_str = '       Min. Raw Chi2: {}\nMin. Reduced Chi2: {}'.format(str_rawX2, str_redX2)
+        axarr[(0, 1)].text(0, 0, chi_str, fontsize=10)
+        for d in [0, 1]:
+            params = both_disks[d]
+            for i, p in enumerate(params, 1):
+                xs = np.linspace(p['p_min'], p['p_max'], 2)
+                axarr[(i, d)].set_title(p['name'], fontsize=10, weight='bold')
+                axarr[(i, d)].yaxis.set_ticks([])
+                axarr[(i, d)].xaxis.set_ticks(p['xvals_queried'])
+                if len(p['xvals_queried']) > 5:
+                    axarr[(i, d)].set_xticklabels(p['xvals_queried'],
+                                                  rotation=45)
+                axarr[(i, d)].plot(xs, [0] * 2, '-k')
+                for bf in p['best_fits']:
+                    # Make the opacity proportional to how many best fits there are.
+                    a = 1 / (2 * len(p['best_fits']))
+                    axarr[(i, d)].plot(bf, 0, marker='o', markersize=10,
+                                       color='black', alpha=a)
+                    axarr[(i, d)].plot(bf, 0, marker='o', markersize=9,
+                                       color=colors[d], markerfacecolor='none',
+                                       markeredgewidth=3)
+                # It'd be nice to not have it fill empty spaces with blank grids.
+                # if len(params) < height:
+
+
+        plt.tight_layout()
+        if save is True:
+            plt.savefig(resultsPath + run_date + '_results.pdf')
+        else:
+            plt.show()
+
+
+    def DMR_images(self, save=False, cmap='magma'):
         """Plot a triptych of data, model, and residuals.
 
         It would be nice to have an option to also plot the grid search results.
@@ -317,8 +392,43 @@ class Run:
             fig.show()
 
 
+    def DMR_spectra(self, save=False):
+        """
+        Plot a model/data/resid triptych of spectra
+        y-axis units: each pixel is in Jy/beam, so want to:
+            - Multiply each by beam
+            - Divide by number of pix (x*y)?
+        """
+
+        model_spec = [np.sum(model_image[i])/model_image.shape[1]
+                      for i in range(model_image.shape[0])]
+        data_spec = [np.sum(data_image[i])/data_image.shape[1]
+                     for i in range(data_image.shape[0])]
+        resid_spec = data_spec - model_spec
+
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+        ax1.plot(data_spec)
+        ax2.plot(model_spec)
+        ax3.plot(resid_spec)
+
+        ax1.set_title('Data Spectrum', weight=bold)
+        ax2.set_title('Model Spectrum', weight=bold)
+        ax3.set_title('Resid Spectrum', weight=bold)
+
+        ymin = min([max(l) for l in [model_spec, data_spec, resid_spec]])
+        ymax = min([max(l) for l in [model_spec, data_spec, resid_spec]])
+        ax1.set_ylim()
+        plt.tight_layout()
+
+        if save:
+            plt.savefig(self.out_path + '_spectra.png', dpi=300)
+        else:
+            plt.show()
+
+
     def param_degeneracies(self, DI=0, save=False):
-        """Plot Chi2 as a function of two params.
+        """
+        Plot Chi2 as a function of two params.
 
         I think this works now.
         """
@@ -396,40 +506,6 @@ class Run:
         else:
             plt.show(block=False)
         return mat
-
-
-    def spectra(self, save=False):
-        """
-        Plot a model/data/resid triptych of spectra
-        y-axis units: each pixel is in Jy/beam, so want to:
-            - Multiply each by beam
-            - Divide by number of pix (x*y)?
-        """
-
-        model_spec = [np.sum(model_image[i])/model_image.shape[1]
-                      for i in range(model_image.shape[0])]
-        data_spec = [np.sum(data_image[i])/data_image.shape[1]
-                     for i in range(data_image.shape[0])]
-        resid_spec = data_spec - model_spec
-
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-        ax1.plot(data_spec)
-        ax2.plot(model_spec)
-        ax3.plot(resid_spec)
-
-        ax1.set_title('Data Spectrum', weight=bold)
-        ax2.set_title('Model Spectrum', weight=bold)
-        ax3.set_title('Resid Spectrum', weight=bold)
-
-        ymin = min([max(l) for l in [model_spec, data_spec, resid_spec]])
-        ymax = min([max(l) for l in [model_spec, data_spec, resid_spec]])
-        ax1.set_ylim()
-        plt.tight_layout()
-
-    if save:
-        plt.savefig(self.out_path + '_spectra.png', dpi=300)
-    else:
-        plt.show()
 
 
 
