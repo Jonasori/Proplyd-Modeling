@@ -414,9 +414,9 @@ class Run:
         #ax2.plot(model_spec)
         #ax3.plot(resid_spec)
 
-        sns.pointplot(x=chans, y=data_spec, ax=ax1)
-        sns.pointplot(x=chans, y=model_spec, ax=ax2)
-        sns.pointplot(x=chans, y=resid_spec, ax=ax3)
+        sns.pointplot(x=chans, y=data_spec, ax=ax1, markersize=0)
+        sns.pointplot(x=chans, y=model_spec, ax=ax2, markersize=0)
+        sns.pointplot(x=chans, y=resid_spec, ax=ax3, markersize=0)
 
         ax1.set_title('Data Spectrum', weight='bold')
         ax2.set_title('Model Spectrum', weight='bold')
