@@ -4,7 +4,9 @@
 *.mp
 *.dat
 mcmc_runs
+mcmc_results
 gridsearch_runs
+gridsearch_results
 disk_model
 data
 *.pyc
