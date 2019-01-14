@@ -406,10 +406,16 @@ class Run:
                               for i in range(self.data_image.shape[0])])
         resid_spec = data_spec - model_spec
 
+        chans = np.arange(len(model_spec))
+
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
-        ax1.plot(data_spec)
-        ax2.plot(model_spec)
-        ax3.plot(resid_spec)
+        #ax1.plot(data_spec)
+        #ax2.plot(model_spec)
+        #ax3.plot(resid_spec)
+
+        sns.pointplot(x=chans, y=data_spec, ax=ax1)
+        sns.pointplot(x=chans, y=model_spec, ax=ax2)
+        sns.pointplot(x=chans, y=resid_spec, ax=ax3)
 
         ax1.set_title('Data Spectrum', weight='bold')
         ax2.set_title('Model Spectrum', weight='bold')
