@@ -33,7 +33,7 @@ resultsPath = '/Volumes/disks/jonas/modeling/gridsearch_results/'
 class Run:
     def __init__(self, path):
         self.path = path
-        self.mol = get_line()
+        self.mol = self.get_line()
 
         self.run_date = path.split('/')[-1]
         self.out_path = './gridsearch_results/' + run_date
