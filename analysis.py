@@ -572,12 +572,12 @@ def plot_spectrum(dataPath):
         - Divide by number of pix (x*y)?
     """
 
-data = fits.getdata(dataPath, ext=0).squeeze()
-header = fits.getheader(image_path, ext=0)
+    data = fits.getdata(dataPath, ext=0).squeeze()
+    header = fits.getheader(image_path, ext=0)
 
-spec = [np.sum(data[i])/data.shape[1] for i in range(data.shape[0])]
-plt.plot(spec)
-plt.show()
+    spec = [np.sum(data[i])/data.shape[1] for i in range(data.shape[0])]
+    plt.plot(spec)
+    plt.show()
 
 
 
