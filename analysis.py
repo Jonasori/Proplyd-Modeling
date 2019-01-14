@@ -400,10 +400,10 @@ class Run:
             - Divide by number of pix (x*y)?
         """
 
-        model_spec = [np.sum(self.model_image[i])/self.model_image.shape[1]
-                      for i in range(self.model_image.shape[0])]
-        data_spec = [np.sum(self.data_image[i])/self.data_image.shape[1]
-                     for i in range(self.data_image.shape[0])]
+        model_spec = np.array([np.sum(self.model_image[i])/self.model_image.shape[1]
+                               for i in range(self.model_image.shape[0])])
+        data_spec = np.array([np.sum(self.data_image[i])/self.data_image.shape[1]
+                              for i in range(self.data_image.shape[0])])
         resid_spec = data_spec - model_spec
 
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
