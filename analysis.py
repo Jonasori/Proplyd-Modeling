@@ -410,7 +410,7 @@ class Run:
 
         chans = np.arange(len(model_spec))
 
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
         ax1.plot(data_spec)
         ax2.plot(model_spec)
         ax3.plot(resid_spec)
