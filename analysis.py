@@ -24,6 +24,7 @@ from astropy.visualization import astropy_mpl_style
 
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 
+sns.set_style('white')
 plt.style.use(astropy_mpl_style)
 matplotlib.rcParams['font.sans-serif'] = 'Times'
 matplotlib.rcParams['font.family'] = 'serif'
@@ -414,9 +415,9 @@ class Run:
         #ax2.plot(model_spec)
         #ax3.plot(resid_spec)
 
-        sns.pointplot(x=chans, y=data_spec, ax=ax1, markersize=0)
-        sns.pointplot(x=chans, y=model_spec, ax=ax2, markersize=0)
-        sns.pointplot(x=chans, y=resid_spec, ax=ax3, markersize=0)
+        sns.pointplot(x=chans, y=data_spec, ax=ax1, markers=[])
+        sns.pointplot(x=chans, y=model_spec, ax=ax2, markers=[])
+        sns.pointplot(x=chans, y=resid_spec, ax=ax3, markers=[])
 
         ax1.set_title('Data Spectrum', weight='bold')
         ax2.set_title('Model Spectrum', weight='bold')
@@ -429,6 +430,7 @@ class Run:
         ax2.set_ylim(ymin, ymax)
         ax3.set_ylim(ymin, ymax)
         plt.tight_layout()
+        sns.despine()
 
         if save:
             plt.savefig(self.out_path + '_spectra.png', dpi=300)
