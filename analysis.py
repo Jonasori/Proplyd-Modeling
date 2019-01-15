@@ -411,9 +411,9 @@ class Run:
         chans = np.arange(len(model_spec))
 
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
-        ax1.plot(data_spec)
-        ax2.plot(model_spec)
-        ax3.plot(resid_spec)
+        ax1.plot(data_spec, color='midnightblue')
+        ax2.plot(model_spec, color='steelblue')
+        ax3.plot(resid_spec, color='cornflowerblue')
 
         # sns.pointplot(x=chans, y=data_spec, color='midnightblue', ax=ax1, markers=['.'], markersize=0.1)
         # sns.pointplot(x=chans, y=model_spec, color='steelblue', ax=ax2, markers=['.'], markersize=0.1)
