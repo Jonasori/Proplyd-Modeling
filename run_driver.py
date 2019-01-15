@@ -91,7 +91,8 @@ param_dict = {
     'chanmins':            chanmins,
     'nchans':              n_chans,
     'imres':               0.045,             # arcsec/pixel
-    'imwidth':             256                # width of image (pixels)
+    'imwidth':             256,               # width of image (pixels)
+    'mol':                 mol                # Emission line
     }
 
 

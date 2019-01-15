@@ -339,7 +339,7 @@ class MCMCrun:
         models = []
         # If it's a one line fit, it's easy.
         if not fourlinefit_tf:
-            models.append(make_model(bf_param_dict))
+            models.append(make_model(bf_param_dict, bf_param_dict['mol']))
 
         else:
             # This assumes that outer radius and abundance are the only things
