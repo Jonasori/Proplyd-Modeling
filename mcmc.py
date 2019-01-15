@@ -14,7 +14,7 @@ from emcee.utils import MPIPool
 from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 #from analysis import plot_fits
-from four_line_run_driver import make_fits
+#from four_line_run_driver import make_fits
 import fitting
 import plotting
 import run_driver
