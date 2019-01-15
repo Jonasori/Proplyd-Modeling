@@ -176,11 +176,11 @@ class GridSearch_Run:
         print "\nPlotting best-fit param number lines..."
 
         run_date = self.run_date
-        both_disks, X2s = self.steps
+        # both_disks = self.steps
 
         # Don't plot the parameters that weren't fit.
         # Keep the statics in case we want to do something with them later
-        disk_A_full, disk_B_full = both_disks
+        disk_A_full, disk_B_full = self.steps
         disk_A, disk_B = [], []
         disk_A_statics, disk_B_statics = [], []
         for param in disk_A_full:
