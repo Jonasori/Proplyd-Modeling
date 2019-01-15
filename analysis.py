@@ -29,11 +29,10 @@ plt.style.use(astropy_mpl_style)
 matplotlib.rcParams['font.sans-serif'] = 'Times'
 matplotlib.rcParams['font.family'] = 'serif'
 
-resultsPath = '/Volumes/disks/jonas/modeling/gridsearch_results/'
 
 
 class Run:
-    def __init__(self, path):
+    def __init__(self, path, save_all=False):
         self.path = path
         self.mol = self.get_line()
 
@@ -46,7 +45,6 @@ class Run:
         self.steps = log[0]
         self.raw_x2 = log[1][0]
         self.red_x2 = log[1][1]
-
 
         self.model_image = fits.getdata(self.path + '_bestFit.fits', ext=0).squeeze()
         self.model_header = fits.getheader(self.path + '_bestFit.fits', ext=0)
@@ -133,20 +131,20 @@ class Run:
                      linewidth=0.1 * n, label=str(n) + '-step smoothing')
 
         # Not sure this is right.
-        run_date = dataPath.split('/')[-2]
         plt.legend()
         plt.xlabel('Step', fontweight='bold')
         plt.ylabel('Time (minutes)', fontweight='bold')
-        plt.title('Time per Step for Grid Search Run on ' + run_date,
+        plt.title('Time per Step for Grid Search Run for ' + self.run_date,
                   fontweight='bold', fontsize=14)
         if save is True:
-            plt.savefig(resultsPath + run_date + '_durations.png', dpi=200)
+            plt.savefig(self.out_path + '_durations.pdf')
+            print "Saved to " + self.out_path + '_durations.pdf'
         else:
             plt.show()
         plt.clf()
 
 
-    def plot_gridSearch_log(self, save=False):
+    def best_fit_params(self, save=False):
         """
         Plot where the best-fit values from a grid search fall.
 
@@ -217,12 +215,13 @@ class Run:
 
         plt.tight_layout()
         if save is True:
-            plt.savefig(resultsPath + run_date + '_results.pdf')
+            plt.savefig(self.out_path + '_bestfit_params.pdf')
+            print "Saved to " + self.out_path + '_bestfit_params.pdf'
         else:
             plt.show()
 
 
-    def DMR_images(self, save=False, cmap='magma'):
+    def DMR_images(self, cmap='magma', save=False):
         """Plot a triptych of data, model, and residuals.
 
         It would be nice to have an option to also plot the grid search results.
@@ -231,14 +230,6 @@ class Run:
         - Get the velocity labels in the right places
 
         Some nice cmaps: magma, rainbow
-        """
-
-        # Read in the data
-        """
-        modeling = '/Volumes/disks/jonas/modeling/'
-        model_path = modeling + 'gridsearch_runs/nov27_cs/nov27_cs_bestFit.fits'
-        resid_path = modeling + 'gridsearch_runs/nov27_cs/nov27_cs_bestFit_resid.fits'
-        data_path = modeling + 'data/cs/cs-short0.fits'
         """
         plt.close()
 
@@ -332,20 +323,17 @@ class Run:
             # crop_arcsec of 2 translates to 88 pixels across
             # 0, 0 in upper left
             ax_d.grid(False)
-            ax_d.set_xticklabels([])
-            ax_d.set_yticklabels([])
+            ax_d.set_xticklabels([]), ax_d.set_yticklabels([])
             ax_d.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_d.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             ax_m.grid(False)
-            ax_m.set_xticklabels([])
-            ax_m.set_yticklabels([])
+            ax_m.set_xticklabels([]), ax_m.set_yticklabels([])
             ax_m.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             ax_r.grid(False)
-            ax_r.set_xticklabels([])
-            ax_r.set_yticklabels([])
+            ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
             ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
@@ -388,7 +376,7 @@ class Run:
 
         if save is True:
             fig.savefig(out_path)
-            print "Saved image to " + out_path
+            print "Saved to " + out_path
         else:
             print "Showing"
             fig.show()
@@ -428,7 +416,8 @@ class Run:
         sns.despine()
 
         if save:
-            plt.savefig(self.out_path + '_spectra.png', dpi=300)
+            plt.savefig(self.out_path + '_spectra.pdf')
+            print "Saved to " + self.out_path + '_spectra.pdf'
         else:
             plt.show()
 
@@ -514,6 +503,12 @@ class Run:
             plt.show(block=False)
         return mat
 
+    # If we want to save all the plots, go ahead and do it.
+    if save_all:
+        self.best_fit_params(save=True)
+        self.step_duration(save=True)
+        self.DMR_spectra(save=True)
+        self.DMR_images(save=True)
 
 
 
@@ -675,8 +670,9 @@ def plot_step_duration(dataPath, ns=[10, 20, 50], save=False):
     plt.ylabel('Time (minutes)', fontweight='bold')
     plt.title('Time per Step for Grid Search Run on ' + run_date,
               fontweight='bold', fontsize=14)
+
     if save is True:
-        plt.savefig(resultsPath + run_date + '_durations.png', dpi=200)
+        plt.savefig(resultsPath + run_date + '_durations.pdf')
     else:
         plt.show()
     plt.clf()
