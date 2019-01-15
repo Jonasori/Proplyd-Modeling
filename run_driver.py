@@ -6,6 +6,7 @@ HERE AND IN FOUR LINE DRIVER
 
 # Import some python packages
 import os
+import pickle
 import argparse
 import numpy as np
 import subprocess as sp
@@ -92,6 +93,9 @@ param_dict = {
     'imres':               0.045,             # arcsec/pixel
     'imwidth':             256                # width of image (pixels)
     }
+
+# Save out the param dict for accessing when we want
+pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'wb'))
 
 
 # Note that this is what is fed to MCMC to dictate how the walkers move, not

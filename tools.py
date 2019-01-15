@@ -385,6 +385,126 @@ def tclean(mol='hco', output_path='./test'):
 
 
 
+def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='magma', save=False, use_cut_baselines=True, best_fit=False):
+    """
+    Plot some fits image data.
+
+    The cropping currently assumes a square image. That could be easily
+    fixed by just adding y_center, y_min, and y_max and putting them in the
+    imshow() call.
+    Args:
+        image_path (str): full path, including filetype, to image.
+        crop_arcsec (float): How many arcseconds from 0 should the axis limits be set?
+        nchans_to_cut (int): cut n/2 chans off the front and end
+        cmap (str): colormap to use. Magma, copper, afmhot, CMRmap, CMRmap(_r) are nice
+
+    Known Bugs:
+        - Some values of n_chans_to_cut give a weird error. I don't really wanna
+            figure that out right now
+
+    To Do:
+        - Maybe do horizontal layout for better screenshots for Evernote.
+    """
+    real_data = fits.getdata(image_path, ext=0).squeeze()
+    header = fits.getheader(image_path, ext=0)
+    if scale_cbar_to_mol is True:
+        dataPath = get_data_path(mol, use_cut_baselines=True)
+        real_data = fits.getdata(dataPath + '.fits', ext=0).squeeze()
+        vmin = 0
+        vmin = np.nanmin(real_data)
+        vmax = np.nanmax(real_data)
+    else:
+        vmin = np.nanmin(real_data)
+        vmax = np.nanmax(real_data)
+    offsets_dA, offsets_dB = offsets[0], offsets[1]
+    add_beam = True if 'bmaj' in header else False
+    if add_beam is True:
+        bmin = header['bmin'] * 3600.0
+        bmaj = header['bmaj'] * 3600.0
+        bpa = header['bpa']
+    x_center = int(np.floor(real_data.shape[1] / 2))
+    if crop_arcsec == 0:
+        crop_arcsec = 11.52
+    crop_pix = int(crop_arcsec / 0.045)
+    xmin, xmax = x_center - crop_pix, x_center + crop_pix
+    chanstep_vel = header['CDELT3'] * 0.001
+    chan0_vel = header['CRVAL3'] * 0.001 - header['CRPIX3'] * chanstep_vel
+    nchans_to_cut = 12
+    chan_offset = 2 * int(nchans_to_cut / 3)
+    nchans = real_data.shape[0] - nchans_to_cut
+    n_rows = int(np.floor(np.sqrt(nchans)))
+    n_cols = int(np.ceil(np.sqrt(nchans)))
+    chan_offset = 4
+    fig = figure(figsize=[n_rows, n_cols])
+    for i in range(nchans):
+        chan = i + int(np.floor(nchans_to_cut / 2))
+        velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
+        ax = fig.add_subplot(n_cols, n_rows, i + 1)
+        ax.grid(False)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.text(0, -0.8 * crop_arcsec, velocity + ' km/s',
+                fontsize=6, color='w',
+                horizontalalignment='center', verticalalignment='center')
+        if i == n_rows * (n_cols - 1) and add_beam is True:
+            el = ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_arcsec],
+                         width=bmin, height=bmaj, angle=-bpa,
+                         fc='k', ec='w', fill=False, hatch='////////')
+            ax.add_artist(el)
+        do_countours = False
+        if do_countours is False:
+            cmaps = imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                           cmap=cmap, vmin=vmin, vmax=vmax,
+                           extent=(crop_arcsec, -crop_arcsec,
+                                   crop_arcsec, -crop_arcsec))
+        else:
+            levels = np.arange(8) * 0.001785
+            cmaps = contourf(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                             cmap=cmap, vmin=vmin, vmax=vmax,
+                             extent=(crop_arcsec, -crop_arcsec,
+                                     crop_arcsec, -crop_arcsec),
+                             levels=[1, 2, 3, 4, 5, 6])
+        ax.plot(offsets_dA[0], offsets_dA[1], '+g')
+        ax.plot(offsets_dB[0], offsets_dB[1], '+g')
+
+    inset_cbar = True
+    if inset_cbar is True:
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=0.1, hspace=0.1)
+        cax = plt.axes([0.55, 0.08, 0.38, 0.07])
+        cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+        cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
+        cbar.set_ticks([vmin, vmax])
+    else:
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=0.1, hspace=0.1, top=0.9)
+        cax = plt.axes([0.1, 0.95, 0.81, 0.025])
+        cbar = colorbar(cmaps, cax=cax, orientation='horizontal')
+        cbar.set_label('Jy/beam', labelpad=-12, fontsize=12, weight='bold')
+        cbar.set_ticks([vmin, vmax])
+    if save is True:
+        suffix = ''
+        if 'data' in image_path:
+            resultsPath = 'data/' + mol + '/images/'
+            if '-short' in image_path:
+                suffix = '-' + image_path.split('-')[1].split('.')[0]
+        else:
+            if 'mcmc' in image_path:
+                resultsPath = 'mcmc_results/'
+            else:
+                if 'gridsearch' in image_path:
+                    resultsPath = 'gridsearch_results/'
+                else:
+                    return 'Failed to make image; specify save location.'
+        run_name = image_path.split('/')[-2]
+        suffix += '_bestFit-' + mol if best_fit is True else ''
+        outpath = resultsPath + run_name + suffix + '_image.pdf'
+        plt.savefig(outpath)
+        print 'Image saved to ' + outpath
+    if show is True:
+        plt.show(block=False)
+    plt.gca()
+
 
 
 

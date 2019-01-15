@@ -14,8 +14,7 @@ from emcee.utils import MPIPool
 from constants import today, mol #, nwalkers, nsteps
 from tools import already_exists, remove
 #from analysis import plot_fits
-# from run_driver import param_dict
-from four_line_run_driver import param_dict, make_fits
+from four_line_run_driver import make_fits
 import fitting
 import plotting
 import run_driver
@@ -48,9 +47,9 @@ class MCMCrun:
         self.runpath = run_path + name
         self.modelfiles_path = run_path + 'model_files/' + name
         self.image_outpath = './mcmc_results/' + name
-
-        # having name/name_chain.csv makes sense
+        self.param_dict = pickle.load(open(run_path + 'param_dict.pickle', 'rb'))
         self.main = pd.read_csv(self.runpath + '_chain.csv')
+
         """
         if path:
             self.main = pd.read_csv(path + '.csv')

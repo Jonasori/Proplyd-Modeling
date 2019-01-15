@@ -146,6 +146,8 @@ for mol in mols:
     param_dict['nchans'][mol] = n_chans
     param_dict['jnum'][mol] = lines[mol]['jnum']
 
+# Save out the param dict for accessing when we want
+pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'wb'))
 
 
 # Note that this is what is fed to MCMC to dictate how the walkers move, not
@@ -153,8 +155,6 @@ for mol in mols:
 # The order matters here (for comparing in lnprob)
 # Note that param_info is of form:
 # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
-
-
 param_info = [('atms_temp_A',       300,     150,      (0, np.inf)),
               ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
               ('incl_A',            65.,     30.,      (0, 90.)),
