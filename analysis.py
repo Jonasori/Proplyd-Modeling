@@ -33,7 +33,6 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 class Run:
     def __init__(self, path, save_all_plots=False):
-        self.save_all_plots = save_all_plots
         self.path = path
         self.mol = self.get_line()
 
@@ -51,6 +50,10 @@ class Run:
         self.model_header = fits.getheader(self.path + '_bestFit.fits', ext=0)
         self.data_image = fits.getdata(self.data_path, ext=0).squeeze()
         self.data_header = fits.getheader(self.data_path, ext=0)
+
+        if save_all_plots:
+            self.plot_all()
+
 
 
     def get_line(self):
@@ -504,8 +507,8 @@ class Run:
             plt.show(block=False)
         return mat
 
-    # If we want to save all the plots, go ahead and do it.
-    if self.save_all_plots:
+
+    def plot_all(self):
         self.best_fit_params(save=True)
         self.step_duration(save=True)
         self.DMR_spectra(save=True)
