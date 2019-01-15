@@ -477,7 +477,7 @@ def fullRun(diskAParams, diskBParams, mol,
         s = s0 + s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10
         f.write(s)
 
-    run = Run(modelPath, save_all=True)
+    run = Run(modelPath, save_all_plots=True)
     print "Successfully finished everything."
 
 # The End
