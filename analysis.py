@@ -411,25 +411,19 @@ class Run:
         chans = np.arange(len(model_spec))
 
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
-        ax1.plot(data_spec, color='midnightblue')
+        ax1.plot(data_spec, color='steelblue')
         ax2.plot(model_spec, color='steelblue')
-        ax3.plot(resid_spec, color='cornflowerblue')
-
-        # sns.pointplot(x=chans, y=data_spec, color='midnightblue', ax=ax1, markers=['.'], markersize=0.1)
-        # sns.pointplot(x=chans, y=model_spec, color='steelblue', ax=ax2, markers=['.'], markersize=0.1)
-        # sns.pointplot(x=chans, y=resid_spec, color='cornflowerblue', ax=ax3, markers=['.'], markersize=0.1)
+        ax3.plot(resid_spec, color='steelblue')
 
         ax1.set_title('Data', weight='bold')
         ax2.set_title('Model', weight='bold')
         ax3.set_title('Residuals', weight='bold')
         ax1.grid(False), ax2.grid(False), ax3.grid(False)
+
         ymin = min([min(l) for l in [model_spec, data_spec, resid_spec]])
         ymax = max([max(l) for l in [model_spec, data_spec, resid_spec]])
-        ax1.set_xlabel('Channel')
-        ax1.set_ylabel('Jy/Beam')
-        ax1.set_ylim(ymin, ymax)
-        ax2.set_ylim(ymin, ymax)
-        ax3.set_ylim(ymin, ymax)
+        ax1.set_xlabel('Channel'), ax1.set_ylabel('Jy/Beam')
+        ax1.set_ylim(ymin, ymax), ax2.set_ylim(ymin, ymax), ax3.set_ylim(ymin, ymax)
         plt.tight_layout()
         sns.despine()
 
