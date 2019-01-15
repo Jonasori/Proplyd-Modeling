@@ -11,8 +11,7 @@ import subprocess as sp
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from emcee.utils import MPIPool
-#from run_driver import run_path #, run_name
-from constants import today, mol #, nwalkers, nsteps
+from constants import today, mol
 from tools import already_exists, remove
 #from analysis import plot_fits
 #from four_line_run_driver import make_fits
@@ -33,6 +32,8 @@ class MCMCrun:
     """A container for an MCMC run and the resulting data.
 
     By the time this is run, a chain file has already been made.
+    It's a little confusing how this integrates with the one-/four-line fits.
+    self.mol should be a thing for the one-line fits.
     """
     # Set up a path for the images to go to:
     def __init__(self, run_path, name, nwalkers=nwalkers, burn_in=0):
@@ -83,7 +84,7 @@ class MCMCrun:
             f.write(s)
 
 
-    def evolution(self):
+    def evolution(self, save=True):
         """Plot walker evolution.
 
         Uses groomed data, so no infs.
@@ -123,9 +124,11 @@ class MCMCrun:
 
         plt.tight_layout()
         plt.suptitle(self.name + ' walker evolution')
-        plt.savefig(self.image_outpath + '_evolution.pdf')  # , dpi=1)
-        print 'Image saved image to ' + self.image_outpath + '_evolution.pdf'
-        plt.show(block=False)
+        if save:
+            plt.savefig(self.image_outpath + '_evolution.pdf')
+            print 'Image saved image to ' + self.image_outpath + '_evolution.pdf'
+        else:
+            plt.show()
 
     def evolution_main(self):
         """Plot walker evolution.
