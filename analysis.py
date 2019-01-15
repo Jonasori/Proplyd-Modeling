@@ -109,6 +109,7 @@ class Run:
                                more colors to colors list.
         """
         plt.close()
+        print "\nPlotting step durations..."
 
         data = pd.read_csv(self.path + '_stepDurations.csv', sep=',')
         xs = data['step']
@@ -160,6 +161,7 @@ class Run:
             Assumes fname is './models/dateofrun/dateofrun'
         """
         plt.close()
+        print "\nPlotting best-fit param number lines..."
 
         run_date = self.run_date
         both_disks, X2s = self.steps, (self.raw_x2, self.red_x2)
@@ -236,11 +238,12 @@ class Run:
         Some nice cmaps: magma, rainbow
         """
         plt.close()
+        print "\nPlotting DMR images..."
 
         model_path = self.path + '_bestFit.fits'
         resid_path = self.path + '_bestFit_resid.fits'
         data_path = self.data_path
-        out_path = './gridsearch_results/' + self.run_date + '_triptych.pdf'
+        out_path = './gridsearch_results/' + self.run_date + '_DMR-images.pdf'
 
         real_data = fits.getdata(data_path, ext=0).squeeze()
         image_header = fits.getheader(data_path, ext=0)
@@ -393,6 +396,8 @@ class Run:
             - Multiply each by beam
             - Divide by number of pix (x*y)?
         """
+        plt.close()
+        print "\nPlotting DMR spectra..."
 
         model_spec = np.array([np.sum(self.model_image[i])/self.model_image.shape[1]
                                for i in range(self.model_image.shape[0])])
@@ -420,8 +425,8 @@ class Run:
         sns.despine()
 
         if save:
-            plt.savefig(self.out_path + '_spectra.pdf')
-            print "Saved to " + self.out_path + '_spectra.pdf'
+            plt.savefig(self.out_path + '_DMR-spectra.pdf')
+            print "Saved to " + self.out_path + '_DMR-spectra.pdf'
         else:
             plt.show()
 
