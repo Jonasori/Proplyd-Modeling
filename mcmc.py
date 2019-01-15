@@ -48,7 +48,7 @@ class MCMCrun:
         self.runpath = run_path + name
         self.modelfiles_path = run_path + 'model_files/' + name
         self.image_outpath = './mcmc_results/' + name
-        self.param_dict = pickle.load(open(run_path + 'param_dict.pickle', 'rb'))
+        self.param_dict = pickle.load(open(run_path + 'param_dict.pkl', 'rb'))
         self.main = pd.read_csv(self.runpath + '_chain.csv')
 
         """
