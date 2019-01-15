@@ -20,7 +20,8 @@ import plotting
 import run_driver
 import analysis
 
-
+from pathlib2 import Path
+Path.cwd()
 
 sns.set_style('ticks')
 
@@ -381,8 +382,6 @@ class MCMCrun:
         # plot_fits(self.runpath)
 
         return (models, bf_param_dict)
-
-
 
 
 
