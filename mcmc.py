@@ -130,7 +130,7 @@ class MCMCrun:
         else:
             plt.show()
 
-    def evolution_main(self):
+    def evolution_main(self, save=True):
         """Plot walker evolution.
 
         This one uses the full step log, including bad steps (not groomed).
@@ -172,9 +172,12 @@ class MCMCrun:
 
         plt.tight_layout()
         plt.suptitle(self.name + ' walker evolution')
-        plt.savefig(self.image_outpath + '_evolution-main.pdf')  # , dpi=1)
-        print 'Image saved image to ' + self.image_outpath + '_evolution-main.pdf'
-        plt.show(block=False)
+
+        if save:
+            plt.savefig(self.image_outpath + '_evolution-main.pdf')  # , dpi=1)
+            print 'Image saved image to ' + self.image_outpath + '_evolution-main.pdf'
+        else:
+            plt.show()
 
     def kde(self):
         """Make a kernel density estimate (KDE) plot."""
