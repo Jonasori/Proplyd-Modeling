@@ -20,6 +20,7 @@ Data/model/resid of grid search.
 
 # Import some python packages
 import os
+import pickle
 import argparse
 import numpy as np
 import subprocess as sp
@@ -234,7 +235,7 @@ def main():
         print "Starting run:", run_path + today
         print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
-        
+
         # Save out the param dict for accessing when we want
         pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'wb'))
 
