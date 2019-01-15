@@ -223,7 +223,7 @@ class MCMCrun:
         print 'Image saved image to ' + self.image_outpath + '_kde.png'
         plt.show()
 
-    def corner(self, variables=None):
+    def corner(self, variables=None, save=True):
         """Plot 'corner plot' of fit."""
         plt.close()
 
@@ -295,8 +295,11 @@ class MCMCrun:
             ax.yaxis.set_major_formatter(FormatStrFormatter('%.3g'))
 
         plt.subplots_adjust(top=0.9)
-        plt.savefig(self.image_outpath + '_corner.png', dpi=200)
-        print 'Image saved image to ' + self.image_outpath + '_corner.png'
+        if save:
+            plt.savefig(self.image_outpath + '_corner.png', dpi=200)
+            print 'Image saved image to ' + self.image_outpath + '_corner.png'
+        else:
+            plt.show()
 
     def make_best_fits(self):
         """Do some modeling stuff.

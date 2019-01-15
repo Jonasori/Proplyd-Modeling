@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 # import matplotlib.pyplot.RcParams
 import matplotlib.gridspec as gridspec
 
+from pathlib2 import Path
 from astropy.io import fits
 from matplotlib.pylab import *
 from matplotlib.ticker import *
@@ -30,13 +31,24 @@ matplotlib.rcParams['font.sans-serif'] = 'Times'
 matplotlib.rcParams['font.family'] = 'serif'
 
 
+Path.cwd()
+
 
 class GridSearch_Run:
     def __init__(self, path, save_all_plots=False):
+        """
+        Initialize the object.
+
+        Args:
+            path (str): Path to the run dir, plus base name for the files contained therein.
+                        Ex: 'gridsearch_runs/jan10_hco/jan10_hco'
+            save_all_plots (bool): If true, run all plotting functions and save
+                                   the resulting plots.
+        """
         self.path = path
         self.mol = self.get_line()
 
-        self.run_date = path.split('/')[-1]
+        self.run_date = path.split('/')[-1].split('_')[0]
         self.out_path = './gridsearch_results/' + self.run_date
         self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol,
                                                             str(lines[mol]['baseline_cutoff']))
@@ -164,7 +176,7 @@ class GridSearch_Run:
         print "\nPlotting best-fit param number lines..."
 
         run_date = self.run_date
-        both_disks, X2s = self.steps, (self.raw_x2, self.red_x2)
+        both_disks, X2s = self.steps
 
         # Don't plot the parameters that weren't fit.
         # Keep the statics in case we want to do something with them later
@@ -184,16 +196,16 @@ class GridSearch_Run:
                 disk_B_statics.append(param)
         both_disks = [disk_A, disk_B]
 
-        raw_x2, red_x2 = X2s
         colors = ['red', 'blue']
         height = max(len(disk_A), len(disk_B)) + 1
+
         f, axarr = plt.subplots(height, 2, figsize=[8, height])
         axarr[(0, 0)].axis('off')
         axarr[(0, 1)].axis('off')
         axarr[(0, 0)].text(0.2, -0.2, 'Summary of\n' + run_date + ' Run',
                            fontsize=16, fontweight='bold')
-        str_rawX2 = str(round(min(raw_x2), 2))
-        str_redX2 = str(round(min(red_x2), 6))
+        str_rawX2 = str(round(self.raw_x2, 2))
+        str_redX2 = str(round(self.red_x2, 6))
         chi_str = '       Min. Raw Chi2: {}\nMin. Reduced Chi2: {}'.format(str_rawX2, str_redX2)
         axarr[(0, 1)].text(0, 0, chi_str, fontsize=10)
         for d in [0, 1]:
