@@ -146,9 +146,6 @@ for mol in mols:
     param_dict['nchans'][mol] = n_chans
     param_dict['jnum'][mol] = lines[mol]['jnum']
 
-# Save out the param dict for accessing when we want
-pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'wb'))
-
 
 # Note that this is what is fed to MCMC to dictate how the walkers move, not
 # the actual set of vars that make_fits pulls from.
@@ -237,6 +234,10 @@ def main():
         print "Starting run:", run_path + today
         print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
+        
+        # Save out the param dict for accessing when we want
+        pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'wb'))
+
         mcmc.run_emcee(run_path=run_path,
                        run_name=today,
                        nsteps=nsteps,
