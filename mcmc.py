@@ -311,7 +311,7 @@ class MCMCrun:
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
 
         # Make a complete dictionary of all the parameters
-        bf_param_dict = param_dict.copy()
+        bf_param_dict = self.param_dict.copy()
         for param in model_params.columns[:-1]:
             bf_param_dict[param] = model_params[param].values
 
@@ -332,7 +332,7 @@ class MCMCrun:
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
             make_fits(model, param_dict_mol)
-            analysis.plot_fits(model.modelfiles_path + '_bestFit.fits', mol=mol,
+            tools.plot_fits(model.modelfiles_path + '_bestFit.fits', mol=mol,
                                best_fit=True)
             return model
 

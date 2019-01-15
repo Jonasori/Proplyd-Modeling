@@ -31,7 +31,7 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 
 
-class Run:
+class GridSearch_Run:
     def __init__(self, path, save_all_plots=False):
         self.path = path
         self.mol = self.get_line()
