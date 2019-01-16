@@ -26,22 +26,21 @@ def make_diskA_params(mol, run_length='long'):
     pos_y        = np.array([offsets[0][1]])
     v_sys        = [vsys[0]]          # np.array([10.70])
     m_disk       = np.array([-1.10791])
+    t_qq         = -1. * np.array([-0.5])
 
     # Params that are fit
     if run_length == 'short':
         t_atms      = np.array([100])
-        t_qq        = -1. * np.array([0])
         r_out       = np.array([150])
         x_mol       = -1. * np.array([4.])
     elif run_length == 'mid':
         t_atms      = np.array([10, 200])
-        t_qq        = -1. * np.array([-0.5, 0, 0.5])
         r_out       = np.array([10, 150, 400])
         x_mol       = -1. * np.array([6, 9])
+
     elif run_length == 'long':
-        t_atms      = np.arange(10, 300, 50)
-        t_qq        = -1. * np.array([-0.5])
-        r_out       = np.arange(50, 500, 75)
+        t_atms      = np.arange(150, 300, 20)
+        r_out       = np.arange(250, 450, 25)
         x_mol       = -1. * np.arange(2, 10)
 
     else:
@@ -91,22 +90,20 @@ def make_diskB_params(mol, run_length='long'):
     pos_y        = np.array([offsets[1][1]])
     v_sys        = [vsys[1]]          # np.array([10.70])
     m_disk       = np.array([-1.552842])
+    t_qq         = -1. * np.array([-0.5])
 
     # Params that are fit
     if run_length == 'short':
         t_atms      = np.array([100])
-        t_qq        = -1. * np.array([0])
         r_out       = np.array([150])
         x_mol       = -1. * np.array([4.])
     elif run_length == 'mid':
         t_atms      = np.arange(10, 500, 100)
-        t_qq        = -1 * np.array([-0.5, 0, 0.5])
         r_out       = np.arange(50, 400, 100)
         x_mol       = -1. * np.array([4.])
     elif run_length == 'long':
-        t_atms      = np.arange(10, 300, 50)
-        t_qq        = -1 * np.array([-0.5])
-        r_out       = np.arange(50, 400, 50)
+        t_atms      = np.arange(10, 160, 50)
+        r_out       = np.arange(50, 200, 20)
         x_mol       = -1. * np.arange(2, 10)
 
     else:
