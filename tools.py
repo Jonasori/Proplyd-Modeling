@@ -271,12 +271,6 @@ def sample_model_in_uvplane(modelPath, mol, option='replace'):
     print "completed sampling uvplane; created .im, .vis, .uvf\n\n"
 
 
-# p = Path.cwd()
-# Path('./gridsearch_runs/jan15_hco').exists()
-# already_exists(path)
-
-
-
 def already_exists(query):
     """Turns out pathlib2 does this really well.
     Doesn't seem to like full paths, just local ones."""
