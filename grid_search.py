@@ -48,7 +48,7 @@ import subprocess as sp
 # Local package files
 from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, already_exists, remove
-from analysis import plot_gridSearch_log, plot_step_duration, plot_fits
+from analysis import GridSearch_Run
 from constants import today, dataPath
 # from run_params import diskAParams, diskBParams
 from run_params import make_diskA_params, make_diskB_params
@@ -477,7 +477,7 @@ def fullRun(diskAParams, diskBParams, mol,
         s = s0 + s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10
         f.write(s)
 
-    run = Run(modelPath, save_all_plots=True)
+    run = GridSearch_Run(modelPath, save_all_plots=True)
     print "Successfully finished everything."
 
 # The End
