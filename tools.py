@@ -278,7 +278,8 @@ already_exists(path)
 
 
 def already_exists(query):
-    """Turns out pathlib2 does this really well."""
+    """Turns out pathlib2 does this really well.
+    Doesn't seem to like full paths, just local ones."""
     # if Path(query).exists():
     if Path(query).exists():
         return True
@@ -305,32 +306,11 @@ def already_exists_oldish(query):
             output = sp.check_output('ls', cwd=short_path).split('\n')
 
         if f[i] not in output:
-            #print "False"
-            #break
             return False
         else:
             i += 1
     # print "True"
     return True
-
-
-def already_exists_old(query):
-    """Search an ls call to see if query is in it."""
-    f = query.split('/')[-1]
-    # path = query.split(f)[0]
-    path = query[:-len(f)]
-
-    # print "Path is: ", path
-    # print "file is: ", f
-
-    output = sp.check_output('ls', cwd=path).split('\n')
-
-    if f in output:
-        print query + ' alrady exists; skipping\n'
-        return True
-    else:
-        print query + ' does not yet exist; executing command\n'
-        return False
 
 
 def remove(filePath):
