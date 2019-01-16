@@ -199,7 +199,7 @@ class GridSearch_Run:
         colors = ['red', 'blue']
         height = max(len(disk_A), len(disk_B)) + 1
 
-        f, axarr = plt.subplots(height, 2, figsize=[8, height])
+        f, axarr = plt.subplots(height, 2, figsize=[8, height+2])
         axarr[(0, 0)].axis('off')
         axarr[(0, 1)].axis('off')
         axarr[(0, 0)].text(0.2, -0.2, 'Summary of\n' + run_date + ' Run',

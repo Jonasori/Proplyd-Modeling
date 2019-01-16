@@ -1,5 +1,3 @@
-%matplotlib inline
-
 import numpy as np
 from analysis import GridSearch_Run
 from pathlib2 import Path
@@ -7,14 +5,14 @@ import mcmc
 
 Path.cwd()
 modeling = '/Volumes/disks/jonas/modeling'
+%matplotlib inline
 
 
 gs_run = GridSearch_Run('gridsearch_runs/jan10_hco/jan10_hco')
 len(gs_run.steps)
-gs_run.steps[1]
+a, b = gs_run.steps
 
-
-
+log = gs_run.depickleLogFile()
 
 gs_run.best_fit_params()
 
