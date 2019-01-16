@@ -15,6 +15,7 @@ import argparse
 import numpy as np
 import subprocess as sp
 import matplotlib.pyplot as plt
+from pathlib2 import Path
 from astropy.io import fits
 from matplotlib.pylab import *
 from matplotlib.ticker import *
@@ -270,8 +271,22 @@ def sample_model_in_uvplane(modelPath, mol, option='replace'):
     print "completed sampling uvplane; created .im, .vis, .uvf\n\n"
 
 
+p = Path.cwd()
+Path('./gridsearch_runs/jan15_hco').exists()
+already_exists(path)
+
+
 
 def already_exists(query):
+    """Turns out pathlib2 does this really well."""
+    # if Path(query).exists():
+    if Path(query).exists():
+        return True
+    else:
+        return False
+
+
+def already_exists_oldish(query):
     """Search an ls call to see if query is in it.
 
     The loop here is to check that directories in the path of the query also

@@ -47,11 +47,16 @@ import subprocess as sp
 
 # Local package files
 from utils import makeModel, sumDisks, chiSq
-from tools import icr, sample_model_in_uvplane, already_exists, remove
+from tools import icr, sample_model_in_uvplane, remove
+from tools import already_exists
 from analysis import GridSearch_Run
 from constants import today, dataPath
 # from run_params import diskAParams, diskBParams
 from run_params import make_diskA_params, make_diskB_params
+
+from pathlib2 import Path
+
+
 
 
 # A little silly, but an easy way to name disks by their disk index (DI)
@@ -285,6 +290,10 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
     print "Minimum Chi2 value and where it happened: ", [minRedX2, minX2Vals]
     return step_log
 
+from run_params import make_diskA_params, make_diskB_params
+mol = 'hco'
+diskAParams = make_diskA_params(mol=mol, run_length='long')
+diskBParams = make_diskB_params(mol=mol, run_length='long')
 
 # PERFORM A FULL RUN USING FUNCTIONS ABOVE #
 def fullRun(diskAParams, diskBParams, mol,
@@ -332,13 +341,16 @@ def fullRun(diskAParams, diskBParams, mol,
     # Begin setting up symlink and get directory paths lined up
     this_run_basename = today + '_' + mol
     this_run = this_run_basename
-    modelPath = './gridsearch_runs/' + this_run + '/' + this_run
+    modelPath = './gridsearch_runs/' + this_run
     run_counter = 2
     # while already_exists_old(modelPath) is True:
+    # while already_exists('/'.join(modelPath.split('/')[:-1])) is True:
     while already_exists(modelPath) is True:
         this_run = this_run_basename + '-' + str(run_counter)
-        modelPath = './gridsearch_runs/' + this_run + '/' + this_run
+        modelPath = './gridsearch_runs/' + this_run
         run_counter += 1
+    # Add on the file base name to the path.
+    modelPath += '/' + this_run
 
     # Parameter Check:
     print "\nThis run will fit for", mol.upper()
