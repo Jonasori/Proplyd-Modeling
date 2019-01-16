@@ -47,8 +47,7 @@ import subprocess as sp
 
 # Local package files
 from utils import makeModel, sumDisks, chiSq
-from tools import icr, sample_model_in_uvplane, remove
-from tools import already_exists
+from tools import icr, sample_model_in_uvplane, remove, already_exists
 from analysis import GridSearch_Run
 from constants import today, dataPath
 # from run_params import diskAParams, diskBParams
