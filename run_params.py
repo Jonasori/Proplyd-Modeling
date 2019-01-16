@@ -102,7 +102,7 @@ def make_diskB_params(mol, run_length='long'):
         r_out       = np.arange(50, 400, 100)
         x_mol       = -1. * np.array([4.])
     elif run_length == 'long':
-        t_atms      = np.arange(10, 160, 50)
+        t_atms      = np.arange(10, 160, 20)
         r_out       = np.arange(50, 200, 20)
         x_mol       = -1. * np.arange(2, 10)
 
