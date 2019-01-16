@@ -20,7 +20,7 @@ M_sun = M_sun.value
 import mcmc
 import fitting
 import plotting
-from tools import remove, already_exists, already_exists_old
+from tools import remove, already_exists
 from constants import mol, obs_stuff, lines, today, offsets
 
 # Import some files from Kevin's modeling code
