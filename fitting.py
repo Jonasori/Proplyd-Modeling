@@ -146,7 +146,8 @@ class Model:
         self.delete()  # delete any preexisting files that will conflict
 
     def delete(self):
-        """Delete anything with this path."""
+        """Delete anything with this path.
+        Maybe can do this with pathlib2."""
         sp.call('rm -rf {}*'.format(self.modelfiles_path), shell=True)
 
     def obs_sample(self):

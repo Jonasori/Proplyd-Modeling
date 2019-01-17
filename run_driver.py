@@ -1,7 +1,5 @@
 """Cail's mcmc.py run wrapper.
 
-RUN DRIVER ISNT WRITING OUT ALL THE PARAMETERS TO THE CHAIN. BAD. FIX ASAP
-HERE AND IN FOUR LINE DRIVER
 """
 
 # Import some python packages
@@ -29,8 +27,6 @@ from disk_model.disk import Disk
 
 nwalkers = 50
 nsteps = 400
-
-
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
