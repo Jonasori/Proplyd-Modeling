@@ -130,7 +130,8 @@ def main():
         print '\n\n\n'
 
         # Save out the param dict for accessing when we want
-        pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'wb'))
+        with open(run_path + 'param_dict.pkl', 'w') as f:
+            pickle.dump(param_dict, f)
 
         mcmc.run_emcee(run_path=run_path,
                        run_name=today,
