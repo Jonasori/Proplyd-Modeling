@@ -408,6 +408,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
                             The second two values set the position & size
                             for a random Gaussian ball of initial positions
     """
+    print "Made it to run_emcee"
     # Name the chain we're looking for
     chain_filename = run_path + today + '_chain.csv'
 
