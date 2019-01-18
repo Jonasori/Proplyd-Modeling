@@ -397,9 +397,9 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
     Args:
         run_path (str): the name to output I guess
         run_name (str): the name to feed the actual emcee routine (line 360)
-        nsteps (int):
-        nwalkers (int):
-        lnprob (something):
+        nsteps (int): How many steps we're taking.
+        nwalkers (int): How many walkers we're using
+        lnprob (func): The lnprob function to feed emcee
         param_info (list): list of [param name,
                                     initial_position_center,
                                     initial_position_sigma,
@@ -464,6 +464,7 @@ else:
         resume = False
 
     if resume is True:
+        print "Resuming run"
         chain = pd.read_csv(chain_filename)
         start_step = chain.index[-1] // nwalkers
         pos = np.array(chain.iloc[-nwalkers:, :-1])
@@ -478,6 +479,7 @@ else:
 
     # If there's no pre-existing run, set one up, and delete any empty dirs.
     else:
+        print "Setting up directories for new run"
         remove(run_path)
         sp.call(['mkdir', run_path])
         sp.call(['mkdir', run_path + '/model_files'])
@@ -507,6 +509,7 @@ else:
     # Save out the initial param dict for accessing when we want
     # with open(run_path + 'param_dict.pkl', 'w') as f:
     pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
+    print "Wrote {}param_dict.pkl out".format(run_path)
 
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
