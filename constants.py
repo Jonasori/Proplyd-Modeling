@@ -135,7 +135,6 @@ def get_data_path(mol, short_vis_only=True):
 
     To be run out of jonas/modeling only.
     """
-    print mol
     dataPath = './data/' + mol + '/' + mol
     if short_vis_only is True:
         dataPath += '-short' + str(lines[mol]['baseline_cutoff'])
