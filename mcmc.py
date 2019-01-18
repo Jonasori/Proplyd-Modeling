@@ -540,7 +540,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
                               lnpostfn returns blobs too.
             """
     lnprobs = []
-    print "About to loop over run"
+    # print "About to loop over run"
     # Instantiate the generator
     for i, result in enumerate(run):
         """Enumerate returns a tuple the element and a counter.
