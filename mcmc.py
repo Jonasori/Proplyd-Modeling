@@ -408,7 +408,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
                             The second two values set the position & size
                             for a random Gaussian ball of initial positions
     """
-    print "Made it to run_emcee"
+    # print "Made it to run_emcee"
     # Name the chain we're looking for
     chain_filename = run_path + run_name + '_chain.csv'
 
@@ -474,7 +474,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
         # If we're adding new steps, just put in a new line and get started.
         with open(chain_filename, 'a') as f:
             f.write('\n')
-        # Not sure whatend looks like.
+        # Not sure what end looks like.
         end = np.array(chain.iloc[-nwalkers:, :])
         print 'Start step: {}'.format(np.mean(end[:, -1]))
 
@@ -526,7 +526,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
 
     # Initiate a generator to provide the data. More about generators here:
     # https://medium.freecodecamp.org/how-and-why-you-should-use-python-generators-f6fb56650888
-    print "About to run sampler"
+    # print "About to run sampler"
     run = sampler.sample(pos, iterations=nsteps, storechain=True)
     """Note that sampler.sample returns:
             pos: list of the walkers' current positions in an object of shape
@@ -556,7 +556,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
         # Log out the new positions
         with open(chain_filename, 'a') as f:
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
-            # print "Adding a new step to the chain: ", new_step
+            print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
 
     if run_w_pool is True:

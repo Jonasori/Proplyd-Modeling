@@ -350,7 +350,7 @@ def lnprob(theta, run_name, param_info, mol=mol):
     # Save out the initial param dict for accessing when we want
     # with open(run_path + 'param_dict.pkl', 'w') as f:
     pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
-    print "Wrote {}param_dict.pkl out".format(run_path)
+    # print "Wrote {}param_dict.pkl out".format(run_path)
 
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
