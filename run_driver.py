@@ -129,10 +129,6 @@ def main():
         print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
 
-        # Save out the param dict for accessing when we want
-        with open(run_path + 'param_dict.pkl', 'w') as f:
-            pickle.dump(param_dict, f)
-
         mcmc.run_emcee(run_path=run_path,
                        run_name=today,
                        nsteps=nsteps,

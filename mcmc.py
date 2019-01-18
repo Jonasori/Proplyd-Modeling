@@ -503,6 +503,11 @@ else:
         pos = [[param[1] + param[2]*np.random.randn() for param in param_info]
                for i in range(nwalkers)]
 
+
+    # Save out the initial param dict for accessing when we want
+    # with open(run_path + 'param_dict.pkl', 'w') as f:
+    pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
+
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.
