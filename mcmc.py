@@ -507,10 +507,6 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
                for i in range(nwalkers)]
 
 
-    # Save out the initial param dict for accessing when we want
-    # with open(run_path + 'param_dict.pkl', 'w') as f:
-    pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
-    print "Wrote {}param_dict.pkl out".format(run_path)
 
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
