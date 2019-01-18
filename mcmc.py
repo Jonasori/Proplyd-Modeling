@@ -391,7 +391,7 @@ class MCMCrun:
 
 
 # Use this one.
-def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob, param_info):
+def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
     """Make an actual MCMC run.
 
     Args:
@@ -418,6 +418,43 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob, param_info):
         if not pool.is_master():
             pool.wait()
             sys.exit(0)
+
+
+
+# Note that this is what is fed to MCMC to dictate how the walkers move, not
+# the actual set of vars that make_fits pulls from.
+# ORDER MATTERS here (for comparing in lnprob)
+# Note that param_info is of form:
+# [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
+if mol != 'co':
+    param_info = [('r_out_A',           500,     300,      (10, 1000)),
+                  ('atms_temp_A',       300,     150,      (0, np.inf)),
+                  ('mol_abundance_A',   -8,      3,        (-13, -3)),
+                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+                  ('incl_A',            65.,     30.,      (0, 90.)),
+                  ('pos_angle_A',       70,      45,       (0, 360)),
+                  ('r_out_B',           500,     300,      (10, 1000)),
+                  ('atms_temp_B',       200,     150,      (0, np.inf)),
+                  ('mol_abundance_B',   -8,      3,        (-13, -3)),
+                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                  ('incl_B',            45.,     30,       (0, 90.)),
+                  ('pos_angle_B',       136.0,   45,       (0, 360))
+                  ]
+
+else:
+    param_info = [('r_out_A',           500,     300,      (10, 1000)),
+                  ('atms_temp_A',       300,     150,      (0, np.inf)),
+                  ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
+                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+                  ('incl_A',            65.,     30.,      (0, 90.)),
+                  ('pos_angle_A',       70,      45,       (0, 360)),
+                  ('r_out_B',           500,     300,      (10, 1000)),
+                  ('atms_temp_B',       200,     150,      (0, np.inf)),
+                  ('m_disk_B',          -1.,      1.,      (-2.5, 0))
+                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                  ('incl_B',            45.,     30,       (0, 90.)),
+                  ('pos_angle_B',       136.0,   45,       (0, 360))
+                  ]
 
     # Try to resume an existing run of this name.
     # There's gotta be a more elegant way of doing this.

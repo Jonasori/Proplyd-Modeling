@@ -49,9 +49,11 @@ pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
 
 # A list of parameters needed to make a model. These get dynamically updated
 # in lnprob (line 348). Nothing that is being fit for can be in a tuple
+# Note that these are only the params that are line-independent.
+# Line-dependent stuff gets added in at the beginnning of lnprob()
 param_dict = {
-    'r_out_A':              400,        # AU
-    'r_out_B':              200,        # AU
+    'r_out_A':              400,             # AU
+    'r_out_B':              200,             # AU
     'atms_temp_A':          300,
     'atms_temp_B':          200,
     'mol_abundance_A':      -10,
@@ -77,55 +79,10 @@ param_dict = {
     'r_crit':              100.,              # Critical radius (AU)
     'rot_hands':           [-1, -1],          # disk rotation direction
     'distance':            389.143,           # parsec, errors of 3ish
-    'offsets':             [pos_A, pos_B],    # from center (")
-    'offsets':             [pos_A, pos_B],    # from center (")
-    'vsys':                vsys,              # km/s
-    'restfreq':            restfreq,		  # GHz
-    'obsv':                obsv,              # km/s?
-    'jnum':                lines[mol]['jnum'],
-    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
-    'chanmins':            chanmins,
-    'nchans':              n_chans,
     'imres':               0.045,             # arcsec/pixel
     'imwidth':             256,               # width of image (pixels)
-    'mol':                 mol                # Emission line
     }
 
-
-# Note that this is what is fed to MCMC to dictate how the walkers move, not
-# the actual set of vars that make_fits pulls from.
-# The order matters here (for comparing in lnprob)
-# Note that param_info is of form:
-# [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
-if mol != 'co':
-    param_info = [('r_out_A',           500,     300,      (10, 1000)),
-                  ('atms_temp_A',       300,     150,      (0, np.inf)),
-                  ('mol_abundance_A',   -8,      3,        (-13, -3)),
-                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-                  ('incl_A',            65.,     30.,      (0, 90.)),
-                  ('pos_angle_A',       70,      45,       (0, 360)),
-                  ('r_out_B',           500,     300,      (10, 1000)),
-                  ('atms_temp_B',       200,     150,      (0, np.inf)),
-                  ('mol_abundance_B',   -8,      3,        (-13, -3)),
-                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
-                  ('incl_B',            45.,     30,       (0, 90.)),
-                  ('pos_angle_B',       136.0,   45,       (0, 360))
-                  ]
-
-else:
-    param_info = [('r_out_A',           500,     300,      (10, 1000)),
-                  ('atms_temp_A',       300,     150,      (0, np.inf)),
-                  ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
-                  ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-                  ('incl_A',            65.,     30.,      (0, 90.)),
-                  ('pos_angle_A',       70,      45,       (0, 360)),
-                  ('r_out_B',           500,     300,      (10, 1000)),
-                  ('atms_temp_B',       200,     150,      (0, np.inf)),
-                  ('m_disk_B',          -1.,      1.,      (-2.5, 0))
-                  ('temp_struct_B',     0.,      1,        (-3., 3.)),
-                  ('incl_B',            45.,     30,       (0, 90.)),
-                  ('pos_angle_B',       136.0,   45,       (0, 360))
-                  ]
 
 
 
@@ -179,8 +136,9 @@ def main():
                        run_name=today,
                        nsteps=nsteps,
                        nwalkers=nwalkers,
-                       lnprob=lnprob,
-                       param_info=param_info)
+                       lnprob=lnprob #,
+                       # param_info=param_info
+                       )
     else:
         if already_exists(run_path) is False:
             return 'Go in and specify which run you want.'
@@ -379,7 +337,20 @@ def lnprob(theta, run_name, param_info, mol=mol):
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
                             and with length = total number of free params
     """
-    #print "Evaluating lnprob"
+    # Start off by adding in the line-dependent values to param_dict.
+    vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+    param_dict['vsys']       = vsys              # km/s
+    param_dict['restfreq']   = restfreq	   	     # GHz
+    param_dict['obsv']       = obsv              # km/s?
+    param_dict['jnum']       = lines[mol]['jnum']
+    param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
+    param_dict['chanmins']   = chanmins
+    param_dict['nchans']     = n_chans
+    param_dict['mol']        = mol
+
+
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
         # print '\n', i, free_param
