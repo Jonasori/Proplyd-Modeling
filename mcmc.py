@@ -410,7 +410,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
     """
     print "Made it to run_emcee"
     # Name the chain we're looking for
-    chain_filename = run_path + today + '_chain.csv'
+    chain_filename = run_path + run_name + '_chain.csv'
 
     # Set up the parallelization
     pool = MPIPool()
