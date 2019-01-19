@@ -511,6 +511,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.
+    print "Initializing sampler."
     ndim = len(param_info)
     if run_w_pool is True:
         sampler = emcee.EnsembleSampler(nwalkers,
@@ -526,7 +527,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
 
     # Initiate a generator to provide the data. More about generators here:
     # https://medium.freecodecamp.org/how-and-why-you-should-use-python-generators-f6fb56650888
-    # print "About to run sampler"
+    print "About to run sampler"
     run = sampler.sample(pos, iterations=nsteps, storechain=True)
     """Note that sampler.sample returns:
             pos: list of the walkers' current positions in an object of shape
@@ -540,7 +541,7 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
                               lnpostfn returns blobs too.
             """
     lnprobs = []
-    # print "About to loop over run"
+    print "About to loop over run"
     # Instantiate the generator
     for i, result in enumerate(run):
         """Enumerate returns a tuple the element and a counter.
@@ -555,6 +556,12 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
 
         # Log out the new positions
         with open(chain_filename, 'a') as f:
+
+            ### THERES A DEBUGGER HERE
+            # import pdb; pdb.set_trace()
+
+
+
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
             print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
