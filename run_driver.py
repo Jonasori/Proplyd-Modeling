@@ -23,13 +23,12 @@ import mcmc
 import fitting
 import plotting
 from tools import remove, already_exists
-from constants import obs_stuff, lines, today, offsets #, mol
-
+from constants import obs_stuff, lines, today, offsets, mol
+# Unfortunately, we have to import mol as a global var because manually
+# entering it for each run in parallel is shit.
 
 nwalkers = 50
 nsteps = 400
-
-mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
