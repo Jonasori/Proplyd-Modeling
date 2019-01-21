@@ -95,9 +95,6 @@ param_dict = {
     'T_freezeout':         lines[mol]['t_fo']
     }
 
-# Save out the initial param dict for accessing when we want
-pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
-print "Wrote {}param_dict.pkl out".format(run_path)
 
 """
 # Start off by adding in the line-dependent values to param_dict.

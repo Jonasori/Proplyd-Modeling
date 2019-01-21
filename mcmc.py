@@ -486,11 +486,14 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
         remove(run_path)
         sp.call(['mkdir', run_path])
         sp.call(['mkdir', run_path + '/model_files'])
+
+        # Export the initial param dict for accessing when we want
+        pickle.dump(run_driver.param_dict, open(run_path + 'param_dict.pkl', 'w'))
+        print "Wrote {}param_dict.pkl out".format(run_path)
         print 'Starting {}'.format(run_path)
 
         start_step = 0
-        # Start a new file for the chain
-        # Set up a header line
+        # Start a new file for the chain; set up a header line
         with open(chain_filename, 'w') as f:
             param_names = [param[0] for param in param_info]
             np.savetxt(f, (np.append(param_names, 'lnprob'), ),
