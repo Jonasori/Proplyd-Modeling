@@ -278,7 +278,7 @@ class GridSearch_Run:
         offsets_dA_pix = [44 - offsets_dA[0]/0.045,
                           44 - offsets_dA[1]/0.045]
         offsets_dB_pix = [44 + offsets_dB[0]/0.045,
-                          44 + offsets_dB[1]/0.045]
+                          44 - offsets_dB[1]/0.045]
 
         chanstep_vel = image_header['CDELT3'] * 0.001
         chan0_vel = image_header['CRVAL3'] * 0.001 - image_header['CRPIX3'] * chanstep_vel
