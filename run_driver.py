@@ -176,7 +176,7 @@ def main():
             run.corner(variables=args.corner_vars)
 
 
-def make_fits(model, param_dict, mol=mol, testing=False):
+def make_fits(model, param_dict, mol, testing=False):
     """Take in two list of disk params and return a two-disk model.
 
     Args:
@@ -387,7 +387,6 @@ def lnprob(theta, run_name, param_info, mol=mol):
 
 
     # Make the actual model fits files.
-    # make_fits(model, param_info, mol)
     make_fits(model, param_dict, mol)
 
     model.obs_sample()

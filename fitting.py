@@ -162,7 +162,6 @@ class Model:
             path.[vis, .uvf]: model files in the visibility domain.
             path.im: a model image that's just a stepping stone.
         """
-        obs = self.observation
 
         # define observation-specific model name, delete any preexisting models
         sp.call('rm -rf {}{{.im,.vis,.uvf}}'.format(self.modelfiles_path),
@@ -180,7 +179,7 @@ class Model:
         # Sample the model image using the observation uv coverage
         sp.call(['uvmodel',
                  'options=replace',
-                 'vis={}.vis'.format(obs.path),
+                 'vis={}.vis'.format(self.observation.path),
                  'model={}.im'.format(self.modelfiles_path),
                  'out={}.vis'.format(self.modelfiles_path)],
                 stdout=open(os.devnull, 'wb')
