@@ -36,6 +36,8 @@ run_name = today
 run_name_basename = run_name
 run_path = './mcmc_runs/' + today + '/'
 counter = 2
+already_exists(run_path)
+
 while already_exists(run_path) is True:
     run_name = run_name_basename + '-' + str(counter)
     run_path = './mcmc_runs/' + run_name + '/'
@@ -125,12 +127,12 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        print "Starting run:", run_path + today
+        print "Starting run:", run_path + run_name
         print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
 
         mcmc.run_emcee(run_path=run_path,
-                       run_name=today,
+                       run_name=run_name,
                        mol=mol,
                        nsteps=nsteps,
                        nwalkers=nwalkers,
@@ -142,7 +144,7 @@ def main():
             return 'Go in and specify which run you want.'
 
         run = mcmc.MCMCrun(run_path,
-                           today,
+                           run_name,
                            nwalkers=nwalkers,
                            burn_in=args.burn_in)
         # old_nsamples = run.groomed.shape[0]
