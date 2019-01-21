@@ -19,7 +19,7 @@ import mcmc
 import fitting
 import plotting
 from tools import remove, already_exists
-from constants import mol, obs_stuff, lines, today, offsets
+from constants import obs_stuff, lines, today, offsets #, mol
 
 # Import some files from Kevin's modeling code
 from disk_model import raytrace as rt
@@ -44,7 +44,7 @@ while already_exists(run_path) is True:
 run_w_pool = True
 
 # I hid the process of getting these bc they're ugly.
-vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+# vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
 
 # A list of parameters needed to make a model. These get dynamically updated
@@ -67,11 +67,9 @@ param_dict = {
     'T_mids':              [15, 15],          # Kelvin
     'r_ins':               1,                 # AU
     'r_ins':               [1, 1],            # AU
-    'T_freezeout':         19,                # Freezeout temperature
     'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
     'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
-    'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
     'surf_dens_str_A':     1.,                # Surface density power law index
     'surf_dens_str_B':     1.,                # Surface density power law index
     'v_turb':              0.081,             # Turbulence velocity
@@ -129,8 +127,13 @@ def main():
         print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
 
+        mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
+        if mol not in ['hco', 'hcn', 'co', 'cs']:
+            return "Choose one of the four lines."
+
         mcmc.run_emcee(run_path=run_path,
                        run_name=today,
+                       mol=mol,
                        nsteps=nsteps,
                        nwalkers=nwalkers,
                        lnprob=lnprob #,
@@ -336,16 +339,18 @@ def lnprob(theta, run_name, param_info, mol=mol):
     """
     # Start off by adding in the line-dependent values to param_dict.
     vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
-    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-    param_dict['vsys']       = vsys              # km/s
-    param_dict['restfreq']   = restfreq	   	     # GHz
-    param_dict['obsv']       = obsv              # km/s
-    param_dict['jnum']       = lines[mol]['jnum']
-    param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
-    param_dict['chanmins']   = chanmins
-    param_dict['nchans']     = n_chans
     param_dict['mol']        = mol
+    param_dict['vsys']       = vsys              # km/s
+    param_dict['obsv']       = obsv              # km/s
+    param_dict['nchans']     = n_chans
+    param_dict['chanmins']   = chanmins
+    param_dict['restfreq']   = restfreq	   	     # GHz
+    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+    param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
+    param_dict['jnum']             = lines[mol]['jnum']
+    param_dict['column_densities'] = lines[mol]['col_dens']
+    param_dict['T_freezeout']      = lines[mol]['t_fo']
 
     # Save out the initial param dict for accessing when we want
     # with open(run_path + 'param_dict.pkl', 'w') as f:

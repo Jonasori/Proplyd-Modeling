@@ -12,18 +12,15 @@ from disk_model.disk import Disk
 import disk_model.raytrace as rt
 
 # Local package files
-from constants import mol, obs_stuff, other_params, get_data_path
+from constants import obs_stuff, other_params, get_data_path, lines #, mol
 
 ######################
 # CONSTANTS & PARAMS #
 ######################
 
 
-# Default observational params
-vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=True)
-
 # Some other constants
-col_dens, Tfo, m_star, r_in, rotHand, offsets, distance = other_params
+# col_dens, Tfo, m_star, r_in, rotHand, offsets, distance = other_params
 
 
 
@@ -54,21 +51,30 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
 
-    v_turb  = diskParams['v_turb']
-    zq      = diskParams['zq']
-    r_crit  = diskParams['r_crit']
-    rho_p   = diskParams['rho_p']
-    t_mid   = diskParams['t_mid']
-    PA      = diskParams['PA']
-    incl    = diskParams['incl']
-    pos_x   = diskParams['pos_x']
-    pos_y   = diskParams['pos_y']
-    v_sys   = diskParams['v_sys']
-    t_atms  = diskParams['t_atms']
-    t_qq    = diskParams['t_qq']
-    r_out   = diskParams['r_out']
-    m_disk  = diskParams['m_disk']
-    x_mol   = diskParams['x_mol']
+    v_turb   = diskParams['v_turb']
+    zq       = diskParams['zq']
+    r_crit   = diskParams['r_crit']
+    rho_p    = diskParams['rho_p']
+    t_mid    = diskParams['t_mid']
+    PA       = diskParams['PA']
+    incl     = diskParams['incl']
+    pos_x    = diskParams['pos_x']
+    pos_y    = diskParams['pos_y']
+    v_sys    = diskParams['v_sys']
+    t_atms   = diskParams['t_atms']
+    t_qq     = diskParams['t_qq']
+    r_out    = diskParams['r_out']
+    m_disk   = diskParams['m_disk']
+    x_mol    = diskParams['x_mol']
+
+    col_dens = lines[mol]['col_dens']
+    t_fo     = lines[mol]['t_fo']
+    m_star   = lines[mol]['m_star']
+    r_in     = lines[mol]['r_in']
+    rotHand  = lines[mol]['rotHand']
+    offsets  = lines[mol]['offsets']
+    distance = lines[mol]['distance']
+
 
     a = Disk(params=[t_qq,
                      10**m_disk,

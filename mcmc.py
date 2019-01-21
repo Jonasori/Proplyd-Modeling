@@ -11,7 +11,7 @@ import subprocess as sp
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from emcee.utils import MPIPool
-from constants import today, mol
+from constants import today #, mol
 from tools import already_exists, remove
 #from analysis import plot_fits
 #from four_line_run_driver import make_fits
@@ -37,7 +37,7 @@ class MCMCrun:
     self.mol should be a thing for the one-line fits.
     """
     # Set up a path for the images to go to:
-    def __init__(self, run_path, name, nwalkers=nwalkers, burn_in=0):
+    def __init__(self, run_path, name, mol='hco', nwalkers=nwalkers, burn_in=0):
         """Set up.
 
         Args:
@@ -46,12 +46,13 @@ class MCMCrun:
             nwalkers (int): how many walkers to have.
             burn_in (int): how many of the first steps to ignore.
         """
-        self.name = name
-        self.runpath = run_path + name
+        self.name            = name
+        self.mol             = mol
+        self.runpath         = run_path + name
+        self.image_outpath   = './mcmc_results/' + name
         self.modelfiles_path = run_path + 'model_files/' + name
-        self.image_outpath = './mcmc_results/' + name
+        self.main            = pd.read_csv(self.runpath + '_chain.csv')
         self.param_dict = pickle.load(open(run_path + 'param_dict.pkl', 'rb'))
-        self.main = pd.read_csv(self.runpath + '_chain.csv')
 
         """
         if path:
@@ -387,16 +388,17 @@ class MCMCrun:
         return (models, bf_param_dict)
 
 
+def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
+    """
+    Make an actual MCMC run.
 
-
-
-# Use this one.
-def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
-    """Make an actual MCMC run.
+    Other than in setting up param_info, this is actually line-agnostic.
+    The line-specificity is created in the lnprob function.
 
     Args:
         run_path (str): the name to output I guess
         run_name (str): the name to feed the actual emcee routine (line 360)
+        mol (str): which line we're running.
         nsteps (int): How many steps we're taking.
         nwalkers (int): How many walkers we're using
         lnprob (func): The lnprob function to feed emcee
@@ -503,7 +505,8 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
         """
         # randn makes an n-dimensional array of rands in [0,1]
         # param[2] is the sigma of the param
-        pos = [[param[1] + param[2]*np.random.randn() for param in param_info]
+        pos = [[param[1] + param[2]*np.random.randn()
+                for param in param_info]
                for i in range(nwalkers)]
 
 
@@ -561,10 +564,19 @@ def run_emcee(run_path, run_name, nsteps, nwalkers, lnprob):
             # import pdb; pdb.set_trace()
 
 
-
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
             print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
 
     if run_w_pool is True:
         pool.close()
+
+
+
+
+
+
+
+
+
+# The End

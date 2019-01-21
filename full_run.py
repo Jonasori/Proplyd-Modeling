@@ -18,7 +18,8 @@ np = 6
 
 # Which fitting method?
 method = 'gs'
-
+m = raw_input("Which type of run?\n['grid', 'mc']: ")
+method = 'mc' if 'm' in m else 'gs'
 
 if method == 'gs':
 
@@ -31,15 +32,15 @@ if method == 'gs':
                             mol=mol, cut_central_chans=False)
 
 
+elif method == 'mc':
+    np = raw_input('How many processors shall we use?\n[1-10]: ')
+    sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
+
+
 elif method == 'fl':
     np = raw_input('How many processors shall we use?\n[1-10]: ')
     sp.call(['mpirun', '-np', np, 'python', 'four_line_run_driver.py', '-r'])
 
-
-
-elif method == 'mc':
-    np = raw_input('How many processors shall we use?\n[1-10]: ')
-    sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
 
 
 
