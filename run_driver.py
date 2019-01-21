@@ -47,14 +47,12 @@ while already_exists(run_path) is True:
 
 run_w_pool = True
 
-# I hid the process of getting these bc they're ugly.
-# vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
 
-# A list of parameters needed to make a model. These get dynamically updated
-# in lnprob (line 348). Nothing that is being fit for can be in a tuple
-# Note that these are only the params that are line-independent.
-# Line-dependent stuff gets added in at the beginnning of lnprob()
+# An initial list of parameters needed to make a model.
+# These get dynamically updated in lnprob (line 348).
+# Nothing that is being fit for can be in a tuple
+vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 param_dict = {
     'r_out_A':              400,             # AU
     'r_out_B':              200,             # AU
@@ -83,8 +81,40 @@ param_dict = {
     'distance':            389.143,           # parsec, errors of 3ish
     'imres':               0.045,             # arcsec/pixel
     'imwidth':             256,               # width of image (pixels)
+    'mol':                 mol,
+    'vsys':                vsys,              # km/s
+    'obsv':                obsv,              # km/s
+    'nchans':              n_chans,
+    'chanmins':            chanmins,
+    'restfreq':            restfreq,	   	  # GHz
+    'offsets':             [pos_A, pos_B],    # from center (")
+    'offsets':             [pos_A, pos_B],    # from center (")
+    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
+    'jnum':                lines[mol]['jnum'],
+    'column_densities':    lines[mol]['col_dens'],
+    'T_freezeout':         lines[mol]['t_fo']
     }
 
+    # Save out the initial param dict for accessing when we want
+    pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
+    print "Wrote {}param_dict.pkl out".format(run_path)
+
+    """
+    # Start off by adding in the line-dependent values to param_dict.
+    vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+    param_dict['mol']        = mol
+    param_dict['vsys']       = vsys              # km/s
+    param_dict['obsv']       = obsv              # km/s
+    param_dict['nchans']     = n_chans
+    param_dict['chanmins']   = chanmins
+    param_dict['restfreq']   = restfreq	   	     # GHz
+    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+    param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
+    param_dict['jnum']             = lines[mol]['jnum']
+    param_dict['column_densities'] = lines[mol]['col_dens']
+    param_dict['T_freezeout']      = lines[mol]['t_fo']
+    """
 
 
 
@@ -337,26 +367,6 @@ def lnprob(theta, run_name, param_info, mol):
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
                             and with length = total number of free params
     """
-    # Start off by adding in the line-dependent values to param_dict.
-    vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
-    param_dict['mol']        = mol
-    param_dict['vsys']       = vsys              # km/s
-    param_dict['obsv']       = obsv              # km/s
-    param_dict['nchans']     = n_chans
-    param_dict['chanmins']   = chanmins
-    param_dict['restfreq']   = restfreq	   	     # GHz
-    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-    param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
-    param_dict['jnum']             = lines[mol]['jnum']
-    param_dict['column_densities'] = lines[mol]['col_dens']
-    param_dict['T_freezeout']      = lines[mol]['t_fo']
-
-    # Save out the initial param dict for accessing when we want
-    # with open(run_path + 'param_dict.pkl', 'w') as f:
-    pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
-    # print "Wrote {}param_dict.pkl out".format(run_path)
-
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
         # print '\n', i, free_param
