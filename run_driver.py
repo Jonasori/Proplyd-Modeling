@@ -14,6 +14,10 @@ from astropy.io import fits
 plt.switch_backend('agg')
 M_sun = M_sun.value
 
+# Import some files from Kevin's modeling code
+from disk_model import raytrace as rt
+from disk_model.disk import Disk
+
 # Import some local files
 import mcmc
 import fitting
@@ -21,12 +25,13 @@ import plotting
 from tools import remove, already_exists
 from constants import obs_stuff, lines, today, offsets #, mol
 
-# Import some files from Kevin's modeling code
-from disk_model import raytrace as rt
-from disk_model.disk import Disk
 
 nwalkers = 50
 nsteps = 400
+
+mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
+if mol not in ['hco', 'hcn', 'co', 'cs']:
+    return "Choose one of the four lines."
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
@@ -126,10 +131,6 @@ def main():
         print "Starting run:", run_path + today
         print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
         print '\n\n\n'
-
-        mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
-        if mol not in ['hco', 'hcn', 'co', 'cs']:
-            return "Choose one of the four lines."
 
         mcmc.run_emcee(run_path=run_path,
                        run_name=today,
