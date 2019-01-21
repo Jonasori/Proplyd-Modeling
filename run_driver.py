@@ -95,26 +95,26 @@ param_dict = {
     'T_freezeout':         lines[mol]['t_fo']
     }
 
-    # Save out the initial param dict for accessing when we want
-    pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
-    print "Wrote {}param_dict.pkl out".format(run_path)
+# Save out the initial param dict for accessing when we want
+pickle.dump(param_dict, open(run_path + 'param_dict.pkl', 'w'))
+print "Wrote {}param_dict.pkl out".format(run_path)
 
-    """
-    # Start off by adding in the line-dependent values to param_dict.
-    vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
-    param_dict['mol']        = mol
-    param_dict['vsys']       = vsys              # km/s
-    param_dict['obsv']       = obsv              # km/s
-    param_dict['nchans']     = n_chans
-    param_dict['chanmins']   = chanmins
-    param_dict['restfreq']   = restfreq	   	     # GHz
-    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-    param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-    param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
-    param_dict['jnum']             = lines[mol]['jnum']
-    param_dict['column_densities'] = lines[mol]['col_dens']
-    param_dict['T_freezeout']      = lines[mol]['t_fo']
-    """
+"""
+# Start off by adding in the line-dependent values to param_dict.
+vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+param_dict['mol']        = mol
+param_dict['vsys']       = vsys              # km/s
+param_dict['obsv']       = obsv              # km/s
+param_dict['nchans']     = n_chans
+param_dict['chanmins']   = chanmins
+param_dict['restfreq']   = restfreq	   	     # GHz
+param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+param_dict['offsets']    = [pos_A, pos_B]    # from center (")
+param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
+param_dict['jnum']             = lines[mol]['jnum']
+param_dict['column_densities'] = lines[mol]['col_dens']
+param_dict['T_freezeout']      = lines[mol]['t_fo']
+"""
 
 
 
