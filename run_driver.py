@@ -323,7 +323,7 @@ def make_fits(model, param_dict, mol, testing=False):
 
 
 # Define likelehood functions
-def lnprob(theta, run_name, param_info, mol=mol):
+def lnprob(theta, run_name, param_info, mol):
     """Evaluate a set of parameters by making a model and getting its chi2.
 
     From the emcee docs: a function that takes a vector in the

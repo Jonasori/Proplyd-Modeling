@@ -520,13 +520,13 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
         sampler = emcee.EnsembleSampler(nwalkers,
                                         ndim,
                                         lnprob,
-                                        args=(run_name, param_info),
+                                        args=(run_name, param_info, mol),
                                         pool=pool)
     else:
         sampler = emcee.EnsembleSampler(nwalkers,
                                         ndim,
                                         lnprob,
-                                        args=(run_name, param_info))
+                                        args=(run_name, param_info, mol))
 
     # Initiate a generator to provide the data. More about generators here:
     # https://medium.freecodecamp.org/how-and-why-you-should-use-python-generators-f6fb56650888
