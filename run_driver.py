@@ -30,8 +30,6 @@ nwalkers = 50
 nsteps = 400
 
 mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
-if mol not in ['hco', 'hcn', 'co', 'cs']:
-    return "Choose one of the four lines."
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
