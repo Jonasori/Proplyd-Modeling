@@ -50,7 +50,6 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=short_vis_only)
 
 
-    obsv
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
 

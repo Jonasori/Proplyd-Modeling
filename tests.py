@@ -2,7 +2,9 @@ import mcmc
 import numpy as np
 from analysis import GridSearch_Run
 from pathlib2 import Path
-from constants import lines
+from utils import makeModel, sumDisks
+from constants import lines, obs_stuff, offsets
+from run_params import make_diskA_params, make_diskB_params
 from run_driver import make_fits, param_dict
 from run_params import make_diskA_params
 from fitting import Model, Observation
@@ -14,12 +16,12 @@ modeling = '/Volumes/disks/jonas/modeling'
 %matplotlib inline
 
 mol = 'hco'
-
+lines['hco']
 
 diskAParams = make_diskA_params(mol=mol, run_length='short')
 
 vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
-
+pos_A, pos_B = offsets
 obsv
 
 param_dict = {
@@ -73,18 +75,22 @@ def test_make_fits(mol, save=False):
     print "Finished making fits files; plotting now"
     plot_fits('/scratch/jonas/mcmc_runs/jan16_test_{}/model_files/test1.fits'.format(mol), save=save)
 
+def test_makeModel(mol, save=False):
+    diskAParams = make_diskA_params(mol='hco', run_length='short')
+    diskBParams = make_diskB_params(mol='hco', run_length='short')
 
-test_make_fits('hco')
-test_make_fits('hcn')
-test_make_fits('co', save=True)
-test_make_fits('cs', save=True)
+    makeModel(diskAParams, './test_files/makeModel_testA.fits', 0, mol)
+    makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
+    sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
+
+# test_make_fits('hco')
+# test_make_fits('hcn')
+# test_make_fits('co', save=True)
+# test_make_fits('cs', save=True)
 
 
-plot_fits('/scratch/jonas/mcmc_runs/jan16_test_cs/model_files/test1.fits')
+test_makeModel('hco')
 
-
-run = mcmc.MCMCrun('mcmc_runs/jan21/', 'jan21')
-run.main
 
 
 
