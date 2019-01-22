@@ -189,7 +189,9 @@ def main():
         if args.analyze or args.corner:
             run.corner(variables=args.corner_vars)
 
-
+# model = Model(obs, 'jan22-4', 'jan22-4')
+# mol = 'hco'
+# testing=False
 def make_fits(model, param_dict, mol, testing=False):
     """Take in two list of disk params and return a two-disk model.
 
@@ -255,7 +257,6 @@ def make_fits(model, param_dict, mol, testing=False):
                    )
 
 
-    param_dict['obsv']
     # Now do Disk 2
     DI = 1
     d2 = Disk(params=[param_dict['temp_struct_B'],
@@ -309,8 +310,8 @@ def make_fits(model, param_dict, mol, testing=False):
     # Add the header by modifying a model header.
 
 
-    with fits.open(model.modelfiles_path + '-d1.fits') as model:
-        model_header = model[0].header
+    with fits.open(model.modelfiles_path + '-d1.fits') as model_fits:
+        model_header = model_fits[0].header
     im.header = model_header
 
     # Swap out some of the vals using values from the data file used by model:

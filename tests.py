@@ -106,10 +106,11 @@ test_makeModel('hco')
 mol = 'hco'
 obs = Observation(mol)
 model = Model(obs, 'jan22-3', 'jan22-3')
-    for p in param_dict.keys():
-        if p != 'obsv':
-            print p, ': ', param_dict[p]
+for p in param_dict.keys():
+    if p != 'obsv':
+        print p, ': ', param_dict[p]
 
+model.observation.fits
 
 
 
