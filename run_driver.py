@@ -1,6 +1,4 @@
-"""Cail's mcmc.py run wrapper.
-
-"""
+"""Cail's mcmc.py run wrapper."""
 
 # Import some python packages
 import os
@@ -98,27 +96,6 @@ param_dict = {
     'column_densities':    lines[mol]['col_dens'],
     'T_freezeout':         lines[mol]['t_fo']
     }
-
-
-
-
-"""
-# Start off by adding in the line-dependent values to param_dict.
-vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
-param_dict['mol']        = mol
-param_dict['vsys']       = vsys              # km/s
-param_dict['obsv']       = obsv              # km/s
-param_dict['nchans']     = n_chans
-param_dict['chanmins']   = chanmins
-param_dict['restfreq']   = restfreq	   	     # GHz
-param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-param_dict['offsets']    = [pos_A, pos_B]    # from center (")
-param_dict['chanstep']   = (1) * np.abs(obsv[1] - obsv[0])
-param_dict['jnum']             = lines[mol]['jnum']
-param_dict['column_densities'] = lines[mol]['col_dens']
-param_dict['T_freezeout']      = lines[mol]['t_fo']
-"""
-
 
 
 
@@ -228,6 +205,11 @@ def make_fits(model, param_dict, mol, testing=False):
         dir_list = model.modelfiles_path.split('/')[:-1]
         dir_to_make = '/'.join(dir_list) + '/'
         sp.call(['mkdir {}'.format(dir_to_make)])
+
+
+    for p in param_dict.keys():
+        if p != 'obsv':
+            print p, ': ', param_dict[p]
 
     # Make Disk 1
     print "Entering make fits; exporting to", model.modelfiles_path

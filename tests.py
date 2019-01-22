@@ -1,3 +1,15 @@
+"""
+So try running a grid with disk B xmol fixed at something reasonable (in -7 to -4)
+to see if anything changes. If it doesn't, then that means it might just be
+optically thick (can check by looking at degeneracy map.)
+
+"""
+
+
+
+
+
+
 import mcmc
 import numpy as np
 from analysis import GridSearch_Run
