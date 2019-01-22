@@ -399,7 +399,7 @@ def lnprob(theta, run_name, param_info, mol):
 
     model.obs_sample()
     model.chiSq()
-    model.delete()
+    # model.delete()
     # Why is this a sum?
     lnp = -0.5 * sum(model.raw_chis)
     print "Lnprob val: ", lnp
