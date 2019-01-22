@@ -73,7 +73,7 @@ class MCMCrun:
         # Get rid of steps that resulted in bad lnprobs
         lnprob_vals = self.burnt_in.loc[:, 'lnprob']
         self.groomed = self.burnt_in.loc[lnprob_vals != -np.inf, :]
-        print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
+        # print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
 
 
 
@@ -387,6 +387,9 @@ class MCMCrun:
 
         return (models, bf_param_dict)
 
+run_path = './mcmc_runs/jan22/'
+run_name = 'jan22'
+mol = 'hco'
 
 def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     """
@@ -453,7 +456,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
                       ('pos_angle_A',       70,      45,       (0, 360)),
                       ('r_out_B',           500,     300,      (10, 1000)),
                       ('atms_temp_B',       200,     150,      (0, np.inf)),
-                      ('m_disk_B',          -1.,      1.,      (-2.5, 0))
+                      ('m_disk_B',          -1.,      1.,      (-2.5, 0)),
                       ('temp_struct_B',     0.,      1,        (-3., 3.)),
                       ('incl_B',            45.,     30,       (0, 90.)),
                       ('pos_angle_B',       136.0,   45,       (0, 360))
@@ -513,7 +516,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
                for i in range(nwalkers)]
 
 
-
+    # lnprob = run_driver.lnprob
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.
@@ -548,6 +551,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
             """
     lnprobs = []
     print "About to loop over run"
+    print type(run)
     # Instantiate the generator
     for i, result in enumerate(run):
         """Enumerate returns a tuple the element and a counter.
@@ -571,6 +575,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
             print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
 
+    print "Ended run"
     if run_w_pool is True:
         pool.close()
 

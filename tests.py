@@ -81,16 +81,8 @@ test_make_fits('cs', save=True)
 plot_fits('/scratch/jonas/mcmc_runs/jan16_test_cs/model_files/test1.fits')
 
 
-
-h = fits.getheader(image_path)
-h
-
-
-
-param_dict
-diskAParams
-
-
+run = mcmc.MCMCrun('mcmc_runs/jan21/', 'jan21')
+run.main
 
 
 

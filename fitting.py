@@ -335,8 +335,7 @@ class Model:
         raw_chi = np.sum(wt * (data_real - model_real)**2 +
                          wt * (data_imag - model_imag)**2)
 
-        # Degrees of freedom is how many total real and imaginary
-        # weights we have.
+        # Degrees of freedom: how many total real and imaginary weights we have
         dof = 2 * len(data_vis)
         reduced_chi = raw_chi/dof
 
