@@ -547,8 +547,9 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
                               lnpostfn returns blobs too.
             """
     lnprobs = []
+    import pdb; pdb.set_trace()
+
     print "About to loop over run"
-    # Instantiate the generator
     for i, result in enumerate(run):
         print "Got a result"
         pos, lnprobs, blob = result
