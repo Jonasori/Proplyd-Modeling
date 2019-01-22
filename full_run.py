@@ -38,8 +38,8 @@ elif method == 'mc':
 
 
 elif method == 'fl':
-    n = raw_input('How many processors shall we use?\n[1-10]: ')
-    np = 2 if n not in range(11) else n
+    n = raw_input('How many processors shall we use?\n[2-10]: ')
+    np = 2 if n not in range(2, 11) else n
     print "Using {} processors".format(np)
     sp.call(['mpirun', '-np', np, 'python', 'four_line_run_driver.py', '-r'])
 
