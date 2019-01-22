@@ -109,7 +109,8 @@ lines = {'hco': {'restfreq': 356.73422300,
          }
 
 
-
+mol = 'hco'
+short_vis_only = True
 def obs_stuff(mol, short_vis_only=True):
     """Get freqs, restfreq, obsv, chanstep, both n_chans, and both chanmins.
 
@@ -144,12 +145,16 @@ def obs_stuff(mol, short_vis_only=True):
     # grid defined by nchans automatically.
     nchans_a = int(2*np.ceil(np.abs(obsv-vsys[0]).max()/np.abs(chanstep))+1)
     nchans_b = int(2*np.ceil(np.abs(obsv-vsys[1]).max()/np.abs(chanstep))+1)
-    chanmin_a = -(nchans_a/2.-.5) * chanstep + vsys
-    chanmin_b = -(nchans_b/2.-.5) * chanstep + vsys
+
+    # Jan 22: Added the +vsys[i] term. Seems obvious that it should be there;
+    # no idea why it wasn't.
+    chanmin_a = -(nchans_a/2.-.5) * chanstep + vsys[0]
+    chanmin_b = -(nchans_b/2.-.5) * chanstep + vsys[1]
     n_chans, chanmins = [nchans_a, nchans_b], [chanmin_a, chanmin_b]
 
     return [vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum]
 
+    chanmin_b + nchans_a * chanstep
 
 # DATA FILE NAME
 def get_data_path(mol, short_vis_only=True):

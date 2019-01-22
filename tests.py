@@ -34,7 +34,7 @@ diskAParams = make_diskA_params(mol=mol, run_length='short')
 
 vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 pos_A, pos_B = offsets
-
+chanmins
 
 param_dict = {
     'r_out_A':              400,             # AU
