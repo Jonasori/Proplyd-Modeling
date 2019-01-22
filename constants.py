@@ -1,6 +1,5 @@
-"""A place to put all the junky equations I don't want elsewhere.
-
-FOR GRID SEARCH.
+"""
+A place to store pretty much all the non-varied values that get used.
 """
 
 from astropy.constants import c
