@@ -47,51 +47,6 @@ distance = 1/(2.569750671443057 * 10**(-3))
 # Maybe this is error? I don't remember.
 error = 0.0526 * distance**(-2)
 
-other_params = [col_dens, Tfo, m_star, r_in, rotHand, offsets, distance]
-
-
-
-def obs_stuff(mol, short_vis_only=True):
-    """Get freqs, restfreq, obsv, chanstep, both n_chans, and both chanmins.
-
-    Just putting this stuff in a function because it's ugly and line-dependent.
-    """
-    dataPath = get_data_path(mol, short_vis_only=short_vis_only)
-
-    jnum = lines[mol]['jnum']
-
-    # Dig some observational params out of the data file.
-    hdr = fits.getheader(dataPath + '.uvf')
-
-    restfreq = lines[mol]['restfreq']
-    # restfreq = hdr['CRVAL4'] * 1e-9
-
-    chan_dir = lines[mol]['chanstep_freq']/np.abs(lines[mol]['chanstep_freq'])
-
-    # Get the frequencies and velocities of each step
-    # {[range(nchans) + 1 - chanNum] * chanStepFreq) + ChanNumFreq} * Hz2GHz
-    # [-25,...,25] * d_nu + ref_chan_freq
-    chanstep = lines[mol]['chanstep_freq'] * 1e9
-    freqs = ((np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * chanstep + hdr['crval4']) * 1e-9
-    # freqs = ( (np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * hdr['cdelt4'] + hdr['crval4']) * 1e-9
-    obsv = c * (restfreq-freqs)/restfreq
-
-    chanstep = -1 * chan_dir * np.abs(obsv[1]-obsv[0])
-    # chanstep = c * (lines[mol]['chanstep_freq']/lines[mol]['restfreq'])
-
-    # Find the largest distance between a point on the velocity grid and sysv
-    # Double it to cover both directions, convert from velocity to chans
-    # The raytracing code will interpolate this (larger) grid onto the smaller
-    # grid defined by nchans automatically.
-    nchans_a = int(2*np.ceil(np.abs(obsv-vsys[0]).max()/np.abs(chanstep))+1)
-    nchans_b = int(2*np.ceil(np.abs(obsv-vsys[1]).max()/np.abs(chanstep))+1)
-    chanmin_a = -(nchans_a/2.-.5) * chanstep
-    chanmin_b = -(nchans_b/2.-.5) * chanstep
-    n_chans, chanmins = [nchans_a, nchans_b], [chanmin_a, chanmin_b]
-
-    return [vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum]
-
-
 
 
 # Lines dict for Grid Search
@@ -156,6 +111,45 @@ lines = {'hco': {'restfreq': 356.73422300,
 
 
 
+def obs_stuff(mol, short_vis_only=True):
+    """Get freqs, restfreq, obsv, chanstep, both n_chans, and both chanmins.
+
+    Just putting this stuff in a function because it's ugly and line-dependent.
+    """
+    dataPath = get_data_path(mol, short_vis_only=short_vis_only)
+
+    jnum = lines[mol]['jnum']
+
+    # Dig some observational params out of the data file.
+    hdr = fits.getheader(dataPath + '.uvf')
+
+    restfreq = lines[mol]['restfreq']
+    # restfreq = hdr['CRVAL4'] * 1e-9
+
+    chan_dir = lines[mol]['chanstep_freq']/np.abs(lines[mol]['chanstep_freq'])
+
+    # Get the frequencies and velocities of each step
+    # {[range(nchans) + 1 - chanNum] * chanStepFreq) + ChanNumFreq} * Hz2GHz
+    # [-25,...,25] * d_nu + ref_chan_freq
+    chanstep = lines[mol]['chanstep_freq'] * 1e9
+    freqs = ((np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * chanstep + hdr['crval4']) * 1e-9
+    # freqs = ( (np.arange(hdr['naxis4']) + 1 - hdr['crpix4']) * hdr['cdelt4'] + hdr['crval4']) * 1e-9
+    obsv = c * (restfreq-freqs)/restfreq
+
+    chanstep = -1 * chan_dir * np.abs(obsv[1]-obsv[0])
+    # chanstep = c * (lines[mol]['chanstep_freq']/lines[mol]['restfreq'])
+
+    # Find the largest distance between a point on the velocity grid and sysv
+    # Double it to cover both directions, convert from velocity to chans
+    # The raytracing code will interpolate this (larger) grid onto the smaller
+    # grid defined by nchans automatically.
+    nchans_a = int(2*np.ceil(np.abs(obsv-vsys[0]).max()/np.abs(chanstep))+1)
+    nchans_b = int(2*np.ceil(np.abs(obsv-vsys[1]).max()/np.abs(chanstep))+1)
+    chanmin_a = -(nchans_a/2.-.5) * chanstep
+    chanmin_b = -(nchans_b/2.-.5) * chanstep
+    n_chans, chanmins = [nchans_a, nchans_b], [chanmin_a, chanmin_b]
+
+    return [vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum]
 
 
 # DATA FILE NAME

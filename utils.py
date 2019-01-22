@@ -11,8 +11,7 @@ from astropy.io import fits
 from disk_model.disk import Disk
 import disk_model.raytrace as rt
 
-# Local package files
-from constants import obs_stuff, other_params, get_data_path, lines #, mol
+from constants import obs_stuff, get_data_path, lines #, mol
 
 ######################
 # CONSTANTS & PARAMS #
@@ -29,6 +28,8 @@ from constants import obs_stuff, other_params, get_data_path, lines #, mol
 # USEFUL FUNCTIONS #
 ####################
 
+mol = 'hco'
+short_vis_only = True
 
 def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     """Make a single model disk.
@@ -48,6 +49,8 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     # Get line-specific stuff
     vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=short_vis_only)
 
+
+    obsv
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
 

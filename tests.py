@@ -2,29 +2,33 @@ import mcmc
 import numpy as np
 from analysis import GridSearch_Run
 from pathlib2 import Path
+from constants import lines
 from run_driver import make_fits, param_dict
 from run_params import make_diskA_params
 from fitting import Model, Observation
 from tools import plot_fits
-
 from astropy.io import fits
-
-
-
-
-diskAParams = make_diskA_params(mol=mol, run_length='long')
 
 Path.cwd()
 modeling = '/Volumes/disks/jonas/modeling'
 %matplotlib inline
 
+mol = 'hco'
+
+
+diskAParams = make_diskA_params(mol=mol, run_length='short')
+
+vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+
+obsv
+
 param_dict = {
-    'r_out_A':              400,        # AU
-    'r_out_B':              200,        # AU
+    'r_out_A':              400,             # AU
+    'r_out_B':              200,             # AU
     'atms_temp_A':          300,
     'atms_temp_B':          200,
-    'mol_abundance_A':      -6.,
-    'mol_abundance_B':      -6.,
+    'mol_abundance_A':      -10,
+    'mol_abundance_B':      -10,
     'temp_struct_A':        -0.2,
     'temp_struct_B':        -0.2,
     'incl_A':               65.,
@@ -34,11 +38,9 @@ param_dict = {
     'T_mids':              [15, 15],          # Kelvin
     'r_ins':               1,                 # AU
     'r_ins':               [1, 1],            # AU
-    'T_freezeout':         19,                # Freezeout temperature
     'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
     'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
     'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
-    'column_densities':    [1.3e21/(1.59e21), 1e30/(1.59e21)],  # Low, high
     'surf_dens_str_A':     1.,                # Surface density power law index
     'surf_dens_str_B':     1.,                # Surface density power law index
     'v_turb':              0.081,             # Turbulence velocity
@@ -46,20 +48,20 @@ param_dict = {
     'r_crit':              100.,              # Critical radius (AU)
     'rot_hands':           [-1, -1],          # disk rotation direction
     'distance':            389.143,           # parsec, errors of 3ish
-    'offsets':             [pos_A, pos_B],    # from center (")
-    'offsets':             [pos_A, pos_B],    # from center (")
-    'vsys':                vsys,              # km/s
-    'restfreq':            restfreq,		  # GHz
-    'obsv':                obsv,              # km/s?
-    'jnum':                lines[mol]['jnum'],
-    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
-    'chanmins':            chanmins,
-    'nchans':              n_chans,
     'imres':               0.045,             # arcsec/pixel
     'imwidth':             256,               # width of image (pixels)
-    'mol':                 mol                # Emission line
+    'mol':                 mol,
+    'vsys':                vsys,              # km/s
+    'obsv':                obsv,              # km/s
+    'nchans':              n_chans,
+    'chanmins':            chanmins,
+    'restfreq':            restfreq,	   	  # GHz
+    'offsets':             [pos_A, pos_B],    # from center (")
+    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
+    'jnum':                lines[mol]['jnum'],
+    'column_densities':    lines[mol]['col_dens'],
+    'T_freezeout':         lines[mol]['t_fo']
     }
-
 
 def test_make_fits(mol, save=False):
     obs = Observation(mol)

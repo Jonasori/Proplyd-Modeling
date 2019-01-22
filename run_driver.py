@@ -30,6 +30,7 @@ from constants import obs_stuff, lines, today, offsets, mol
 nwalkers = 50
 nsteps = 400
 
+today
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
 run_name = today
@@ -49,10 +50,14 @@ run_w_pool = True
 
 pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
 
+pos_A
+pos_B
+
 # An initial list of parameters needed to make a model.
 # These get dynamically updated in lnprob (line 348).
 # Nothing that is being fit for can be in a tuple
 vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
+
 param_dict = {
     'r_out_A':              400,             # AU
     'r_out_B':              200,             # AU
@@ -88,12 +93,13 @@ param_dict = {
     'chanmins':            chanmins,
     'restfreq':            restfreq,	   	  # GHz
     'offsets':             [pos_A, pos_B],    # from center (")
-    'offsets':             [pos_A, pos_B],    # from center (")
     'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
     'jnum':                lines[mol]['jnum'],
     'column_densities':    lines[mol]['col_dens'],
     'T_freezeout':         lines[mol]['t_fo']
     }
+
+
 
 
 """
@@ -262,8 +268,9 @@ def make_fits(model, param_dict, mol, testing=False):
                    isgas=True
                    )
 
+
+    param_dict['obsv']
     # Now do Disk 2
-    #print "Now fitting disk 2"
     DI = 1
     d2 = Disk(params=[param_dict['temp_struct_B'],
                       10**param_dict['m_disk_B'],
@@ -304,21 +311,21 @@ def make_fits(model, param_dict, mol, testing=False):
     # Now sum those two models, make a header, and crank out some other files.
     a = fits.getdata(model.modelfiles_path + '-d1.fits')
     b = fits.getdata(model.modelfiles_path + '-d2.fits')
-    header_info_from_model = fits.open(model.modelfiles_path + '-d1.fits')
 
     # The actual disk summing
     sum_data = a + b
 
     # Create the empty structure for the final fits file and insert the data.
     im = fits.PrimaryHDU()
-    im.data = sum_data
+    # The actual disk summing
+    im.data = a + b
 
     # Add the header by modifying a model header.
 
-    # im_header = header_info_from_model[0].header
-    # I think this should be an attribute, not a variable.
-    im.header = header_info_from_model[0].header
-    header_info_from_model.close()
+
+    with fits.open(model.modelfiles_path + '-d1.fits') as model:
+        model_header = model[0].header
+    im.header = model_header
 
     # Swap out some of the vals using values from the data file used by model:
     # header_info_from_data = fits.open('../data/{}/{}.fits'.format(mol, mol))
@@ -333,23 +340,13 @@ def make_fits(model, param_dict, mol, testing=False):
     # im.header['EPOCH'] = data_header['EPOCH']
 
     # Write it out to a file, overwriting the existing one if need be
-    fitsout = model.modelfiles_path + '.fits'
-    #print "Writing out model fits file to: ", fitsout
-    im.writeto(fitsout, overwrite=True)
+    im.writeto(model.modelfiles_path + '.fits', overwrite=True)
 
-    """
-    Not sure why this is commented out; seems like it's important.
-    But it's showing up in the header somehow, so I guess no need to put it in.
-    sp.call
-    puthd in={fitsout.fits}/EPOCH value=2000.0
-    """
-
-    # Clear out the individual disk models now that we've got the data.
     remove([model.modelfiles_path + '-d1.fits',
             model.modelfiles_path + '-d2.fits'])
 
 
-# Define likelehood functions
+
 def lnprob(theta, run_name, param_info, mol):
     """
     Evaluate a set of parameters by making a model and getting its chi2.
@@ -379,6 +376,7 @@ def lnprob(theta, run_name, param_info, mol):
         else:
             # print "Taking else, returning -inf"
             return -np.inf
+
 
 
     # Set up an observation
