@@ -34,7 +34,7 @@ diskAParams = make_diskA_params(mol=mol, run_length='short')
 
 vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 pos_A, pos_B = offsets
-obsv
+
 
 param_dict = {
     'r_out_A':              400,             # AU
@@ -102,6 +102,13 @@ def test_makeModel(mol, save=False):
 
 
 test_makeModel('hco')
+
+mol = 'hco'
+obs = Observation(mol)
+model = Model(obs, 'jan22-3', 'jan22-3')
+    for p in param_dict.keys():
+        if p != 'obsv':
+            print p, ': ', param_dict[p]
 
 
 

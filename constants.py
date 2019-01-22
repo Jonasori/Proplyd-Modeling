@@ -144,8 +144,8 @@ def obs_stuff(mol, short_vis_only=True):
     # grid defined by nchans automatically.
     nchans_a = int(2*np.ceil(np.abs(obsv-vsys[0]).max()/np.abs(chanstep))+1)
     nchans_b = int(2*np.ceil(np.abs(obsv-vsys[1]).max()/np.abs(chanstep))+1)
-    chanmin_a = -(nchans_a/2.-.5) * chanstep
-    chanmin_b = -(nchans_b/2.-.5) * chanstep
+    chanmin_a = -(nchans_a/2.-.5) * chanstep + vsys
+    chanmin_b = -(nchans_b/2.-.5) * chanstep + vsys
     n_chans, chanmins = [nchans_a, nchans_b], [chanmin_a, chanmin_b]
 
     return [vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum]
