@@ -496,6 +496,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
         print 'Starting {}'.format(run_path)
 
         start_step = 0
+
         # Start a new file for the chain; set up a header line
         with open(chain_filename, 'w') as f:
             param_names = [param[0] for param in param_info]
@@ -523,15 +524,11 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     print "Initializing sampler."
     ndim = len(param_info)
     if run_w_pool is True:
-        sampler = emcee.EnsembleSampler(nwalkers,
-                                        ndim,
-                                        lnprob,
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
                                         args=(run_name, param_info, mol),
                                         pool=pool)
     else:
-        sampler = emcee.EnsembleSampler(nwalkers,
-                                        ndim,
-                                        lnprob,
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
                                         args=(run_name, param_info, mol))
 
     # Initiate a generator to provide the data. More about generators here:
@@ -554,10 +551,12 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     print type(run)
     # Instantiate the generator
     for i, result in enumerate(run):
+        print i
         """Enumerate returns a tuple the element and a counter.
             tuples = [t for t in enumerate(['a', 'b', 'c'])]
             counters = [c for c, l in enumerate(['a', 'b', 'c'])]
             """
+        """
         print "Got a result"
         pos, lnprobs, blob = result
         print "Step: ", i
@@ -574,7 +573,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
             print "Adding a new step to the chain: ", new_step
             np.savetxt(f, new_step, delimiter=',')
-
+        """
     print "Ended run"
     if run_w_pool is True:
         pool.close()

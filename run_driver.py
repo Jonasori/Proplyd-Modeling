@@ -41,9 +41,9 @@ already_exists(run_path)
 while already_exists(run_path) is True:
     run_name = run_name_basename + '-' + str(counter)
     run_path = './mcmc_runs/' + run_name + '/'
-
     counter += 1
 
+print run_path
 
 run_w_pool = True
 
@@ -351,7 +351,8 @@ def make_fits(model, param_dict, mol, testing=False):
 
 # Define likelehood functions
 def lnprob(theta, run_name, param_info, mol):
-    """Evaluate a set of parameters by making a model and getting its chi2.
+    """
+    Evaluate a set of parameters by making a model and getting its chi2.
 
     From the emcee docs: a function that takes a vector in the
     parameter space as input and returns the natural logarithm of the
@@ -399,6 +400,7 @@ def lnprob(theta, run_name, param_info, mol):
     model.obs_sample()
     model.chiSq()
     model.delete()
+    # Why is this a sum?
     lnp = -0.5 * sum(model.raw_chis)
     print "Lnprob val: ", lnp
     print '\n'
