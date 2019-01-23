@@ -10,7 +10,7 @@ import mcmc
 import numpy as np
 import subprocess as sp
 from utils import makeModel, sumDisks
-from tools import plot_fits, plot_spectrum
+from tools import plot_fits, plot_spectrum, already_exists
 from fitting import Model, Observation
 from analysis import GridSearch_Run
 from pathlib2 import Path
