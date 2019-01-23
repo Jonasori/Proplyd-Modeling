@@ -521,7 +521,8 @@ def plot_spectrum(image_path, save=False):
     sns.despine()
 
     if save:
-        outpath = raw_input('Enter path to save image to:\n')
+        # outpath = raw_input('Enter path to save image to:\n')
+        outpath = '.'.join(image_path.split('.')[:-1]) + '_spectrum.pdf'
         plt.savefig(outpath + '.pdf')
         print "Saved to " + outpath + '.pdf'
     else:
