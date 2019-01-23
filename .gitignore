@@ -12,3 +12,13 @@ data
 *.pyc
 __init__.py
 .nfs*
+.DS_Store
+._*
+.gitignore
+.remote-sync.json
+__init__.py
+*.pdf
+*.fits
+*.png
+plt_xkcd.py
+*rsync*

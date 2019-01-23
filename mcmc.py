@@ -503,13 +503,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
             np.savetxt(f, (np.append(param_names, 'lnprob'), ),
                        delimiter=',', fmt='%s')
 
-        # Set up initial positions?
-        """I think this is saying the same thing as the nested list comps.
-        pos = []
-        for i in range(nwalkers):
-            for param in param_info:
-                pos.append(param[1] + param[2]*np.random.randn())
-        """
+        # Set up initial positions
         # randn makes an n-dimensional array of rands in [0,1]
         # param[2] is the sigma of the param
         pos = [[param[1] + param[2]*np.random.randn()
