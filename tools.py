@@ -489,10 +489,11 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap=
         run_name = image_path.split('/')[-2]
         suffix += '_bestFit-' + mol if best_fit is True else ''
         outpath = resultsPath + run_name + suffix + '_image.pdf'
+        outpath = '.'.join(image_path.split('.')[:-1]) + '_image.pdf'
         plt.savefig(outpath)
         print 'Image saved to ' + outpath
     if show is True:
-        plt.show(block=False)
+        plt.show()
     plt.gca()
 
 

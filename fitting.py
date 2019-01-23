@@ -129,7 +129,7 @@ class Model:
     stuff on it.
     """
 
-    def __init__(self, observation, run_name, model_name):
+    def __init__(self, observation, run_name, model_name, testing=False):
         """Feed the model what it needs.
 
         Args:
@@ -138,7 +138,12 @@ class Model:
             model_name: run_name + unique ID number
         """
 
-        self.modelfiles_path = './mcmc_runs/' + run_name + '/model_files/' + model_name
+        if not testing:
+            self.modelfiles_path = './mcmc_runs/' + run_name + '/model_files/' + model_name
+        else:
+            # This is super janky. Basically uses run_name as a path instead.
+            # i.e. './test_files/make_fits_test-jan22-1/', 'mf_test'
+            self.modelfiles_path = run_name + model_name
         self.observation = observation
         self.raw_chis = []
         self.reduced_chis = []

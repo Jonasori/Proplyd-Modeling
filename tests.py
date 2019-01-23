@@ -68,7 +68,7 @@ param_dict = {
     'chanmins':            chanmins,
     'restfreq':            restfreq,	   	  # GHz
     'offsets':             [pos_A, pos_B],    # from center (")
-    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
+    'chanstep':            chanstep,
     'jnum':                lines[mol]['jnum'],
     'column_densities':    lines[mol]['col_dens'],
     'T_freezeout':         lines[mol]['t_fo']
@@ -157,16 +157,22 @@ gs_testdict_b = {'v_turb': testdict['v_turb'],
 
 
 def test_make_fits(mol, param_dict, save=True):
+
+    fname = 'mf_test'
+    base_path='./test_files/make_fits_test-{}'.format(today)
+    path, counter = base_path, 1
+    while already_exists(path) is True:
+        path = '{}-{}/'.format(base_path, str(counter))
+        counter += 1
+    sp.call(['mkdir', path])
+
     obs = Observation(mol)
-    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}'.format(mol)])
-    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}/model_files/'.format(mol)])
-    print "Made directories"
-    model = Model(obs, 'jan23_test_' + mol, 'test1')
+    model = Model(obs, path, fname)
     make_fits(model, param_dict, mol=mol)
     model.obs_sample()
-    print "Finished making fits files; plotting now"
-    plot_spectrum('/scratch/jonas/mcmc_runs/jan23_test_{}/model_files/test1.fits'.format(mol), save=save)
-    plot_fits('/scratch/jonas/mcmc_runs/jan23_test_{}/model_files/test1.fits'.format(mol), save=save)
+
+    plot_spectrum(path + fname + '.fits', save=save)
+    plot_fits(path + fname + '.fits', save=save)
 
 
 
@@ -175,12 +181,19 @@ diskBParams = make_diskB_params(mol='hco', run_length='short')
 
 def test_makeModel(mol, diskAParams, diskBParams, save=False):
 
-    path='./test_files/makeModel'
-    makeModel(diskAParams, path + '_testA', 0, mol)
-    makeModel(diskBParams, path + '_testB', 1, mol)
-    sumDisks(path + '_testA', path + '_testB', path + '_test_both', mol)
-    plot_spectrum(path + '_test_both.fits', save=True)
-    sample_model_in_uvplane(path + '_test_both', mol)
+    fname = 'mm_test'
+    base_path='./test_files/makeModel_test-{}'.format(today)
+    path, counter = base_path, 1
+    while already_exists(path) is True:
+        path = '{}-{}/'.format(base_path, str(counter))
+        counter += 1
+    sp.call(['mkdir', path])
+
+    makeModel(diskAParams, path + fname + 'A', 0, mol)
+    makeModel(diskBParams, path + fname + 'B', 1, mol)
+    sumDisks(path + 'A', path + fname + 'B', path + fname + '_both', mol)
+    plot_spectrum(path + fname + '_both.fits', save=True)
+    sample_model_in_uvplane(path + fname + '_both', mol)
 
 
 

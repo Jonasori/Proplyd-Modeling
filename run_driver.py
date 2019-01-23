@@ -348,17 +348,17 @@ def lnprob(theta, run_name, param_info, mol):
     """
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
-        print '\n', i, free_param
+        # print '\n', i, free_param
         lower_bound, upper_bound = free_param[-1]
         # If it is, put it into the dict that make_fits calls from
         if lower_bound < theta[i] < upper_bound:
-            print "Taking if"
+            # print "Taking if"
             name = free_param[0]
             param_dict[name] = theta[i]
             #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
                 #print name, theta[i], param_dict[name]
         else:
-            print "Taking else, returning -inf"
+            # print "Taking else, returning -inf"
             return -np.inf
 
 
