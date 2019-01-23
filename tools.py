@@ -506,18 +506,15 @@ def plot_spectrum(image_path, save=False):
     print "\nPlotting spectrum..."
 
     image = fits.getdata(image_path, ext=0).squeeze()
-    data_spec = np.array([np.sum(image[i])/image.shape[1]
+    spec = np.array([np.sum(image[i])/image.shape[1]
                           for i in range(image.shape[0])])
 
-    chans = np.arange(len(model_spec))
+    chans = np.arange(len(spec))
 
     fig, ax = plt.subplots(1, 1)
-    ax.plot(data_spec, color='steelblue')
-    # ax.set_title('Data', weight='bold')
-    ax.grid(False)
+    ax.plot(spec, color='steelblue')
 
-    # ymin = min([min(l) for l in [model_spec, data_spec, resid_spec]])
-    # ymax = max([max(l) for l in [model_spec, data_spec, resid_spec]])
+    ax.grid(False)
     ax.set_xlabel('Channel'), ax.set_ylabel('Jy/Beam')
     plt.tight_layout()
     sns.despine()
