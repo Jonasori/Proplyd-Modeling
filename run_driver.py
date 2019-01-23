@@ -211,10 +211,10 @@ def make_fits(model, param_dict, mol, testing=False):
         dir_to_make = '/'.join(dir_list) + '/'
         sp.call(['mkdir {}'.format(dir_to_make)])
 
-
-    for p in param_dict.keys():
-        if p != 'obsv':
-            print p, ': ', param_dict[p]
+    
+    # for p in param_dict.keys():
+    #     if p != 'obsv':
+    #         print p, ': ', param_dict[p]
 
     # Make Disk 1
     print "Entering make fits; exporting to", model.modelfiles_path
@@ -350,17 +350,17 @@ def lnprob(theta, run_name, param_info, mol):
     """
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
-        # print '\n', i, free_param
+        print '\n', i, free_param
         lower_bound, upper_bound = free_param[-1]
         # If it is, put it into the dict that make_fits calls from
         if lower_bound < theta[i] < upper_bound:
-            # print "Taking if"
+            print "Taking if"
             name = free_param[0]
             param_dict[name] = theta[i]
             #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
                 #print name, theta[i], param_dict[name]
         else:
-            # print "Taking else, returning -inf"
+            print "Taking else, returning -inf"
             return -np.inf
 
 
@@ -380,7 +380,6 @@ def lnprob(theta, run_name, param_info, mol):
 
     # Make the actual model fits files.
     make_fits(model, param_dict, mol)
-
     model.obs_sample()
     model.chiSq()
     # model.delete()

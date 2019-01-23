@@ -26,7 +26,6 @@ modeling = '/Volumes/disks/jonas/modeling'
 # %matplotlib inline
 
 mol = 'hco'
-lines['hco']
 
 diskAParams = make_diskA_params(mol=mol, run_length='short')
 
@@ -75,41 +74,6 @@ param_dict = {
     'T_freezeout':         lines[mol]['t_fo']
     }
 
-def test_make_fits(mol, param_dict, save=False):
-    obs = Observation(mol)
-    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}'.format(mol)])
-    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}/model_files/'.format(mol)])
-    print "Made directories"
-    model = Model(obs, 'jan23_test_' + mol, 'test1')
-    make_fits(model, param_dict, mol=mol)
-    model.obs_sample()
-    print "Finished making fits files; plotting now"
-    plot_fits('/scratch/jonas/mcmc_runs/jan23_test_{}/model_files/test1.fits'.format(mol), save=save)
-
-def test_makeModel(mol, save=False):
-    diskAParams = make_diskA_params(mol='hco', run_length='short')
-    diskBParams = make_diskB_params(mol='hco', run_length='short')
-
-    makeModel(diskAParams, './test_files/makeModel_testA.fits', 0, mol)
-    makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
-    sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
-
-# test_make_fits('hco', testdict)
-# test_make_fits('hcn')
-# test_make_fits('co', save=True)
-# test_make_fits('cs', save=True)
-
-
-# test_makeModel('hco')
-
-mol = 'hco'
-obs = Observation(mol)
-model = Model(obs, 'jan22-3', 'jan22-3')
-# for p in param_dict.keys():
-#     if p != 'obsv':
-#         print p, ': ', param_dict[p]
-#
-# model.observation.fits
 
 testdict = {'rot_hands' :  [-1, -1],
             'r_crit' :  100.0,
@@ -149,7 +113,81 @@ testdict = {'rot_hands' :  [-1, -1],
             'distance' :  389.143,
             'obsv': obsv}
 
-# make_fits(model, testdict, 'hco')
+gs_testdict_a = {'v_turb': testdict['v_turb'],
+                 'zq': testdict['vert_temp_str'],
+                 'r_crit': testdict['r_crit'],
+                 'rho_p': testdict['rho_p'],
+                 't_mid': testdict['T_mids'][0],
+                 'PA': testdict['pos_angle_A'],
+                 'incl': testdict['incl_A'],
+                 'pos_x': testdict['offsets'][0][0],
+                 'pos_y': testdict['offsets'][0][1],
+                 'v_sys': testdict['vsys'],
+                 't_atms': testdict['atms_temp_A'],
+                 't_qq': testdict['temp_struct_A'],
+                 'r_out': testdict['r_out_A'],
+                 'm_disk': testdict['m_disk_A'],
+                 'x_mol': testdict['mol_abundance_A']
+                 }
+
+gs_testdict_a = {'v_turb': testdict['v_turb'],
+                 'zq': testdict['vert_temp_str'],
+                 'r_crit': testdict['r_crit'],
+                 'rho_p': testdict['rho_p'],
+                 't_mid': testdict['T_mids'][1],
+                 'PA': testdict['pos_angle_B'],
+                 'incl': testdict['incl_B'],
+                 'pos_x': testdict['offsets'][1][0],
+                 'pos_y': testdict['offsets'][1][1],
+                 'v_sys': testdict['vsys'],
+                 't_atms': testdict['atms_temp_B'],
+                 't_qq': testdict['temp_struct_B'],
+                 'r_out': testdict['r_out_B'],
+                 'm_disk': testdict['m_disk_B'],
+                 'x_mol': testdict['mol_abundance_B']
+                 }
+
+
+
+
+def test_make_fits(mol, param_dict, save=True):
+    obs = Observation(mol)
+    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}'.format(mol)])
+    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}/model_files/'.format(mol)])
+    print "Made directories"
+    model = Model(obs, 'jan23_test_' + mol, 'test1')
+    make_fits(model, param_dict, mol=mol)
+    model.obs_sample()
+    print "Finished making fits files; plotting now"
+    plot_spectrum('/scratch/jonas/mcmc_runs/jan23_test_{}/model_files/test1.fits'.format(mol), save=save)
+    plot_fits('/scratch/jonas/mcmc_runs/jan23_test_{}/model_files/test1.fits'.format(mol), save=save)
+
+
+
+diskAParams = make_diskA_params(mol='hco', run_length='short')
+diskBParams = make_diskB_params(mol='hco', run_length='short')
+
+def test_makeModel(mol, diskAParams, diskBParams, path, save=False):
+    makeModel(diskAParams, './test_files/makeModel_testA.fits', 0, mol)
+    makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
+    sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
+    plot_spectrum('./test_files/makeModel_test_both.fits', save=True)
+    sample_model_in_uvplane('./test_files/makeModel_test_both'
+
+
+
+
+
+# test_make_fits('hco', testdict)
+# test_make_fits('hcn')
+# test_make_fits('co', save=True)
+# test_make_fits('cs', save=True)
+# test_makeModel('hco')
+
+mol = 'hco'
+obs = Observation(mol)
+model = Model(obs, 'jan22-3', 'jan22-3')
+
 
 
 
