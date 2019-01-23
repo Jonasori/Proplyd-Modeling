@@ -159,7 +159,7 @@ gs_testdict_b = {'v_turb': testdict['v_turb'],
 def test_make_fits(mol, param_dict, save=True):
 
     fname = 'mf_test'
-    base_path='./test_files/make_fits_test-{}'.format(today)
+    base_path='./test_files/make_fits_test-{}/'.format(today)
     path, counter = base_path, 1
     while already_exists(path) is True:
         path = '{}-{}/'.format(base_path, str(counter))
@@ -182,7 +182,7 @@ diskBParams = make_diskB_params(mol='hco', run_length='short')
 def test_makeModel(mol, diskAParams, diskBParams, save=False):
 
     fname = 'mm_test'
-    base_path='./test_files/makeModel_test-{}'.format(today)
+    base_path='./test_files/makeModel_test-{}/'.format(today)
     path, counter = base_path, 1
     while already_exists(path) is True:
         path = '{}-{}/'.format(base_path, str(counter))
