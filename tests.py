@@ -6,21 +6,18 @@ optically thick (can check by looking at degeneracy map.)
 """
 
 
-
-
-
-
 import mcmc
 import numpy as np
+from utils import makeModel, sumDisks
+from tools import plot_fits, plot_spectrum
+from fitting import Model, Observation
 from analysis import GridSearch_Run
 from pathlib2 import Path
+from constants import lines, obs_stuff, offsets
 from run_params import make_diskA_params, make_diskB_params
 from run_driver import make_fits, param_dict
 from run_params import make_diskA_params
-from constants import lines, obs_stuff, offsets
-from fitting import Model, Observation
-from utils import makeModel, sumDisks
-from tools import plot_fits, plot_spectrum
+
 from astropy.io import fits
 
 Path.cwd()
@@ -79,14 +76,14 @@ param_dict = {
 
 def test_make_fits(mol, param_dict, save=False):
     obs = Observation(mol)
-    sp.call(['mkdir', 'mcmc_runs/jan16_test_{}'.format(mol)])
-    sp.call(['mkdir', 'mcmc_runs/jan16_test_{}/model_files/'.format(mol)])
+    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}'.format(mol)])
+    sp.call(['mkdir', 'mcmc_runs/jan23_test_{}/model_files/'.format(mol)])
     print "Made directories"
-    model = Model(obs, 'jan16_test_' + mol, 'test1')
+    model = Model(obs, 'jan23_test_' + mol, 'test1')
     make_fits(model, param_dict, mol=mol)
     model.obs_sample()
     print "Finished making fits files; plotting now"
-    plot_fits('/scratch/jonas/mcmc_runs/jan16_test_{}/model_files/test1.fits'.format(mol), save=save)
+    plot_fits('/scratch/jonas/mcmc_runs/jan23_test_{}/model_files/test1.fits'.format(mol), save=save)
 
 def test_makeModel(mol, save=False):
     diskAParams = make_diskA_params(mol='hco', run_length='short')
