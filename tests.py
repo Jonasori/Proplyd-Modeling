@@ -172,7 +172,7 @@ def test_makeModel(mol, diskAParams, diskBParams, path, save=False):
     makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
     sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
     plot_spectrum('./test_files/makeModel_test_both.fits', save=True)
-    sample_model_in_uvplane('./test_files/makeModel_test_both'
+    sample_model_in_uvplane('./test_files/makeModel_test_both')
 
 
 
