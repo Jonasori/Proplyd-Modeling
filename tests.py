@@ -22,7 +22,7 @@ from astropy.io import fits
 
 Path.cwd()
 modeling = '/Volumes/disks/jonas/modeling'
-%matplotlib inline
+# %matplotlib inline
 
 mol = 'hco'
 lines['hco']
@@ -93,7 +93,7 @@ def test_makeModel(mol, save=False):
     makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
     sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
 
-test_make_fits('hco', testdict)
+# test_make_fits('hco', testdict)
 # test_make_fits('hcn')
 # test_make_fits('co', save=True)
 # test_make_fits('cs', save=True)
@@ -148,7 +148,7 @@ testdict = {'rot_hands' :  [-1, -1],
             'distance' :  389.143,
             'obsv': obsv}
 
-make_fits(model, testdict, 'hco')
+# make_fits(model, testdict, 'hco')
 
 
 
