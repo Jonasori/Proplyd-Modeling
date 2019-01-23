@@ -20,7 +20,7 @@ from run_params import make_diskA_params
 from constants import lines, obs_stuff, offsets
 from fitting import Model, Observation
 from utils import makeModel, sumDisks
-from tools import plot_fits
+from tools import plot_fits, plot_spectrum
 from astropy.io import fits
 
 Path.cwd()

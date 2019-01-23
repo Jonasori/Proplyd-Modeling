@@ -513,7 +513,7 @@ def plot_spectrum(image_path, save=False):
 
     fig, ax = plt.subplots(1, 1)
     ax.plot(data_spec, color='steelblue')
-    ax.set_title('Data', weight='bold')
+    # ax.set_title('Data', weight='bold')
     ax.grid(False)
 
     # ymin = min([min(l) for l in [model_spec, data_spec, resid_spec]])
