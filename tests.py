@@ -130,7 +130,7 @@ gs_testdict_a = {'v_turb': testdict['v_turb'],
                  'x_mol': testdict['mol_abundance_A']
                  }
 
-gs_testdict_a = {'v_turb': testdict['v_turb'],
+gs_testdict_b = {'v_turb': testdict['v_turb'],
                  'zq': testdict['vert_temp_str'],
                  'r_crit': testdict['r_crit'],
                  'rho_p': testdict['rho_p'],
