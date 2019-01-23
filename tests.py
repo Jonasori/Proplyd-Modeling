@@ -8,6 +8,7 @@ optically thick (can check by looking at degeneracy map.)
 
 import mcmc
 import numpy as np
+import subprocess as sp
 from utils import makeModel, sumDisks
 from tools import plot_fits, plot_spectrum
 from fitting import Model, Observation
