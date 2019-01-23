@@ -155,7 +155,6 @@ gs_testdict_b = {'v_turb': testdict['v_turb'],
                  }
 
 
-len(gs_testdict_b)
 
 def test_make_fits(mol, param_dict, save=True):
     obs = Observation(mol)
@@ -177,11 +176,11 @@ diskBParams = make_diskB_params(mol='hco', run_length='short')
 def test_makeModel(mol, diskAParams, diskBParams, save=False):
 
     path='./test_files/makeModel'
-    makeModel(diskAParams, path + '_testA.fits', 0, mol)
-    makeModel(diskBParams, path + '_testB.fits', 1, mol)
+    makeModel(diskAParams, path + '_testA', 0, mol)
+    makeModel(diskBParams, path + '_testB', 1, mol)
     sumDisks(path + '_testA', path + '_testB', path + '_test_both', mol)
     plot_spectrum(path + '_test_both.fits', save=True)
-    sample_model_in_uvplane(path + '_test_both')
+    sample_model_in_uvplane(path + '_test_both', mol)
 
 
 

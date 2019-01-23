@@ -66,8 +66,8 @@ param_dict = {
     'atms_temp_B':          200,
     'mol_abundance_A':      -10,
     'mol_abundance_B':      -10,
-    'temp_struct_A':        -0.2,
-    'temp_struct_B':        -0.2,
+    'temp_struct_A':        -0.2,            # Tqq in Kevin's code
+    'temp_struct_B':        -0.2,            # Tqq in Kevin's code
     'incl_A':               65.,
     'incl_B':               45,
     'pos_angle_A':          69.7,
@@ -94,13 +94,11 @@ param_dict = {
     'chanmins':            chanmins,
     'restfreq':            restfreq,	   	  # GHz
     'offsets':             [pos_A, pos_B],    # from center (")
-    'chanstep':            (1) * np.abs(obsv[1] - obsv[0]),
+    'chanstep':            chanstep,
     'jnum':                lines[mol]['jnum'],
     'column_densities':    lines[mol]['col_dens'],
     'T_freezeout':         lines[mol]['t_fo']
     }
-
-
 
 def main():
     """Establish and evaluate some custom argument options.
@@ -211,7 +209,7 @@ def make_fits(model, param_dict, mol, testing=False):
         dir_to_make = '/'.join(dir_list) + '/'
         sp.call(['mkdir {}'.format(dir_to_make)])
 
-    
+
     # for p in param_dict.keys():
     #     if p != 'obsv':
     #         print p, ': ', param_dict[p]
