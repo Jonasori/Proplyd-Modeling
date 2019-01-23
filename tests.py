@@ -167,7 +167,7 @@ def test_make_fits(mol, param_dict, save=True):
     sp.call(['mkdir', path])
 
     obs = Observation(mol)
-    model = Model(obs, path, fname)
+    model = Model(obs, path, fname, testing=True)
     make_fits(model, param_dict, mol=mol)
     model.obs_sample()
 
