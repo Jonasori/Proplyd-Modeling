@@ -551,6 +551,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
 
     print "About to loop over run"
     for i, result in enumerate(run):
+        break
         print "Got a result"
         pos, lnprobs, blob = result
         # print "Lnprobs: ", lnprobs
