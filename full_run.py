@@ -22,7 +22,6 @@ m = raw_input("Which type of run?\n['grid', 'mc']: ")
 method = 'mc' if 'm' in m else 'gs'
 
 if method == 'gs':
-
     mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
     if mol in ['hco', 'hcn', 'co', 'cs']:
         diskAParams = make_diskA_params(mol=mol, run_length='long')
@@ -33,7 +32,8 @@ if method == 'gs':
 
 
 elif method == 'mc':
-    np = raw_input('How many processors shall we use?\n[1-10]: ')
+    n = raw_input('How many processors shall we use?\n[2-10]: ')
+    np = 2 if n not in range(2, 11) else n
     sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
 
 

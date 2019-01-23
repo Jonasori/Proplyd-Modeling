@@ -9,6 +9,7 @@ import subprocess as sp
 import matplotlib.pyplot as plt
 from astropy.constants import M_sun
 from astropy.io import fits
+from pathlib2 import Path
 plt.switch_backend('agg')
 M_sun = M_sun.value
 
@@ -29,10 +30,8 @@ nwalkers = 50
 nsteps = 400
 
 
-from pathlib2 import Path
-Path.cwd()
+# Path.cwd()
 
-today
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
 run_name = today

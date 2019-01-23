@@ -14,12 +14,12 @@ import mcmc
 import numpy as np
 from analysis import GridSearch_Run
 from pathlib2 import Path
-from utils import makeModel, sumDisks
-from constants import lines, obs_stuff, offsets
 from run_params import make_diskA_params, make_diskB_params
 from run_driver import make_fits, param_dict
 from run_params import make_diskA_params
+from constants import lines, obs_stuff, offsets
 from fitting import Model, Observation
+from utils import makeModel, sumDisks
 from tools import plot_fits
 from astropy.io import fits
 
@@ -77,13 +77,14 @@ param_dict = {
     'T_freezeout':         lines[mol]['t_fo']
     }
 
-def test_make_fits(mol, save=False):
+def test_make_fits(mol, param_dict, save=False):
     obs = Observation(mol)
     sp.call(['mkdir', 'mcmc_runs/jan16_test_{}'.format(mol)])
     sp.call(['mkdir', 'mcmc_runs/jan16_test_{}/model_files/'.format(mol)])
     print "Made directories"
     model = Model(obs, 'jan16_test_' + mol, 'test1')
     make_fits(model, param_dict, mol=mol)
+    model.obs_sample()
     print "Finished making fits files; plotting now"
     plot_fits('/scratch/jonas/mcmc_runs/jan16_test_{}/model_files/test1.fits'.format(mol), save=save)
 
@@ -95,22 +96,64 @@ def test_makeModel(mol, save=False):
     makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
     sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
 
-# test_make_fits('hco')
+test_make_fits('hco', testdict)
 # test_make_fits('hcn')
 # test_make_fits('co', save=True)
 # test_make_fits('cs', save=True)
 
 
-test_makeModel('hco')
+# test_makeModel('hco')
 
 mol = 'hco'
 obs = Observation(mol)
 model = Model(obs, 'jan22-3', 'jan22-3')
-for p in param_dict.keys():
-    if p != 'obsv':
-        print p, ': ', param_dict[p]
+# for p in param_dict.keys():
+#     if p != 'obsv':
+#         print p, ': ', param_dict[p]
+#
+# model.observation.fits
 
-model.observation.fits
+testdict = {'rot_hands' :  [-1, -1],
+            'r_crit' :  100.0,
+            'column_densities' :  [0.8176100628930818, 628930817.610063],
+            'r_out_A' :  770.910089564,
+            'restfreq' :  356.734223,
+            'r_out_B' :  592.91782106,
+            'T_mids' :  [15, 15],
+            'chanstep' :  0.410341794388,
+            'mol' :  'hco',
+            'surf_dens_str_A' :  1.0,
+            'm_disk_B' :  -1.552842,
+            'surf_dens_str_B' :  1.0,
+            'm_stars' :  [3.5, 0.4],
+            'imwidth' :  256,
+            'r_ins' :  [1, 1],
+            'chanmins' :  [23.13093742042156, 23.060253831645213],
+            'incl_B' :  12.1070550098,
+            'incl_A' :  67.5001509446,
+            'atms_temp_B' :  81.3680085166,
+            'T_freezeout' :  19,
+            'jnum' :  3,
+            'atms_temp_A' :  366.878245658,
+            'vsys' :  [10.0, 10.75],
+            'imres' :  0.045,
+            'm_disk_A' :  -1.10791,
+            'mol_abundance_B' :  -8.65404254293,
+            'offsets' :  [[0.0002, 0.082], [-1.006, -0.3]],
+            'mol_abundance_A' :  -7.84839263903,
+            'pos_angle_A' :  57.528424483,
+            'pos_angle_B' :  155.778624035,
+            'v_turb' :  0.081,
+            'vert_temp_str' :  70.0,
+            'temp_struct_B' :  -0.916682600684,
+            'nchans' :  [65, 61],
+            'temp_struct_A' :  1.40565384915,
+            'distance' :  389.143,
+            'obsv': obsv}
+
+make_fits(model, testdict, 'hco')
+
+
 
 
 

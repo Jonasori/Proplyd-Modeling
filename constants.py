@@ -22,9 +22,9 @@ today = months[td.month - 1] + str(td.day)
 
 # DEFAULT VALUES
 # Column density [low, high]
-col_dens = [1.3e21/(1.59e21), 1e30/(1.59e21)]
+# col_dens = [1.3e21/(1.59e21), 1e30/(1.59e21)]
 # Freeze out temp (K)
-Tfo = 19
+# Tfo = 19
 # Stellar mass, in solar masses [a,b]
 m_star = [3.5, 0.4]
 # Inner disk radius, in AU
@@ -109,8 +109,6 @@ lines = {'hco': {'restfreq': 356.73422300,
          }
 
 
-mol = 'hco'
-short_vis_only = True
 def obs_stuff(mol, short_vis_only=True):
     """Get freqs, restfreq, obsv, chanstep, both n_chans, and both chanmins.
 
@@ -118,14 +116,12 @@ def obs_stuff(mol, short_vis_only=True):
     """
     dataPath = get_data_path(mol, short_vis_only=short_vis_only)
 
-    jnum = lines[mol]['jnum']
-
     # Dig some observational params out of the data file.
     hdr = fits.getheader(dataPath + '.uvf')
 
     restfreq = lines[mol]['restfreq']
     # restfreq = hdr['CRVAL4'] * 1e-9
-
+    jnum = lines[mol]['jnum']
     chan_dir = lines[mol]['chanstep_freq']/np.abs(lines[mol]['chanstep_freq'])
 
     # Get the frequencies and velocities of each step

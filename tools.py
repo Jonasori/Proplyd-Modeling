@@ -495,7 +495,39 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap=
     plt.gca()
 
 
+def plot_spectrum(image_path, save=False):
+    """
+    Plot a model/data/resid triptych of spectra
+    y-axis units: each pixel is in Jy/beam, so want to:
+        - Multiply each by beam
+        - Divide by number of pix (x*y)?
+    """
+    plt.close()
+    print "\nPlotting spectrum..."
 
+    image = fits.getdata(image_path, ext=0).squeeze()
+    data_spec = np.array([np.sum(image[i])/image.shape[1]
+                          for i in range(image.shape[0])])
+
+    chans = np.arange(len(model_spec))
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(data_spec, color='steelblue')
+    ax.set_title('Data', weight='bold')
+    ax.grid(False)
+
+    # ymin = min([min(l) for l in [model_spec, data_spec, resid_spec]])
+    # ymax = max([max(l) for l in [model_spec, data_spec, resid_spec]])
+    ax.set_xlabel('Channel'), ax.set_ylabel('Jy/Beam')
+    plt.tight_layout()
+    sns.despine()
+
+    if save:
+        outpath = raw_input('Enter path to save image to:\n')
+        plt.savefig(outpath + '.pdf')
+        print "Saved to " + outpath + '.pdf'
+    else:
+        plt.show()
 
 
 
