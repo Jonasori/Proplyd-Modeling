@@ -14,7 +14,7 @@ from tools import plot_fits, plot_spectrum
 from fitting import Model, Observation
 from analysis import GridSearch_Run
 from pathlib2 import Path
-from constants import lines, obs_stuff, offsets
+from constants import lines, obs_stuff, offsets, today
 from run_params import make_diskA_params, make_diskB_params
 from run_driver import make_fits, param_dict
 from run_params import make_diskA_params
@@ -130,8 +130,8 @@ gs_testdict_a = {'v_turb': testdict['v_turb'],
                  'x_mol': testdict['mol_abundance_A']
                  }
 
-for p in gs_testdict_a.keys():
-    print p, gs_testdict_a[p]
+# for p in gs_testdict_a.keys():
+#     print p, gs_testdict_a[p]
 
 
 
