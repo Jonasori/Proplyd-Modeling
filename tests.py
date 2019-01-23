@@ -122,13 +122,20 @@ gs_testdict_a = {'v_turb': testdict['v_turb'],
                  'incl': testdict['incl_A'],
                  'pos_x': testdict['offsets'][0][0],
                  'pos_y': testdict['offsets'][0][1],
-                 'v_sys': testdict['vsys'],
+                 'v_sys': testdict['vsys'][0],
                  't_atms': testdict['atms_temp_A'],
                  't_qq': testdict['temp_struct_A'],
                  'r_out': testdict['r_out_A'],
                  'm_disk': testdict['m_disk_A'],
                  'x_mol': testdict['mol_abundance_A']
                  }
+
+for p in gs_testdict_a.keys():
+    print p, gs_testdict_a[p]
+
+
+
+
 
 gs_testdict_b = {'v_turb': testdict['v_turb'],
                  'zq': testdict['vert_temp_str'],
@@ -139,7 +146,7 @@ gs_testdict_b = {'v_turb': testdict['v_turb'],
                  'incl': testdict['incl_B'],
                  'pos_x': testdict['offsets'][1][0],
                  'pos_y': testdict['offsets'][1][1],
-                 'v_sys': testdict['vsys'],
+                 'v_sys': testdict['vsys'][1],
                  't_atms': testdict['atms_temp_B'],
                  't_qq': testdict['temp_struct_B'],
                  'r_out': testdict['r_out_B'],
@@ -148,7 +155,7 @@ gs_testdict_b = {'v_turb': testdict['v_turb'],
                  }
 
 
-
+len(gs_testdict_b)
 
 def test_make_fits(mol, param_dict, save=True):
     obs = Observation(mol)
@@ -167,12 +174,14 @@ def test_make_fits(mol, param_dict, save=True):
 diskAParams = make_diskA_params(mol='hco', run_length='short')
 diskBParams = make_diskB_params(mol='hco', run_length='short')
 
-def test_makeModel(mol, diskAParams, diskBParams, path, save=False):
-    makeModel(diskAParams, './test_files/makeModel_testA.fits', 0, mol)
-    makeModel(diskBParams, './test_files/makeModel_testB.fits', 1, mol)
-    sumDisks('./test_files/makeModel_testA', './test_files/makeModel_testB', './test_files/makeModel_test_both', mol)
-    plot_spectrum('./test_files/makeModel_test_both.fits', save=True)
-    sample_model_in_uvplane('./test_files/makeModel_test_both')
+def test_makeModel(mol, diskAParams, diskBParams, save=False):
+
+    path='./test_files/makeModel'
+    makeModel(diskAParams, path + '_testA.fits', 0, mol)
+    makeModel(diskBParams, path + '_testB.fits', 1, mol)
+    sumDisks(path + '_testA', path + '_testB', path + '_test_both', mol)
+    plot_spectrum(path + '_test_both.fits', save=True)
+    sample_model_in_uvplane(path + '_test_both')
 
 
 
