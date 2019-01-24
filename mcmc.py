@@ -510,8 +510,6 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
                 for param in param_info]
                for i in range(nwalkers)]
 
-
-    # lnprob = run_driver.lnprob
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.

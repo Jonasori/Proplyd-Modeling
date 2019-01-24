@@ -90,7 +90,7 @@ def imspec(imageName, source='both'):
              'device=/xs, plot=sum'])
 
 
-def imstat(modelName, ext='.cm', plane_to_check=39):
+def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
     """Call imstat to find rms and mean.
 
     Want an offsource region so that we can look at the noise. Decision to look
@@ -138,7 +138,8 @@ def imstat(modelName, ext='.cm', plane_to_check=39):
     d = {}
     for i in range(len(hdr) - 1):
         d[hdr[i]] = imstat_list[i]
-        print hdr[i], ': ', imstat_list[i]
+        if verbose:
+            print hdr[i], ': ', imstat_list[i]
 
     # Return the mean and rms
     # return d

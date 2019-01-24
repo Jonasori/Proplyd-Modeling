@@ -20,7 +20,8 @@ class Figure:
                    "ytick.direction": "in"})
     sns.set_context("talk")
 
-    def __init__(self, paths, rmses, texts, layout=(1, 1),  savefile='figure.pdf', title=None, show=False):
+    def __init__(self, paths, rmses, texts, layout=(1, 1),
+                 savefile='figure.pdf', title=None, show=False):
         """Docstring."""
         rmses = np.array([rmses]) if type(rmses) is float else np.array(rmses)
         texts = np.array([texts], dtype=object) if type(texts) is str \
@@ -242,7 +243,7 @@ class Figure:
 
 
 def my_kde(samples, ax=None, show=False, **kwargs):
-    """Docstring.""" 
+    """Docstring."""
     # if ax is None: fig, ax = plt.subplots()
 
     q1, q3 = samples.quantile([.25, .75])
