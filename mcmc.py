@@ -545,6 +545,8 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     for i, result in enumerate(run):
         break
         print "Got a result"
+        
+        # Maybe do this logging out in the lnprob function itself?
         pos, lnprobs, blob = result
         # print "Lnprobs: ", lnprobs
 

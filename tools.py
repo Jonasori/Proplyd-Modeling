@@ -409,17 +409,19 @@ def tclean(mol='hco', output_path='./test'):
           "niter         = 5000)"])
 
 
-def moment_maps(im_path, out_path, moment=0):
-    # If doing it this way, need to convert CASA image -> miriad image
-    # pipe(["immoments(",
-    #       "imagename     = '{}',".format(im_path),
-    #       "moments       = [{}],".format(moment),
-    #       "axis          = 'spectral',",
-    #       "outfile       = 'moment_map')"
-    #       ])
+def moment_maps(im_path, out_path, rms, moment=0):
+    """Make a moment map from an image.
 
+    Args:
+        im_path (str): path to the Miriad image (.cm or .im, without file extension).
+    """
+
+    # Clear out old ones.
+    remove([out_path + '.cm', out_path + '.fits'])
     sp.call(['moment',
              'mom={}'.format(moment),
+             # 'clip={},{}'.format(5*rms, 1e10),
+             'clip={}'.format(6*rms),
              'in={}.cm'.format(im_path),
              'out={}.cm'.format(out_path)
              ])
@@ -429,6 +431,10 @@ def moment_maps(im_path, out_path, moment=0):
               'out={}.fits'.format(out_path)])
 
     # remove('moment_map')
+
+moment_maps('data/hco/hco-short110', 'clipped_hco_moment1', 0.01, moment=1)
+
+Path.cwd()
 
 def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='magma', save=False, use_cut_baselines=True, best_fit=False):
     """

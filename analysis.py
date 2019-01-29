@@ -32,7 +32,7 @@ import sys
 sys.version
 
 
-from tools import imstat, imstat_single, pipe
+from tools import imstat, imstat_single, pipe, moment_maps
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 import constants
 
@@ -679,6 +679,61 @@ class Figure:
                 plt.show()
 
 
+    def get_fits_manually(self, path, mol):
+        """Make moment maps by hand. Should not be used."""
+        fits_file = fits.open(path)
+        self.head = fits_file[0].header
+        self.data = fits_file[0].data.squeeze()
+
+        # Read in header spatial info to create ra
+        nx, ny, nv = self.head['NAXIS1'], self.head['NAXIS2'], self.head['NAXIS3']
+        xpix, ypix = self.head['CRPIX1'], self.head['CRPIX2']
+        xval, yval = self.head['CRVAL1'], self.head['CRVAL2']
+        self.xdelt, self.ydelt = self.head['CDELT1'], self.head['CDELT2']
+
+        # Convert from degrees to arcsecs
+        self.ra_offset = np.array(
+            ((np.arange(nx) - xpix + 1) * self.xdelt) * 3600)
+        self.dec_offset = np.array(
+            ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
+
+        # Assumes we have channels (i.e. nv > 1)
+        try:
+            self.rms = imstat(path.split('.')[-2])[1] * nv
+        except sp.CalledProcessError:
+            self.rms = 0
+        # Decide which moment map to make.
+        # www.atnf.csiro.au/people/Tobias.Westmeier/tools_hihelpers.php#moments
+        if self.moment == 0:
+            # Integrate intensity over pixels.
+            self.im = np.sum(self.data, axis=0)
+            if self.remove_bg:
+                self.im = ma.masked_where(self.im < self.rms, self.im, copy=True)
+
+        elif self.moment == 1:
+            self.im = np.zeros((nx, ny))
+
+            vsys = constants.obs_stuff(mol)[0]
+            obsv = constants.obs_stuff(mol)[3] - vsys[0]
+
+            # There must be a way to do this with array ops.
+            # obsv = obsv.reshape([len(obsv)]).shape
+            # self.im = np.sum(self.data * obsv, axis=0)/np.sum(self.data, axis=0)
+
+            for x in range(nx):
+                for y in range(ny):
+                    # I think this is doing good stuff.
+                    self.im[x, y] = np.sum(self.data[:, x, y] * obsv)
+                    # self.im[x, y] = np.sum(self.data[:, x, y] * obsv)/np.sum(self.data[:, x, y])
+
+        if self.remove_bg:
+            self.im = ma.masked_where(abs(self.im) < self.rms, self.im, copy=True)
+
+            # change units to micro Jy
+        # self.im *= 1e6
+        # self.rms *= 1e6
+
+
     def get_fits(self, path, mol):
         """Docstring."""
         fits_file = fits.open(path)
@@ -697,44 +752,16 @@ class Figure:
         self.dec_offset = np.array(
             ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
 
-        if nv == 1:
-            self.im = self.data
-            self.rms = imstat_single(path.split('.')[-2])[1]
-        else:
-            try:
-                self.rms = imstat(path.split('.')[-2])[1] * nv
-            except sp.CalledProcessError:
-                self.rms = 0
-            # Decide which moment map to make.
-            # www.atnf.csiro.au/people/Tobias.Westmeier/tools_hihelpers.php#moments
-            if self.moment == 0:
-                # Integrate intensity over pixels.
-                self.im = np.sum(self.data, axis=0)
-                if self.remove_bg:
-                    self.im = ma.masked_where(self.im < self.rms, self.im, copy=True)
-
-            elif self.moment == 1:
-                self.im = np.zeros((nx, ny))
-
-                vsys = constants.obs_stuff(mol)[0]
-                obsv = constants.obs_stuff(mol)[3] - vsys[0]
-
-                # There must be a way to do this with array ops.
-                # obsv = obsv.reshape([len(obsv)]).shape
-                # self.im = np.sum(self.data * obsv, axis=0)/np.sum(self.data, axis=0)
-
-                for x in range(nx):
-                    for y in range(ny):
-                        # I think this is doing good stuff.
-                        self.im[x, y] = np.sum(self.data[:, x, y] * obsv)
-                        # self.im[x, y] = np.sum(self.data[:, x, y] * obsv)/np.sum(self.data[:, x, y])
-
-            if self.remove_bg:
-                self.im = ma.masked_where(abs(self.im) < self.rms, self.im, copy=True)
-
-            # change units to micro Jy
+        # Make some moment maps
+        # This needs work.
+        rms = imstat_single(moment0_map)
+        momentmap_outpath = path.split('.')[-2] + '_moment' + str(self.moment)
+        moment_maps(path.split('.')[-2] + '.cm', momentmap_outpath, moment=self.moment)
+        self.im = fits.getdata(momentmap_outpath + '.fits')
+        # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
+
 
     def make_axis(self, ax):
         """Docstring."""
