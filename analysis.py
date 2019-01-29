@@ -28,7 +28,11 @@ from astropy.visualization import astropy_mpl_style
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MultipleLocator, LinearLocator, AutoMinorLocator
 
-from tools import imstat
+import sys
+sys.version
+
+
+from tools import imstat, imstat_single, pipe
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 import constants
 
@@ -37,6 +41,8 @@ from astropy.utils import data
 # https://media.readthedocs.org/pdf/spectral-cube/latest/spectral-cube.pdf
 # from spectral_cube import SpectralCube
 
+os.chdir('/Volumes/disks/jonas/modeling')
+Path.cwd()
 
 sns.set_style('white')
 plt.style.use(astropy_mpl_style)
@@ -46,19 +52,7 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 Path.cwd()
 
-dp = 'data/co/co-short60'
 
-
-d = fits.getdata(dp + '.fits').squeeze()
-m = fits.getdata('gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits')
-m.shape
-d.shape
-
-
-s = np.sum(m, axis=0)
-s.shape
-plt.imshow(s)
-plt.show()
 
 class GridSearch_Run:
     def __init__(self, path, save_all_plots=False):
@@ -557,8 +551,8 @@ class GridSearch_Run:
         self.DMR_spectra(save=True)
         self.DMR_images(save=True)
 
-run = GridSearch_Run('gridsearch_runs/jan21_hco/jan21_hco')
-run.plot_best_fit_params()
+# run = GridSearch_Run('gridsearch_runs/jan21_hco/jan21_hco')
+# run.plot_best_fit_params()
 
 class MomentMaps:
     def __init__(self, path):
@@ -570,7 +564,7 @@ class MomentMaps:
 
         try:
             self.mean, self.rms = imstat(self.path)
-        except CalledProcessError:
+        except sp.CalledProcessError:
             self.levels = []
             pass
 
@@ -597,13 +591,13 @@ class MomentMaps:
     # def moment1(self, save=False):
 
 
-m = MomentMaps('gridsearch_runs/jan19_hco/jan19_hco_bestFit')
-d = MomentMaps('data/hco/hco-short110')
-
-d.moment0()
-m.moment0()
-
-Path.cwd()
+# m = MomentMaps('gridsearch_runs/jan19_hco/jan19_hco_bestFit')
+# d = MomentMaps('data/hco/hco-short110')
+#
+# d.moment0()
+# m.moment0()
+#
+# Path.cwd()
 
 
 class Figure:
@@ -703,40 +697,42 @@ class Figure:
         self.dec_offset = np.array(
             ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
 
-        # Get the RMS
-        try:
-            self.rms = imstat(path.split('.')[-2])[1] * nv
-        except CalledProcessError:
-            self.rms = 0
+        if nv == 1:
+            self.im = self.data
+            self.rms = imstat_single(path.split('.')[-2])[1]
+        else:
+            try:
+                self.rms = imstat(path.split('.')[-2])[1] * nv
+            except sp.CalledProcessError:
+                self.rms = 0
+            # Decide which moment map to make.
+            # www.atnf.csiro.au/people/Tobias.Westmeier/tools_hihelpers.php#moments
+            if self.moment == 0:
+                # Integrate intensity over pixels.
+                self.im = np.sum(self.data, axis=0)
+                if self.remove_bg:
+                    self.im = ma.masked_where(self.im < self.rms, self.im, copy=True)
 
-        # Decide which moment map to make.
-        # www.atnf.csiro.au/people/Tobias.Westmeier/tools_hihelpers.php#moments
-        if self.moment == 0:
-            # Integrate intensity over pixels.
-            self.im = np.sum(self.data, axis=0)
-            if self.remove_bg:
-                self.im = ma.masked_where(self.im < self.rms, self.im, copy=True)
+            elif self.moment == 1:
+                self.im = np.zeros((nx, ny))
 
-        elif self.moment == 1:
-            self.im = np.zeros((nx, ny))
+                vsys = constants.obs_stuff(mol)[0]
+                obsv = constants.obs_stuff(mol)[3] - vsys[0]
 
-            vsys = constants.obs_stuff(mol)[0]
-            obsv = constants.obs_stuff(mol)[3] - vsys[0]
+                # There must be a way to do this with array ops.
+                # obsv = obsv.reshape([len(obsv)]).shape
+                # self.im = np.sum(self.data * obsv, axis=0)/np.sum(self.data, axis=0)
 
-            # There must be a way to do this with array ops.
-            # obsv = obsv.reshape([len(obsv)]).shape
-            # self.im = np.sum(self.data * obsv, axis=0)/np.sum(self.data, axis=0)
-
-            for x in range(nx):
-                for y in range(ny):
-                    # I think this is doing good stuff.
-                    self.im[x, y] = np.sum(self.data[:, x, y] * obsv)
-                    # self.im[x, y] = np.sum(self.data[:, x, y] * obsv)/np.sum(self.data[:, x, y])
+                for x in range(nx):
+                    for y in range(ny):
+                        # I think this is doing good stuff.
+                        self.im[x, y] = np.sum(self.data[:, x, y] * obsv)
+                        # self.im[x, y] = np.sum(self.data[:, x, y] * obsv)/np.sum(self.data[:, x, y])
 
             if self.remove_bg:
                 self.im = ma.masked_where(abs(self.im) < self.rms, self.im, copy=True)
 
-        # change units to micro Jy
+            # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
 
@@ -903,10 +899,9 @@ path_hco, path_hcn = 'data/hco/hco-short110.fits', 'data/hcn/hcn-short80.fits'
 path_co, path_cs = 'data/co/co-short60.fits', 'data/cs/cs-short0.fits'
 path_modelhco = 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
 
-f = Figure([path_co, path_modelhco], moment=1, remove_bg=True, save=True)
+# f = Figure([path_co, path_modelhco], moment=1, remove_bg=True, save=True)
 
-
-f2 = Figure([path_hco, path_co], moment=1)
+# f2 = Figure([path_hco, path_co], moment=1)
 
 
 

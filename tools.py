@@ -146,6 +146,40 @@ def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
     return float(d['Mean']), float(d['rms'])
 
 
+def imstat_single(modelName, ext='.cm', verbose=False):
+    print '\nIMSTATING ', modelName, '\n'
+
+    r_offsource = '(-5,-5,5,-1)'
+    imstat_raw = sp.check_output(['imstat',
+                                  'in={}{}'.format(modelName, ext),
+                                  'region=arcsec,box{}'.format(r_offsource)
+                                  ])
+    imstat_out = filter(None, imstat_raw.split('\n'))
+    # Get column names
+    hdr = filter(None, imstat_out[7].split(' '))
+
+    imstat_list = filter(None, imstat_out[-3].split(' '))
+
+    for i in range(len(imstat_list)-1):
+        if len(imstat_list[i]) > 11:
+            if imstat_list[i][0] == '-':
+                cut = 10
+            else:
+                cut = 9
+            imstat_list.insert(i+1, imstat_list[i][cut:])
+            imstat_list[i] = imstat_list[i][:cut]
+
+    d = {}
+    for i in range(len(hdr) - 1):
+        d[hdr[i]] = imstat_list[i]
+        if verbose:
+            print hdr[i], ': ', imstat_list[i]
+
+    # Return the mean and rms
+    # return d
+    return float(d['Mean']), float(d['rms'])
+
+
 def icr(visPath, mol='hco', min_baseline=0, niters=1e4):
     """Invert/clean/restor: Turn a vis into a convolved clean map.
 
@@ -375,6 +409,26 @@ def tclean(mol='hco', output_path='./test'):
           "niter         = 5000)"])
 
 
+def moment_maps(im_path, out_path, moment=0):
+    # If doing it this way, need to convert CASA image -> miriad image
+    # pipe(["immoments(",
+    #       "imagename     = '{}',".format(im_path),
+    #       "moments       = [{}],".format(moment),
+    #       "axis          = 'spectral',",
+    #       "outfile       = 'moment_map')"
+    #       ])
+
+    sp.call(['moment',
+             'mom={}'.format(moment),
+             'in={}.cm'.format(im_path),
+             'out={}.cm'.format(out_path)
+             ])
+    sp.call(['fits',
+              'op=xyout',
+              'in={}.cm'.format(out_path),
+              'out={}.fits'.format(out_path)])
+
+    # remove('moment_map')
 
 def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='magma', save=False, use_cut_baselines=True, best_fit=False):
     """
