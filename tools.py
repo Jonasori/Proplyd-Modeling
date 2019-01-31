@@ -105,7 +105,7 @@ def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
     From /Volumes/disks/sam/modeling/clean.csh:
     cgdisp in=gridsearch_runs/oct18_hco/oct18_hco_bestFit.cm,gridsearch_runs/oct18_hco/oct18_hco_bestFit.cm device=oct18_hco_bestFit.ps/cps labtyp=arcsec, options=mirror,full,blacklab,3value,beambl 3format=1pe12.6 olay=centering_for_olay.cgdisp, slev=a,6.2e-3 levs=3,5,7,9 cols1=2 type=pixel,contour nxy=7,5 region='arcsec,box(-2, -2, 2, 2)'
     """
-    print '\nIMSTATING ', modelName, '\n'
+    print('\nIMSTATING ', modelName, '\n')
 
     r_offsource = '(-5,-5,5,-1)'
     imstat_raw = sp.check_output(['imstat',
@@ -139,7 +139,7 @@ def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
     for i in range(len(hdr) - 1):
         d[hdr[i]] = imstat_list[i]
         if verbose:
-            print hdr[i], ': ', imstat_list[i]
+            print(hdr[i], ': ', imstat_list[i])
 
     # Return the mean and rms
     # return d
@@ -147,7 +147,7 @@ def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
 
 
 def imstat_single(modelName, ext='.cm', verbose=False):
-    print '\nIMSTATING ', modelName, '\n'
+    print('\nIMSTATING ', modelName, '\n')
 
     r_offsource = '(-5,-5,5,-1)'
     imstat_raw = sp.check_output(['imstat',
@@ -173,7 +173,7 @@ def imstat_single(modelName, ext='.cm', verbose=False):
     for i in range(len(hdr) - 1):
         d[hdr[i]] = imstat_list[i]
         if verbose:
-            print hdr[i], ': ', imstat_list[i]
+            print(hdr[i], ': ', imstat_list[i])
 
     # Return the mean and rms
     # return d
@@ -192,7 +192,7 @@ def icr(visPath, mol='hco', min_baseline=0, niters=1e4):
         rms (float): the the rms noise, to which we clean down to.
         mol (str): which molecule's restfreq to use.
     """
-    print "\nConvolving image\n"
+    print("\nConvolving image\n")
 
     # Since the path is sometimes more than 64 characters long, need to slice
     # it and use Popen/cwd to cut things down.
@@ -282,7 +282,7 @@ def sample_model_in_uvplane(modelPath, mol, option='replace'):
     modelPath = modelPath + '_resid' if option == 'subtract' else modelPath
 
     if option == 'subtract':
-        print "Making residual map."
+        print("Making residual map.")
 
     remove(modelPath + '.im')
     sp.call(['fits', 'op=xyin',
@@ -304,7 +304,7 @@ def sample_model_in_uvplane(modelPath, mol, option='replace'):
              'in={}.vis'.format(modelPath),
              'out={}.uvf'.format(modelPath)])
 
-    print "completed sampling uvplane; created .im, .vis, .uvf\n\n"
+    print("completed sampling uvplane; created .im, .vis, .uvf\n\n")
 
 
 def already_exists(query):
@@ -409,11 +409,14 @@ def tclean(mol='hco', output_path='./test'):
           "niter         = 5000)"])
 
 
-def moment_maps(im_path, out_path, rms, moment=0):
+def moment_maps(im_path, out_path, clip_val, moment=0):
     """Make a moment map from an image.
 
     Args:
         im_path (str): path to the Miriad image (.cm or .im, without file extension).
+        out_path (str): path to output images (.cm and .fits). No file extension.
+        clip_val (float): the value below which to clip. Miriad will remove all
+                          signal in [-abs(clip_val), abs(clip_val)]
     """
 
     # Clear out old ones.
@@ -421,7 +424,7 @@ def moment_maps(im_path, out_path, rms, moment=0):
     sp.call(['moment',
              'mom={}'.format(moment),
              # 'clip={},{}'.format(5*rms, 1e10),
-             'clip={}'.format(6*rms),
+             'clip={}'.format(clip_val),
              'in={}.cm'.format(im_path),
              'out={}.cm'.format(out_path)
              ])
@@ -432,9 +435,6 @@ def moment_maps(im_path, out_path, rms, moment=0):
 
     # remove('moment_map')
 
-moment_maps('data/hco/hco-short110', 'clipped_hco_moment1', 0.01, moment=1)
-
-Path.cwd()
 
 def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='magma', save=False, use_cut_baselines=True, best_fit=False):
     """
@@ -552,7 +552,7 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap=
         outpath = resultsPath + run_name + suffix + '_image.pdf'
         outpath = '.'.join(image_path.split('.')[:-1]) + '_image.pdf'
         plt.savefig(outpath)
-        print 'Image saved to ' + outpath
+        print('Image saved to ' + outpath)
     if show is True:
         plt.show()
     plt.gca()
@@ -566,7 +566,7 @@ def plot_spectrum(image_path, save=False):
         - Divide by number of pix (x*y)?
     """
     plt.close()
-    print "\nPlotting spectrum..."
+    print("\nPlotting spectrum...")
 
     image = fits.getdata(image_path, ext=0).squeeze()
     spec = np.array([np.sum(image[i])/image.shape[1]
@@ -586,10 +586,33 @@ def plot_spectrum(image_path, save=False):
         # outpath = raw_input('Enter path to save image to:\n')
         outpath = '.'.join(image_path.split('.')[:-1]) + '_spectrum.pdf'
         plt.savefig(outpath)
-        print "Saved to " + outpath
+        print("Saved to " + outpath)
     else:
         plt.show()
 
+
+def plot_pv_diagram(image_path, out_path, center=[129, 130], length=25, pa=70):
+    """
+    Make a position-velocity diagram.
+
+    https://casa.nrao.edu/casadocs/casa-5.1.0/global-task-list/task_impv/about
+    """
+    pipe(["impv(",
+          "imagename = '{}.cm',".format(image_path),
+          "outfile   = '{}.cm',".format(out_path),
+          # "overwrite = True,",
+          "mode      = 'length',",
+          "center    = {},".format(center),
+          "length    = {},".format(length),
+          "pa        = '{} deg')".format(pa)
+          ])
+    print "Made PV diagram. Converting to fits now."
+    sp.call(['fits',
+             'op=xyout',
+             'in={}.cm'.format(out_path),
+             'out={}.fits'.format(out_path)])
+
+    remove(out_path + '.cm')
 
 
 

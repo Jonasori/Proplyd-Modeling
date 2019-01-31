@@ -259,7 +259,7 @@ class GridSearch_Run:
             plt.show()
 
 
-    def DMR_images(self, cmap='magma', save=False):
+    def DMR_images(self, cmap='seismic', save=False):
         """Plot a triptych of data, model, and residuals.
 
         It would be nice to have an option to also plot the grid search results.
@@ -573,8 +573,8 @@ class MomentMaps:
 
         cmap = plt.imshow(im,
                          # extent=self.extent,
-                         vmin=np.min(im),
-                         vmax=np.max(im),
+                         vmin=np.nanmin(im),
+                         vmax=np.nanmax(im),
                          cmap='jet')
         if self.rms:
             levels = np.arange(3, 100, 3) * self.rms
@@ -752,12 +752,28 @@ class Figure:
         self.dec_offset = np.array(
             ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
 
-        # Make some moment maps
-        # This needs work.
-        rms = imstat_single(moment0_map)
-        momentmap_outpath = path.split('.')[-2] + '_moment' + str(self.moment)
-        moment_maps(path.split('.')[-2] + '.cm', momentmap_outpath, moment=self.moment)
-        self.im = fits.getdata(momentmap_outpath + '.fits')
+        # Check if we're looking at 2- or 3-dimensional data
+        if len(self.data.shape) == 3:
+            # Make some moment maps. Make both maps and just choose which data to use.
+            momentmap_basepath = path.split('.')[-2]
+            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
+                        clip_val=0, moment=0)
+            self.rms = imstat_single(momentmap_basepath + '_moment0')[1]
+
+            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
+                        clip_val=self.rms, moment=0)
+
+            self.im = fits.getdata(momentmap_basepath + '_moment0.fits').squeeze()
+            if self.moment == 1:
+                moment_maps(momentmap_basepath,
+                            momentmap_basepath + '_moment1',
+                            clip_val=self.rms, moment=1)
+                self.im_mom1 = fits.getdata(momentmap_basepath + '_moment1.fits').squeeze()
+
+        else:
+            self.im = self.data
+            self.rms = imstat_single(path.split('.')[-2])[1]
+
         # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
@@ -771,10 +787,10 @@ class Figure:
                        "ytick.direction": "in"})
         sns.set_context("talk")
 
-        xmin = -5.0
-        xmax = 5.0
-        ymin = -5.0
-        ymax = 5.0
+        xmin = -2.0
+        xmax = 2.0
+        ymin = -2.0
+        ymax = 2.0
         ax.set_xlim(xmax, xmin)
         ax.set_ylim(ymin, ymax)
         ax.grid(False)
@@ -792,7 +808,8 @@ class Figure:
         ax.set_xlabel(r'$\Delta \alpha$ (")', fontsize=18)
         ax.set_ylabel(r'$\Delta \delta$ (")', fontsize=18)
 
-        tick_labs = ['', '', '-4', '', '-2', '', '0', '', '2', '', '4', '']
+        # tick_labs = ['', '', '-4', '', '-2', '', '0', '', '2', '', '4', '']
+        tick_labs = ['', '', '-1', '', '1', '', '']
         ax.xaxis.set_ticklabels(tick_labs, fontsize=18)
         ax.yaxis.set_ticklabels(tick_labs, fontsize=18)
         ax.tick_params(which='both', right='on', labelsize=18, direction='in')
@@ -816,17 +833,25 @@ class Figure:
     def fill_axis(self, ax):
         """Docstring."""
         # Plot image as a colour map
-        cmap = ax.imshow(self.im,
+
+        # This is massively hacky, but works. Basically, if we're plotting as
+        # moment1 map, we still want to contour with moment0 lines. So this:
+        try:
+            im = self.im_mom1
+            cbar_lab = r'$km \, s^{-1}$'
+            vmin, vmax = 5, 15
+        except AttributeError:
+            im = self.im
+            cbar_lab = r'$Jy / beam$'
+            vmin, vmax = np.nanmin(im), np.nanmax(im)
+        cmap = ax.imshow(im,
                          extent=self.extent,
-                         vmin=np.min(self.im),
-                         vmax=np.max(self.im),
+                         vmin=vmin,
+                         vmax=vmax,
                          # cmap='afmhot_r')
                          cmap='seismic')
-
         if self.rms:
-            # Set contour levels
-            # cont_levs = np.arange(3, 100, 3) * self.rms
-            cont_levs = np.arange(1, 15, 2) * self.rms
+            cont_levs = np.arange(3, 15, 2) * self.rms
             # add residual contours if resdiual exists; otherwise, add image contours
             try:
                 ax.contour(self.resid,
@@ -881,27 +906,26 @@ class Figure:
 
         # Colorbar label
         # cbar.ax.text(0.425, 0.320, r'$\mu Jy / beam$', fontsize=12,
-        cbar.ax.text(0.425, 0.320, r'$Jy / beam$', fontsize=12,
+        cbar.ax.text(0.425, 0.320, cbar_lab, fontsize=12,
                      path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
 
         # Overplot the beam ellipse
         try:
-            beam_ellipse_color = 'w'
             bmin = self.head['bmin'] * 3600.
             bmaj = self.head['bmaj'] * 3600.
             bpa = self.head['bpa']
 
-            el = Ellipse(xy=[4.2, -4.2], width=bmin, height=bmaj, angle=-bpa,
-                         edgecolor='w', hatch='/////', facecolor='none', zorder=10)
+            el = Ellipse(xy=[1.5, -1.5], width=bmin, height=bmaj, angle=-bpa,
+                         edgecolor='k', hatch='///', facecolor='white', zorder=10)
             ax.add_artist(el)
         except KeyError:
             print "Unable to plot beam; couldn't find header info."
 
         # Plot the scale bar
         if np.where(self.axes == ax)[1][0] == 0:  # if first plot
-            x, y = -3.1, -4.4        # arcsec location
-            ax.plot([x, x - 700/389], [y, y], '-', linewidth=3, color='darkorange')
-            ax.text(x + 0.3, y + 0.25, "700 au", fontsize=12,
+            x, y = -0.8, -1.7        # arcsec location
+            ax.plot([x, x - 400/389], [y, y], '-', linewidth=3, color='darkorange')
+            ax.text(x - 0.1, y + 0.15, "400 au", fontsize=12,
                 path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
 
         # Plot crosses at the source positions
@@ -932,5 +956,7 @@ path_modelhco = 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
 
 
 
+
+# The End
 
 # The End
