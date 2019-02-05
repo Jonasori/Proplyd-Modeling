@@ -39,9 +39,9 @@ def make_diskA_params(mol, run_length='long'):
         x_mol       = -1. * np.array([6, 9])
 
     elif run_length == 'long':
-        t_atms      = np.arange(50, 300, 25)
-        r_out       = np.arange(250, 350, 10)
-        x_mol       = -1. * np.arange(6.5, 8.1, 0.1)
+        t_atms      = np.arange(25, 400, 25)
+        r_out       = np.arange(100, 400, 25)
+        x_mol       = -1. * np.arange(2, 10)
 
     else:
         return "Please choose 'short', 'mid', or 'long'"
@@ -103,7 +103,7 @@ def make_diskB_params(mol, run_length='long'):
         x_mol       = -1. * np.array([4.])
     elif run_length == 'long':
         t_atms      = np.arange(10, 300, 25)
-        r_out       = np.array([100])
+        r_out       = np.arange(50, 350, 20)
         x_mol       = -1. * np.arange(2, 10)
 
     else:

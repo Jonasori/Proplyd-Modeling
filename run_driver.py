@@ -347,44 +347,45 @@ def lnprob(theta, run_name, param_info, mol):
                             and with length = total number of free params
     """
     # Check that the proposed value, theta, is within priors for each var.
-    for i, free_param in enumerate(param_info):
-        # print '\n', i, free_param
-        lower_bound, upper_bound = free_param[-1]
-        # If it is, put it into the dict that make_fits calls from
-        if lower_bound < theta[i] < upper_bound:
-            # print "Taking if"
-            name = free_param[0]
-            param_dict[name] = theta[i]
-            #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
-                #print name, theta[i], param_dict[name]
-        else:
-            # print "Taking else, returning -inf"
-            return -np.inf
-
-
-
-    # Set up an observation
-    obs = fitting.Observation(mol=mol)
-
-    # Make model and the resulting fits image
-    model_name = run_name + '_' + str(np.random.randint(1e10))
-    model = fitting.Model(observation=obs,
-                          run_name=run_name,
-                          model_name=model_name)
-
-
-    # print "Evaluating lnprob for", model_name
-
-
-    # Make the actual model fits files.
-    make_fits(model, param_dict, mol)
-    model.obs_sample()
-    model.chiSq()
-    # model.delete()
-    # Why is this a sum?
-    lnp = -0.5 * sum(model.raw_chis)
-    print "Lnprob val: ", lnp
-    print '\n'
+    # for i, free_param in enumerate(param_info):
+    #     # print '\n', i, free_param
+    #     lower_bound, upper_bound = free_param[-1]
+    #     # If it is, put it into the dict that make_fits calls from
+    #     if lower_bound < theta[i] < upper_bound:
+    #         # print "Taking if"
+    #         name = free_param[0]
+    #         param_dict[name] = theta[i]
+    #         #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
+    #             #print name, theta[i], param_dict[name]
+    #     else:
+    #         # print "Taking else, returning -inf"
+    #         return -np.inf
+    #
+    #
+    #
+    # # Set up an observation
+    # obs = fitting.Observation(mol=mol)
+    #
+    # # Make model and the resulting fits image
+    # model_name = run_name + '_' + str(np.random.randint(1e10))
+    # model = fitting.Model(observation=obs,
+    #                       run_name=run_name,
+    #                       model_name=model_name)
+    #
+    #
+    # # print "Evaluating lnprob for", model_name
+    #
+    #
+    # # Make the actual model fits files.
+    # make_fits(model, param_dict, mol)
+    # model.obs_sample()
+    # model.chiSq()
+    # # model.delete()
+    # # Why is this a sum?
+    # lnp = -0.5 * sum(model.raw_chis)
+    # print "Lnprob val: ", lnp
+    # print '\n'
+    lnp = 6
     return lnp
 
 

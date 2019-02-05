@@ -25,7 +25,7 @@ Path.cwd()
 
 sns.set_style('ticks')
 
-run_w_pool = True
+run_w_pool = False
 nwalkers, nsteps = 50, 500
 
 
@@ -418,7 +418,8 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     chain_filename = run_path + run_name + '_chain.csv'
 
     # Set up the parallelization
-    pool = MPIPool()
+    # pool = MPIPool()
+    print run_w_pool
     if run_w_pool:
         pool = MPIPool()
         if not pool.is_master():
@@ -541,21 +542,23 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     lnprobs = []
     # import pdb; pdb.set_trace()
 
-    print "About to loop over run"
-    for i, result in enumerate(run):
-        break
-        print "Got a result"
-        
-        # Maybe do this logging out in the lnprob function itself?
-        pos, lnprobs, blob = result
-        # print "Lnprobs: ", lnprobs
-
-        # Log out the new positions
-        with open(chain_filename, 'a') as f:
-            new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
-            print "Adding a new step to the chain: ", new_step
-            np.savetxt(f, new_step, delimiter=',')
-
+    return run
+    # print "About to loop over run"
+    # for i, result in enumerate(run):
+    #     break
+    #     print "Got a result"
+    #
+    #     # Maybe do this logging out in the lnprob function itself?
+    #     pos, lnprobs, blob = result
+    #     # print "Lnprobs: ", lnprobs
+    #
+    #     # Log out the new positions
+    #     with open(chain_filename, 'a') as f:
+    #         new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
+    #         print "Adding a new step to the chain: ", new_step
+    #         np.savetxt(f, new_step, delimiter=',')
+    #
+    #
     print "Ended run"
     if run_w_pool is True:
         pool.close()

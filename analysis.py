@@ -1,8 +1,13 @@
-"""Functions to analyze and plot output from a gridSearch run.
+"""
+Functions to analyze and plot output from a gridSearch run.
 
-IDEA: Add molecular line to the data (and model) headers. Would save a lot of
+IDEA: Add molecular line name to the data (and model) headers. Would save a lot of
         string parsing hassle. Would've been nice to think of this a couple
         months ago.
+
+To-Do: In GridSearch_Run.param_degeneracies(), choose which slice of the
+       non-plotted params we're looking through. Right now it's not doing that,
+       so it's not showing the best-fit point in p-space.
 """
 
 import os
@@ -522,9 +527,9 @@ class GridSearch_Run:
             for j in range(len_p_j):
                 this_chi = df['Raw Chi2'][i * len_p_j + j]
                 mat[(i, j)] = this_chi
-                print this_chi
-                print p_i, df[p_i][i * len_p_j + j], '; ', p_j, df[p_j][i * len_p_j + j]
-                print
+                # print this_chi
+                # print p_i, df[p_i][i * len_p_j + j], '; ', p_j, df[p_j][i * len_p_j + j]
+                # print
 
         plt.close()
         # vmin, vmax = np.nanmin(df_full['Raw Chi2']), np.nanmax(df_full['Raw Chi2'])
@@ -539,15 +544,17 @@ class GridSearch_Run:
         plt.gca().xaxis.tick_bottom()
 
         if save is True:
-            plt.savefig('param_degens.pdf')
+            out = "{}_param_degens_disk{}.pdf".format(self.out_path, DI)
+            plt.savefig(out)
+            print "Saved to ", out
         else:
-            plt.show(block=False)
-        return mat
+            plt.show() #block=False)
+        return None
 
 
     def plot_all(self):
-        self.best_fit_params(save=True)
-        self.step_duration(save=True)
+        self.plot_best_fit_params(save=True)
+        self.plot_step_duration(save=True)
         self.DMR_spectra(save=True)
         self.DMR_images(save=True)
 
