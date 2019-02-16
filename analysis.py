@@ -72,11 +72,11 @@ class GridSearch_Run:
         """
         self.path = path
         self.mol = self.get_line()
-
+        print self.mol, lines[self.mol]['baseline_cutoff']
         self.run_date = path.split('/')[-1].split('_')[0]
-        self.out_path = './gridsearch_results/' + self.run_date
+        self.out_path = './gridsearch_results/{}-{}'.format(self.run_date, self.mol)
         self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol,
-                                                            str(lines[mol]['baseline_cutoff']))
+                                                            str(lines[self.mol]['baseline_cutoff']))
 
         log = self.depickleLogFile()
         self.steps = log[0]

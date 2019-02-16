@@ -25,7 +25,7 @@ Path.cwd()
 
 sns.set_style('ticks')
 
-run_w_pool = False
+run_w_pool = True
 nwalkers, nsteps = 50, 500
 
 
@@ -41,7 +41,7 @@ class MCMCrun:
         """Set up.
 
         Args:
-            path (str): the file path to where to find the chain
+            run_path (str): the file path to where to find the chain, i.e. './mcmc_runs/feb5/'
             name (str): the name of the run (for output files; usually just '[today]-[run number of the day]').
             nwalkers (int): how many walkers to have.
             burn_in (int): how many of the first steps to ignore.
@@ -419,7 +419,6 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
 
     # Set up the parallelization
     # pool = MPIPool()
-    print run_w_pool
     if run_w_pool:
         pool = MPIPool()
         if not pool.is_master():
@@ -518,7 +517,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     ndim = len(param_info)
     if run_w_pool is True:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
-                                        args=(run_name, param_info, mol),
+                                         args=(run_name, param_info, mol),
                                         pool=pool)
     else:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
@@ -542,23 +541,23 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     lnprobs = []
     # import pdb; pdb.set_trace()
 
-    return run
-    # print "About to loop over run"
-    # for i, result in enumerate(run):
-    #     break
-    #     print "Got a result"
-    #
-    #     # Maybe do this logging out in the lnprob function itself?
-    #     pos, lnprobs, blob = result
-    #     # print "Lnprobs: ", lnprobs
-    #
-    #     # Log out the new positions
-    #     with open(chain_filename, 'a') as f:
-    #         new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
-    #         print "Adding a new step to the chain: ", new_step
-    #         np.savetxt(f, new_step, delimiter=',')
-    #
-    #
+
+    # return run
+    print "About to loop over run"
+    for i, result in enumerate(run):
+        # break
+        print "Got a result"
+
+        # Maybe do this logging out in the lnprob function itself?
+        pos, lnprobs, blob = result
+        # print "Lnprobs: ", lnprobs
+
+        # Log out the new positions
+        with open(chain_filename, 'a') as f:
+            new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
+            print "Adding a new step to the chain: ", new_step
+            np.savetxt(f, new_step, delimiter=',')
+
     print "Ended run"
     if run_w_pool is True:
         pool.close()

@@ -85,7 +85,7 @@ def imspec(imageName, source='both'):
         return "Choose A, B, or Both"
 
     sp.call(['imspec',
-             'in={}'.format(image_path),
+             'in={}'.format(imageName),
              'region=arcsec,box{}'.format(r),
              'device=/xs, plot=sum'])
 
