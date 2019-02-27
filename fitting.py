@@ -148,7 +148,7 @@ class Model:
         self.raw_chis = []
         self.reduced_chis = []
 
-        self.delete()  # delete any preexisting files that will conflict
+        # self.delete()  # delete any preexisting files that will conflict
 
     def delete(self):
         """Delete anything with this path.
@@ -308,7 +308,7 @@ class Model:
                      'labtyp=arcsec', 'beamtyp=b,l,3', ])
             raw_input('\npress enter when ready to go on:')
 
-    def chiSq(self):
+    def chiSq(self, mol):
         """Calculate the goodness of fit between data and model."""
         # GET VISIBILITIES
         obs = self.observation
@@ -317,8 +317,7 @@ class Model:
         model = fits.open(self.modelfiles_path + '.uvf')
         model_vis = model[0].data['data'].squeeze()
 
-        #print "Getting Chi2 for " + self.modelfiles_path
-        #print
+
         # PREPARE STUFF FOR CHI SQUARED
 
         # get real and imaginary values, skipping repeating values created by
@@ -332,13 +331,61 @@ class Model:
         data_real = (data_vis[:, :, 0, 0] + data_vis[:, :, 1, 0])/2.
         data_imag = (data_vis[:, :, 0, 1] + data_vis[:, :, 1, 1])/2.
 
-        model_real = model_vis[::2, :, 0]
-        model_imag = model_vis[::2, :, 1]
+        # Scout/cluster and iorek handle uvmodel differently. Read about it in S4.2 of:
+        # https://github.com/kevin-flaherty/Wesleyan_cluster/blob/master/cluster_guide.pdf
+        if len(model_vis.shape) == 3:
+            # On iorek, the output of uvmodel is of shape
+            # (2N_baselines, nchans, 3)
+            model_real = model_vis[::2, :, 0]
+            model_imag = model_vis[::2, :, 1]
+        else:
+            # If on cluster/scout, the output of uvmodel is of shape
+            # (N_baselines, nchans, 2, 3), where the 2 is X or Y.
+            # Since they're the same, choose either one.
+            model_real = model_vis[:, :, 0, 0]
+            model_imag = model_vis[:, :, 0, 1]
 
         wt = data_vis[:, :, 0, 2]
 
-        raw_chi = np.sum(wt * (data_real - model_real)**2 +
-                         wt * (data_imag - model_imag)**2)
+        # Don't fit for central channels in CO.
+        if mol is not 'co':
+            raw_chi = np.sum(wt * (data_real - model_real)**2 +
+                             wt * (data_imag - model_imag)**2)
+
+        else:
+            # Define the bounds of the slice that's getting pulled out.
+            # Found this by looking at data channel maps, identifying bad
+            # central channels and their velocities, then imstating that
+            # file to find their channel numbers.
+            slice_front, slice_back = lines[mol]['chan_cut_idxs']
+
+            data_real_front = (data_vis[:, :slice_front, 0, 0] + data_vis[:, :slice_front, 1, 0])/2.
+            data_real_back = (data_vis[:, slice_back:, 0, 0] + data_vis[:, slice_back:, 1, 0])/2.
+            data_imag_front = (data_vis[:, :slice_front, 0, 1] + data_vis[:, :slice_front, 1, 1])/2.
+            data_imag_back = (data_vis[:, slice_back:, 0, 1] + data_vis[:, slice_back:, 1, 1])/2.
+
+            if len(model_vis.shape) == 3:
+                model_real_front = model_vis[::2, :slice_front, 0]
+                model_real_back = model_vis[::2, slice_back:, 0]
+                model_imag_front = model_vis[::2, :slice_front, 1]
+                model_imag_back = model_vis[::2, slice_back:, 1]
+
+            else:
+                model_real_front = model_vis[:, :slice_front, 0, 0]
+                model_real_back = model_vis[:, slice_back:, 0, 0]
+                model_imag_front = model_vis[:, :slice_front, 0, 1]
+                model_imag_back = model_vis[:, slice_back:, 0, 1]
+
+            wt_front = data_vis[:, :slice_front, 0, 2]
+            wt_back = data_vis[:, slice_back:, 0, 2]
+            # Do chi-front, chi-back and then just sum them instead of cat'ing
+            raw_chi_front = np.sum(wt_front * (data_real_front - model_real_front)**2) + \
+                np.sum(wt_front*(data_imag_front - model_imag_front)**2)
+
+            raw_chi_back = np.sum(wt_back * (data_real_back - model_real_back)**2) + \
+                np.sum(wt_back * (data_imag_back - model_imag_back)**2)
+
+            raw_chi = raw_chi_back + raw_chi_front
 
         # Degrees of freedom: how many total real and imaginary weights we have
         dof = 2 * len(data_vis)
@@ -348,6 +395,7 @@ class Model:
         self.reduced_chis.append(reduced_chi)
         print "Raw Chi2: ", self.raw_chis
         #print "Reduced Chi2: ", self.reduced_chis
+        return self.raw_chis
 
     def make_residuals(self, obs, suffix='', show=False):
         """Create model residuals, and clean/display if desired.

@@ -27,19 +27,17 @@ from constants import obs_stuff, lines, today, offsets, mol
 # entering it for each run in parallel is shit.
 
 nwalkers = 50
-nsteps = 400
+nsteps = 500
 
 
 # Path.cwd()
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
-run_name = today
+run_name = today + '-' + mol
 run_name_basename = run_name
-run_path = './mcmc_runs/' + today + '/'
+run_path = './mcmc_runs/' + run_name_basename + '/'
 counter = 2
-already_exists(run_path)
-
 while already_exists(run_path) is True:
     run_name = run_name_basename + '-' + str(counter)
     run_path = './mcmc_runs/' + run_name + '/'
@@ -60,14 +58,14 @@ pos_B
 vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
 
 param_dict = {
-    'r_out_A':              400,             # AU
-    'r_out_B':              200,             # AU
+    'r_out_A':              500,             # AU
+    'r_out_B':              400,             # AU
     'atms_temp_A':          300,
     'atms_temp_B':          200,
-    'mol_abundance_A':      -10,
-    'mol_abundance_B':      -10,
+    'mol_abundance_A':      -4,              # Set these to their CO values because they're
+    'mol_abundance_B':      -4,              # fixed for CO but get updated for the others.
     'temp_struct_A':        -0.2,            # Tqq in Kevin's code
-    'temp_struct_B':        -0.2,            # Tqq in Kevin's code
+    'temp_struct_B':        -0.5,            # Tqq in Kevin's code
     'incl_A':               65.,
     'incl_B':               45,
     'pos_angle_A':          69.7,
@@ -139,7 +137,7 @@ def main():
 
     if args.run:
         print "Starting run:", run_path + run_name
-        print "with " + str(nsteps) + " steps and " + str(nwalkers) + "walkers."
+        print "with {} steps and {} walkers.".format(str(nsteps), str(nwalkers))
         print '\n\n\n'
 
         mcmc.run_emcee(run_path=run_path,
@@ -379,8 +377,8 @@ def lnprob(theta, run_name, param_info, mol):
     # Make the actual model fits files.
     make_fits(model, param_dict, mol)
     model.obs_sample()
-    model.chiSq()
-    # model.delete()
+    model.chiSq(mol)
+    model.delete()
     # Why is this a sum?
     lnp = -0.5 * sum(model.raw_chis)
     print "Lnprob val: ", lnp

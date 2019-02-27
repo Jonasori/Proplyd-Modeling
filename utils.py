@@ -11,7 +11,7 @@ from astropy.io import fits
 from disk_model.disk import Disk
 import disk_model.raytrace as rt
 
-from constants import obs_stuff, get_data_path, lines #, mol
+from constants import obs_stuff, get_data_path, lines, mol
 
 ######################
 # CONSTANTS & PARAMS #
@@ -28,7 +28,7 @@ from constants import obs_stuff, get_data_path, lines #, mol
 # USEFUL FUNCTIONS #
 ####################
 
-mol = 'hco'
+# mol = 'hco'
 short_vis_only = True
 
 def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
@@ -53,6 +53,7 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     # Clear out space
     # sp.call('rm -rf {}.{{fits,vis,uvf,im}}'.format(outputPath), shell=True)
 
+    # Since make_diskX_params() generates
     v_turb   = diskParams['v_turb']
     zq       = diskParams['zq']
     r_crit   = diskParams['r_crit']
@@ -77,6 +78,8 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     offsets  = lines[mol]['offsets']
     distance = lines[mol]['distance']
 
+    # for p in diskParams.keys():
+    #     print p, diskParams[p]
 
     a = Disk(params=[t_qq,
                      10**m_disk,
@@ -103,6 +106,7 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
                    chanstep=chanstep,
                    distance=389,
                    xnpix=256,
+                   # vsys=vsys[DI],
                    vsys=v_sys,
                    PA=PA,
                    offs=[pos_x, pos_y],
@@ -249,3 +253,15 @@ def chiSq(infile, mol, cut_central_chans=False):
     dof = 2 * len(data_vis)
     red_chi = raw_chi/dof
     return [raw_chi, red_chi]
+
+
+
+
+
+
+
+
+
+
+
+# The End

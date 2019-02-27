@@ -677,7 +677,7 @@ class Figure:
             for ax, path, mol in zip(self.axes.flatten(), self.paths, self.mols):
                 self.get_fits(path, mol)
                 self.make_axis(ax)
-                self.fill_axis(ax)
+                self.fill_axis(ax, mol)
 
             if save:
                 plt.savefig(self.outpath, dpi=700)
@@ -837,7 +837,7 @@ class Figure:
         self.extent = [self.ra_offset[0], self.ra_offset[-1],
                        self.dec_offset[-1], self.dec_offset[0]]
 
-    def fill_axis(self, ax):
+    def fill_axis(self, ax, mol):
         """Docstring."""
         # Plot image as a colour map
 
@@ -942,6 +942,12 @@ class Figure:
         ax.plot([posx_B], [posy_B], '+', markersize=6,
                 markeredgewidth=2, color='darkorange')
 
+        # Print the name of the line:
+        mol = r'HCO$^+$' if mol is 'hco' else mol
+        ax.text(-1.8, 1.7, mol.upper(),
+                fontsize=18, weight='bold', horizontalalignment='right',
+                path_effects=[PathEffects.withStroke(linewidth=3,
+                                                     foreground="w")])
         # Add figure text
         # if text is not None:
         #     for t in text:

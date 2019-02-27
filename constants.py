@@ -9,7 +9,7 @@ import datetime
 c = c.to('km/s').value
 
 
-mol = 'hco'
+mol = 'co'
 nwalkers, nsteps = 50, 500
 
 
@@ -45,7 +45,6 @@ vsys = [10., 10.75]
 distance = 1/(2.569750671443057 * 10**(-3))
 # Maybe this is error? I don't remember.
 error = 0.0526 * distance**(-2)
-
 
 
 # Lines dict for Grid Search
@@ -87,6 +86,7 @@ lines = {'hco': {'restfreq': 356.73422300,
                 'spwID': 2,
                 't_fo': 19,
                 'col_dens': [1.3e21/(1.59e21), 1e30/(1.59e21)],
+                'chan_cut_idxs': [17, 22],
                 'm_star': m_star,
                 'r_in': r_in,
                 'rotHand': rotHand,
@@ -150,7 +150,7 @@ def obs_stuff(mol, short_vis_only=True):
 
     return [vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum]
 
-    chanmin_b + nchans_a * chanstep
+    # chanmin_b + nchans_a * chanstep
 
 # DATA FILE NAME
 def get_data_path(mol, short_vis_only=True):

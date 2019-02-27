@@ -16,9 +16,10 @@ from tools import already_exists, remove
 #from analysis import plot_fits
 #from four_line_run_driver import make_fits
 import fitting
-import plotting
+# import plotting
 import run_driver
 import analysis
+import tools
 
 from pathlib2 import Path
 Path.cwd()
@@ -162,8 +163,8 @@ class MCMCrun:
             # make y-limits on lnprob subplot reasonable
             # This is not reasonable. Change it?
             #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
-            amin = np.nanmin(main.lnprob[main.lnprob != -np.inf])
-            amax = np.nanmax(main.lnprob)
+            amin = np.amin(main.lnprob[main.lnprob != -np.inf])
+            amax = np.amax(main.lnprob)
             axes[-1].set_ylim(amin, amax)
             # axes[-1].set_ylim(-50000, -25000)
 
@@ -251,6 +252,8 @@ class MCMCrun:
             print "Entering else"
             corner.map_lower(sns.kdeplot, cut=0, cmap='Blues',
                              n_levels=18, shade=True)
+            corner.map_lower(sns.kdeplot, cut=0, cmap='Blues',
+                             n_levels=5)
 
         print "finished conditional"
         # This is where the error is coming from:
@@ -314,9 +317,10 @@ class MCMCrun:
         # Locate the best fit model from max'ed lnprob.
         max_lnp = subset_df['lnprob'].max()
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
-        #return model_params
-        #"""
-        print 'Model parameters:\n', [mp for mp in list(model_params)], '\n\n'
+
+        print 'Model parameters:\n' #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
+        for mp in list(model_params):
+            print mp, model_params[mp].values[0]
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
@@ -342,9 +346,11 @@ class MCMCrun:
             model = fitting.Model(observation=obs,
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
-            make_fits(model, param_dict_mol)
-            tools.plot_fits(model.modelfiles_path + '_bestFit.fits', mol=mol,
-                               best_fit=True)
+            run_driver.make_fits(model, param_dict_mol, mol)
+            tools.sample_model_in_uvplane(model.modelfiles_path, mol=mol)
+            tools.icr(model.modelfiles_path, mol=mol)
+            tools.plot_fits(model.modelfiles_path + '.fits', mol=mol,
+                               best_fit=True, save=True)
             return model
 
         models = []
@@ -434,30 +440,30 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
     if mol != 'co':
         param_info = [('r_out_A',           500,     300,      (10, 1000)),
-                      ('atms_temp_A',       300,     150,      (0, np.inf)),
+                      ('atms_temp_A',       300,     150,      (0, 1000)),
                       ('mol_abundance_A',   -8,      3,        (-13, -3)),
                       ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
                       ('incl_A',            65.,     30.,      (0, 90.)),
                       ('pos_angle_A',       70,      45,       (0, 360)),
                       ('r_out_B',           500,     300,      (10, 1000)),
-                      ('atms_temp_B',       200,     150,      (0, np.inf)),
+                      ('atms_temp_B',       200,     150,      (0, 1000)),
                       ('mol_abundance_B',   -8,      3,        (-13, -3)),
-                      ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                      # ('temp_struct_B',     0.,      1,        (-3., 3.)),
                       ('incl_B',            45.,     30,       (0, 90.)),
                       ('pos_angle_B',       136.0,   45,       (0, 360))
                       ]
 
     else:
         param_info = [('r_out_A',           500,     300,      (10, 1000)),
-                      ('atms_temp_A',       300,     150,      (0, np.inf)),
+                      ('atms_temp_A',       300,     150,      (0, 1000)),
                       ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
                       ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
                       ('incl_A',            65.,     30.,      (0, 90.)),
                       ('pos_angle_A',       70,      45,       (0, 360)),
                       ('r_out_B',           500,     300,      (10, 1000)),
-                      ('atms_temp_B',       200,     150,      (0, np.inf)),
-                      ('m_disk_B',          -1.,      1.,      (-2.5, 0)),
-                      ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                      ('atms_temp_B',       200,     150,      (0, 1000)),
+                      # ('m_disk_B',          -1.,      1.,      (-2.5, 0)),
+                      # ('temp_struct_B',     0.,      1,        (-3., 3.)),
                       ('incl_B',            45.,     30,       (0, 90.)),
                       ('pos_angle_B',       136.0,   45,       (0, 360))
                       ]
@@ -506,10 +512,25 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
         # Set up initial positions
         # randn makes an n-dimensional array of rands in [0,1]
         # param[2] is the sigma of the param
-        pos = [[param[1] + param[2]*np.random.randn()
-                for param in param_info]
-               for i in range(nwalkers)]
+        # This is bad because it doesn't check for positions outside of priors.
+        # pos = [[param[1] + param[2]*np.random.randn()
+        #         for param in param_info]
+        #        for i in range(nwalkers)]
 
+        pos = []
+        for i in range(nwalkers):
+            pos_walker = []
+            for param in param_info:
+                pos_i = param[1] + param[2]*np.random.randn()
+                # Make sure we're starting within priors
+                lower_bound, upper_bound = param[-1]
+                # If it is, put it into the dict that make_fits calls from
+                # while pos_i < param[3][0] or pos_i > param[3][1]:
+                while not lower_bound < pos_i < upper_bound:
+                    pos_i = param[1] + param[2]*np.random.randn()
+
+                pos_walker.append(pos_i)
+            pos.append(pos_walker)
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.

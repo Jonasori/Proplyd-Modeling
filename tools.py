@@ -90,7 +90,7 @@ def imspec(imageName, source='both'):
              'device=/xs, plot=sum'])
 
 
-def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
+def imstat(modelName, ext='.cm', verbose=False):
     """Call imstat to find rms and mean.
 
     Want an offsource region so that we can look at the noise. Decision to look
@@ -113,9 +113,14 @@ def imstat(modelName, ext='.cm', plane_to_check=39, verbose=False):
                                   'region=arcsec,box{}'.format(r_offsource)
                                   ])
     imstat_out = imstat_raw.split('\n')
-    # Get column names
-    hdr = filter(None, imstat_out[9].split(' '))
 
+    # Get column names. First, find which line the header is at.
+    hdr_idx = 0
+    while imstat_out[hdr_idx][-7:] != 'Npoints':
+        hdr_idx += 1
+    hdr = filter(None, imstat_out[hdr_idx].split(' '))
+
+    plane_to_check = 30 + hdr_idx
     # Split the output on spaces and then drop empty elements.
     imstat_list = filter(None, imstat_out[plane_to_check].split(' '))
 
@@ -238,7 +243,7 @@ def icr(visPath, mol='hco', min_baseline=0, niters=1e4):
     sp.Popen(invert_str, stdout=open(os.devnull, 'wb'), cwd=filepath).wait()
 
     # Grab the rms
-    rms = imstat(filepath + outName, '.mp')[1]
+    rms = imstat(filepath + outName, ext='.mp')[1]
 
     sp.Popen(['clean',
               'map={}.mp'.format(outName),
@@ -535,22 +540,23 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap=
         cbar.set_ticks([vmin, vmax])
     if save is True:
         suffix = ''
-        if 'data' in image_path:
-            resultsPath = 'data/' + mol + '/images/'
-            if '-short' in image_path:
-                suffix = '-' + image_path.split('-')[1].split('.')[0]
-        else:
-            if 'mcmc' in image_path:
+        if 'data' in image_path or 'mcmc' in image_path or 'gridsearch' in image_path:
+            if 'data' in image_path:
+                resultsPath = 'data/' + mol + '/images/'
+                if '-short' in image_path:
+                    suffix = '-' + image_path.split('-')[1].split('.')[0]
+            elif 'mcmc' in image_path:
                 resultsPath = 'mcmc_results/'
-            else:
-                if 'gridsearch' in image_path:
-                    resultsPath = 'gridsearch_results/'
-                else:
-                    return 'Failed to make image; specify save location.'
-        run_name = image_path.split('/')[-2]
-        suffix += '_bestFit-' + mol if best_fit is True else ''
-        outpath = resultsPath + run_name + suffix + '_image.pdf'
-        outpath = '.'.join(image_path.split('.')[:-1]) + '_image.pdf'
+            elif 'gridsearch' in image_path:
+                resultsPath = 'gridsearch_results/'
+
+            run_name = image_path.split('/')[-2]
+            suffix += '_bestFit-' + mol if best_fit is True else ''
+            outpath = resultsPath + run_name + suffix + '_image.pdf'
+            outpath = '.'.join(image_path.split('.')[:-1]) + '_image.pdf'
+        else:
+            outpath = '.'.join(image_path.split('.')[:-1]) + '_image.pdf'
+
         plt.savefig(outpath)
         print('Image saved to ' + outpath)
     if show is True:

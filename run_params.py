@@ -26,21 +26,21 @@ def make_diskA_params(mol, run_length='long'):
     pos_y        = np.array([offsets[0][1]])
     v_sys        = [vsys[0]]          # np.array([10.70])
     m_disk       = np.array([-1.10791])
-    t_qq         = -1. * np.array([-0.5])
+    t_qq         = np.array([-0.5])
 
     # Params that are fit
     if run_length == 'short':
         t_atms      = np.array([100])
-        r_out       = np.array([150])
-        x_mol       = -1. * np.array([4.])
+        r_out       = np.array([500])
+        x_mol       = np.array([-4.])
     elif run_length == 'mid':
         t_atms      = np.array([10, 200])
-        r_out       = np.array([10, 150, 400])
+        r_out       = np.array([100, 300, 600])
         x_mol       = -1. * np.array([6, 9])
 
     elif run_length == 'long':
         t_atms      = np.arange(25, 400, 25)
-        r_out       = np.arange(100, 400, 25)
+        r_out       = np.arange(200, 800, 50)
         x_mol       = -1. * np.arange(2, 10)
 
     else:
@@ -48,13 +48,13 @@ def make_diskA_params(mol, run_length='long'):
 
     # If we're looking at CO, then fix X_mol and fit for M_disk
     if mol == 'co':
-        x_mol = -1 * np.array([4.])
+        x_mol = np.array([-4.])
         if run_length == 'short':
             m_disk = np.array([-1.10791])
         elif run_length == 'mid':
             m_disk = np.array([-1.07, -1.108, -1.109])
         elif run_length == 'long':
-            m_disk = np.array([-1.06, -1.07, -1.108, -1.109, -1.11])
+            m_disk = np.array([-1.104, -1.106, -1.108, -1.11, -1.112])
 
     params = np.array([v_turb, zq, r_crit, rho_p, t_mid, PA, incl,
                        pos_x, pos_y, v_sys, t_atms, t_qq, r_out,
@@ -90,20 +90,20 @@ def make_diskB_params(mol, run_length='long'):
     pos_y        = np.array([offsets[1][1]])
     v_sys        = [vsys[1]]          # np.array([10.70])
     m_disk       = np.array([-1.552842])
-    t_qq         = -1. * np.array([-0.5])
+    t_qq         = np.array([-0.5])
 
     # Params that are fit
     if run_length == 'short':
         t_atms      = np.array([100])
-        r_out       = np.array([150])
-        x_mol       = -1. * np.array([4.])
+        r_out       = np.array([400])
+        x_mol       = np.array([-4.])
     elif run_length == 'mid':
         t_atms      = np.arange(50, 500, 100)
-        r_out       = np.arange(50, 400, 100)
-        x_mol       = -1. * np.array([4.])
+        r_out       = np.arange(100, 600, 100)
+        x_mol       = np.array([-4.])
     elif run_length == 'long':
         t_atms      = np.arange(10, 300, 25)
-        r_out       = np.arange(50, 350, 20)
+        r_out       = np.arange(150, 550, 25)
         x_mol       = -1. * np.arange(2, 10)
 
     else:
@@ -111,7 +111,7 @@ def make_diskB_params(mol, run_length='long'):
 
     # If we're looking at CO, then fix X_mol and fit for M_disk
     if mol == 'co':
-        x_mol = -1 * np.array([4.])
+        x_mol = np.array([-4.])
         if run_length == 'short':
             m_disk = np.array([-1.552842])
         elif run_length == 'mid':
