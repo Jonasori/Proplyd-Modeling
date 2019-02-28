@@ -331,7 +331,7 @@ co_tatms_B_model = ('co', 'atms_temp_B', range(50, 400, 40))
 co_mdisk_A_model = ('co', 'm_disk_A', list(np.arange(-1.25, -0.95, 0.04)))
 co_mdisk_B_model = ('co', 'm_disk_B', list(np.arange(-2.1, -1.7, 0.05)))
 
-co_tatms_A_model_low = ('co', 'atms_temp_A', range(50, 150, 10))
+co_tatms_A_model_reallylow = ('co', 'atms_temp_A', range(0, 50, 10))
 co_tatms_B_model_low = ('co', 'atms_temp_B', range(50, 150, 10))
 
 co_mdisk_A_model_mid = ('co', 'm_disk_A', list(np.arange(-2.2, -1.2, 0.1)))

@@ -1,6 +1,7 @@
 *.pyc
 *.bm
 *.cl
+*.cm
 *.mp
 *.dat
 mcmc_runs
@@ -22,3 +23,6 @@ __init__.py
 *.png
 plt_xkcd.py
 *rsync*
+test*
+*.last
+*.log

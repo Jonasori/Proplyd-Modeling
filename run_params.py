@@ -16,10 +16,10 @@ pos_By = -0.1879
 def make_diskA_params(mol, run_length='long'):
     # Params that are constant but could be fit
     v_turb       = np.array([0.081])
-    zq           = np.array([70.])
+    zq           = np.array([29.])      # Was formerly 70, but Sam fixed at 29 for all lines
     r_crit       = np.array([100.])
     rho_p        = np.array([1.])
-    t_mid        = np.array([15.])
+    t_mid        = np.array([19.])
     PA           = np.array([69.7])
     incl         = np.array([65])
     pos_x        = np.array([offsets[0][0]])
@@ -80,7 +80,7 @@ def make_diskA_params(mol, run_length='long'):
 def make_diskB_params(mol, run_length='long'):
     # Params that are constant but could be fit
     v_turb       = np.array([0.081])
-    zq           = np.array([70.])
+    zq           = np.array([29.])
     r_crit       = np.array([100.])
     rho_p        = np.array([1.])
     t_mid        = np.array([15.])
