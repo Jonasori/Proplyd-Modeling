@@ -673,7 +673,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
             data = fits.getdata(moment_map_path).squeeze()
             plt.contourf(data, 50, cmap='BrBG')
             plt.colorbar(extend='both')
-            plt.contour(data, colors='k', linewidths=1) # cmap='binary')
+            plt.contour(data, colors='k', linewidths=1)
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
             response = raw_input('Want to try again?\n[y/n]: ').lower()
@@ -695,7 +695,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     plt.close()
     plt.contourf(pv_data, 50, cmap='RdBu')
     plt.colorbar(extend='both')
-    plt.contour(pv_data, colors='k', linewidths=4) # cmap='binary')
+    plt.contour(pv_data, colors='k', linewidths=1)
 
     if save:
         plt.savefig(outpath + '.pdf')
