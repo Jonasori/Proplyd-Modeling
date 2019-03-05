@@ -670,10 +670,10 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
         while keep_trying:
             plt.close()
             print "Find coordinates for a line across the disk axis:"
-            data = fits.getdata(moment_map_path).squeeze()
-            plt.contourf(data, 50, cmap='BrBG')
+            image_data = fits.getdata(moment_map_path).squeeze()
+            plt.contourf(image_data, 50, cmap='BrBG')
             plt.colorbar(extend='both')
-            plt.contour(data, colors='k', linewidths=1)
+            plt.contour(image_data, colors='k', linewidths=1)
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
             response = raw_input('Want to try again?\n[y/n]: ').lower()
@@ -693,14 +693,29 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     pv_data = pv_slice.data
 
     plt.close()
-    plt.contourf(pv_data, 50, cmap='RdBu')
-    plt.colorbar(extend='both')
-    plt.contour(pv_data, colors='k', linewidths=1)
+    fig, (ax_image, ax_pv) = plt.subplots(1, 2)
+    ax_image.contourf(image_data, 50, cmap='BrBG')
+    ax_image.colorbar(extend='both')
+    ax_image.contour(image_data, colors='k', linewidths=1)
+    ax_image.plot(xs, ys, '-k')
+
+    ax_pv.contourf(pv_data, 50, cmap='RdBu')
+    ax_pv.colorbar(extend='both')
+    ax_pv.contour(pv_data, colors='k', linewidths=1)
 
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
-    plt.xticks(labels=[ax.get_xticklabels(which='major')])
-    plt.xlabel("Velocity (km/s)", weight='bold')
-    plt.ylabel("Position Offset (AU)")
+
+    ylabels_au = ax_pv.get_yticklabels(which='major') * pixel_to_AU
+    ax_pv.set_yticks(labels=ylabels_au)
+    ax_pv.xlabel("Velocity (km/s)", weight='bold')
+    ax_pv.ylabel("Position Offset (AU)")
+
+    labels_au = ax_image.get_yticklabels(which='major') * pixel_to_AU
+    ax_image.set_yticks(labels=labels_au)
+    ax_image.set_xticks(labels=labels_au)
+    ax_image.set_xlabel("Position Offset (AU)")
+    ax_image.set_ylabel("Position Offset (AU)")
+
 
     if save:
         plt.savefig(outpath + '.pdf')
