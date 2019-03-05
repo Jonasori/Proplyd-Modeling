@@ -16,7 +16,6 @@ import numpy as np
 import seaborn as sns
 import subprocess as sp
 import matplotlib.pyplot as plt
-from pathlib2 import Path
 from astropy.io import fits
 from matplotlib.pylab import *
 from matplotlib.ticker import *
@@ -24,6 +23,9 @@ from matplotlib.pylab import figure
 from matplotlib.patches import Ellipse as ellipse
 from astropy.visualization import astropy_mpl_style
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
+from pvextractor import extract_pv_slice
+from pvextractor import Path as PVPath
+from pathlib2 import Path
 plt.style.use(astropy_mpl_style)
 
 
@@ -597,7 +599,7 @@ def plot_spectrum(image_path, save=False):
         plt.show()
 
 
-def plot_pv_diagram(image_path, out_path, center=[129, 130], length=25, pa=70):
+def plot_pv_diagram_casa(image_path, out_path, center=[129, 130], length=25, pa=70):
     """
     Make a position-velocity diagram.
 
@@ -619,6 +621,92 @@ def plot_pv_diagram(image_path, out_path, center=[129, 130], length=25, pa=70):
              'out={}.fits'.format(out_path)])
 
     remove(out_path + '.cm')
+
+
+
+def plot_pv_diagram_miriad(image_path):
+    """
+    Seems like we can use velplot for this and it might be better than CASAs bullshit but a ton of the settings for velplot come through prompted entry, rather than command line arguments, which might make scripting a PITA.
+
+    Docs: https://www.cfa.harvard.edu/sma/miriad/manuals/SMAuguide/smauserhtml/velplot.html
+
+    Good velplot tutorial on p. 162:
+    https://www.cfa.harvard.edu/sma/miriad/manuals/ATNFuserguide_US.pdf
+
+
+    or use pvextractor package
+    """
+    # Start with a reorder from xyv -> vxy
+    # # reorder in=../data/hco/hco-short110.cm out=hco-data.vxy mode=312
+    # region=(ll_x,ll_y,ur_x,ur_y)(chan_i,chan_f)
+    # velplot in=file.cm region=region
+    # response: p     # enters pos-vel diagram option
+
+    # Get the coordinates of the SE and NW corners of the disk from HCO+ mom0 map with
+    # cgcurs in=hco.mom0 device=/xs type=both options=cursor
+    # moment in=data/hco/hco-short110.cm out=hco.mom0 mom=0 region=arcsec,box'(-2,-2,2,2)'
+    # fits op=xyout in=hco.mom0 out=hco-mom0.fits
+    p_se, p_nw = (56.82, 41.15), (27.82, 53.56)
+
+
+    return None
+
+
+
+def plot_pv_diagram(image_path, moment_map_path, coords=None):
+    """
+    Fuck Miriad and CASA, let's just use a package.
+
+    Args: image_path (str): path to fits image, including extension.
+          coords (tuple of tuples): if you have x and y values for the
+                                    disk axis, enter them.
+    """
+
+
+    # Can use this to test for points:
+    if coords is None:
+        keep_trying = True
+        xs, ys = [28, 52], [53, 41]
+        while keep_trying:
+            plt.close()
+            print "Find coordinates for a line across the disk axis:"
+            data = fits.getdata(moment_map_path).squeeze()
+            plt.contourf(data, cmap='BrBG')
+            plt.contour(data, cmap='binary')
+            plt.plot(left, right, '-k')
+            plt.show(block=False)
+            response = raw_input('Want to try again?\n[y/n]: ').lower()
+            keep_trying = True if response == 'y' or response == 'yes' else False
+            if keep_trying:
+                xs = tuple(int(x.strip())
+                           for x in raw_input(
+                               'Enter the x coordinates:\n[x1, x2]: ').split(','))
+                ys = tuple(int(x.strip())
+                           for x in raw_input(
+                               'Enter the y coordinates:\n[y1, y2]: ').split(','))
+
+
+    data3d = fits.getdata('data/hco/hco-short110.fits').squeeze()
+    path = PVPath([[xs[0], ys[0]], xs[1], ys[1]])
+    pv_slice = extract_pv_slice(data3d, path)
+    pv_data = pv_slice.data
+
+    plot.contourf(pv_data, cmap='BrBG')
+    plot.contour(pv_data, cmap='binary')
+    plt.savefig('PV_diagram')
+
+
+def show_mom_map(image_path):
+    """
+    Just a nice countoured plotter for a fits moment map.
+    """
+    data = fits.getdata(image_path)
+    plt.contourf(data, cmap='Reds')
+    plt.contour(data, cmap='Greys')
+    plt.show()
+
+
+
 
 
 

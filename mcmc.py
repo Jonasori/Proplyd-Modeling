@@ -4,6 +4,7 @@
 import sys
 import emcee
 import pickle
+import corner
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -133,6 +134,7 @@ class MCMCrun:
         else:
             plt.show()
 
+
     def evolution_main(self, save=True):
         """Plot walker evolution.
 
@@ -182,6 +184,7 @@ class MCMCrun:
         else:
             plt.show()
 
+
     def kde(self):
         """Make a kernel density estimate (KDE) plot."""
         print 'Generating posterior kde plots...'
@@ -225,6 +228,7 @@ class MCMCrun:
         print 'Image saved image to ' + self.image_outpath + '_kde.png'
         plt.show()
 
+
     def corner(self, variables=None, save=True):
         """Plot 'corner plot' of fit."""
         plt.close()
@@ -241,25 +245,25 @@ class MCMCrun:
 
         # make corner plot
         print "Starting SNS PairGrid"
-        corner = sns.PairGrid(data=self.groomed, diag_sharey=False, despine=False,
-                              vars=variables)
+        corner_plt = sns.PairGrid(data=self.groomed, diag_sharey=False, despine=False, vars=variables)
+
         print "Finished SNS PairGrid"
 
         if variables is not None:
             print "Entering if"
-            corner.map_lower(plt.scatter, s=1, color='#708090', alpha=0.1)
+            corner_plt.map_lower(plt.scatter, s=1, color='#708090', alpha=0.1)
         else:
             print "Entering else"
-            corner.map_lower(sns.kdeplot, cut=0, cmap='Blues',
-                             n_levels=18, shade=True)
-            corner.map_lower(sns.kdeplot, cut=0, cmap='Blues',
-                             n_levels=5)
+            corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
+                                 n_levels=18, shade=True)
+            corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
+                                 n_levels=5)
 
         print "finished conditional"
         # This is where the error is coming from:
         # ValueError: zero-size array to reduction operation minimum which has no identity
         # corner.map_lower(sns.kdeplot, cut=0, cmap='Blues', n_levels=3, shade=False)
-        corner.map_diag(sns.kdeplot, cut=0)
+        corner_plt.map_diag(sns.kdeplot, cut=0)
 
         print "Made it this far"
         if variables is None:
@@ -275,13 +279,13 @@ class MCMCrun:
             # print(stats.round(2).to_latex())
 
             # add stats to corner plot as table
-            table_ax = corner.fig.add_axes([0, 0, 1, 1], frameon=False)
+            table_ax = corner_plt.fig.add_axes([0, 0, 1, 1], frameon=False)
             table_ax.axis('off')
             left, bottom = 0.15, 0.83
             pd.plotting.table(table_ax, stats.round(2), bbox=[
                               left, bottom, 1-left, .12], edges='open', colLoc='right')
 
-            corner.fig.suptitle(r'{} Parameters, {} Walkers, {} Steps $\to$ {} Samples'
+            corner_plt.fig.suptitle(r'{} Parameters, {} Walkers, {} Steps $\to$ {} Samples'
                                 .format(self.groomed.shape[1], self.nwalkers,
                                         self.groomed.shape[0]//self.nwalkers, self.groomed.shape[0],
                                         fontsize=25))
@@ -290,20 +294,88 @@ class MCMCrun:
             tag = '_subset'
 
         # hide upper triangle, so that it's a conventional corner plot
-        for i, j in zip(*np.triu_indices_from(corner.axes, 1)):
-            corner.axes[i, j].set_visible(False)
+        for i, j in zip(*np.triu_indices_from(corner_plt.axes, 1)):
+            corner_plt.axes[i, j].set_visible(False)
 
         # fix decimal representation
-        for ax in corner.axes.flat:
+        for ax in corner_plt.axes.flat:
             ax.xaxis.set_major_formatter(FormatStrFormatter('%.3g'))
             ax.yaxis.set_major_formatter(FormatStrFormatter('%.3g'))
 
         plt.subplots_adjust(top=0.9)
         if save:
-            plt.savefig(self.image_outpath + '_corner.png', dpi=200)
+            plt.savefig(self.image_outpath + '_corner.pdf')
             print 'Image saved image to ' + self.image_outpath + '_corner.png'
         else:
             plt.show()
+
+
+    def corner_dfm(self, save_to_thesis=False):
+        """Plot 'corner plot' of fit."""
+        plt.close()
+
+        # Get best_fit and posterior statistics
+        stats = self.groomed.describe(percentiles=[0.16, 0.84]).drop([
+            'count', 'min', 'max', 'mean'])
+        stats.loc['best fit'] = self.main.loc[self.main['lnprob'].idxmax()]
+        stats = stats.iloc[[-1]].append(stats.iloc[:-1])
+        stats.loc[['16%', '84%'], :] -= stats.loc['50%', :]
+        stats = stats.reindex(
+            ['50%', '16%', '84%', 'best fit', 'std'], copy=False)
+        print(stats.T.round(6).to_string())
+
+
+
+        # bestfit = self.groomed[np.where(np.min(chi)==chi)]
+        # sh = np.shape(bestfit)
+        # bfs=False
+        # if sh!=(ndim,):
+        #     nm, nd = sh
+        #     for i in range(nm):
+        #         for j in range(nm):
+        #             if (bestfit[i]!=bestfit[j]).any():
+        #                 bfs=True
+        #                 break
+        #         if bfs:
+        #             break
+        #     if bfs:
+        #         print '########## WARNING: MORE THAN 1 BEST FIT MODEL ##########'
+        #     bestfit=bestfit[0].tolist()
+
+        groomed = self.groomed.reset_index()
+
+        p = groomed[groomed['lnprob'] == max(groomed['lnprob'])]
+        bf_idx = p.index.values[0]
+        bestfit = groomed.iloc[bf_idx].tolist()
+
+        # groomed = groomed.drop(['index', 'lnprob'], axis=1)
+
+
+        not_diskA_params = [p for p in groomed.columns if '_A' not in p]
+        not_diskB_params = [p for p in groomed.columns if '_B' not in p]
+
+        groomed_diskA = groomed.drop(not_diskA_params, axis=1)
+        groomed_diskB = groomed.drop(not_diskB_params, axis=1)
+
+
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        # for ax, df, disk_ID in zip(axes, [groomed_diskA, groomed_diskB], ('A', 'B')):
+        outpath = self.image_outpath + '_' if not save_to_thesis else '/Volumes/disks/jonas/Thesis/Figures/'
+        for df, disk_ID in zip([groomed_diskA, groomed_diskB], ('A', 'B')):
+            print "Making corner plot"
+            corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
+
+            plt.savefig('{}cornerplot-disk{}.png'.format(outpath, disk_ID), dpi=200)
+            print "Saved plot for disk{} to {}".format(disk_ID, outpath)
+
+        # corner.corner(groomed_diskA, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
+
+        # corner.corner(groomed_diskB, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
+
+
+        # plt.savefig(self.image_outpath + '_corner.pdf')
+        # print "Saved plot."
+
 
     def make_best_fits(self):
         """Do some modeling stuff.

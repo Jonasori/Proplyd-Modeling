@@ -623,7 +623,7 @@ class Figure:
     sns.set_context("paper")
 
     def __init__(self, paths, make_plot=True, save=False, moment=0, remove_bg=True,
-                 texts=None, title=None):
+                 texts=None, title=None, export_fits_mom=False):
         """
         Make a nice image from a fits file.
 
@@ -640,6 +640,7 @@ class Figure:
         """
         self.title = title
         self.moment = moment
+        self.export_fits_mom = export_fits_mom
         self.remove_bg = remove_bg
         self.paths = np.array(([paths]) if type(paths) is str else paths)
 
@@ -736,6 +737,16 @@ class Figure:
         if self.remove_bg:
             self.im = ma.masked_where(abs(self.im) < self.rms, self.im, copy=True)
 
+        if self.export_fits_mom:
+            fits_out = fits.PrimaryHDU()
+            fits_out.header = self.head
+            fits_out.data = self.im
+            modeling = '/Volumes/disks/jonas/modeling/'
+            outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
+                                                                   self.moment)
+            fits_out.writeto(outpath, overwrite=True)
+            print "Wrote out moment {} fits file to {}".format(self.moment,
+                                                               outpath)
             # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
@@ -781,6 +792,19 @@ class Figure:
             self.im = self.data
             self.rms = imstat_single(path.split('.')[-2])[1]
 
+
+        if self.export_fits_mom:
+            fits_out = fits.PrimaryHDU()
+            fits_out.header = self.head
+            data = self.im if self.moment is 0 else self.im_mom1
+            fits_out.data = data[100:160, 100:180]
+            modeling = '/Volumes/disks/jonas/modeling/'
+            outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
+                                                                   self.moment)
+            fits_out.writeto(outpath, overwrite=True)
+            print "Wrote out moment {} fits file to {}".format(self.moment,
+                                                               outpath)
+            print "NOTE: ^^ That moment map was cropped (in line ~800)"
         # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
