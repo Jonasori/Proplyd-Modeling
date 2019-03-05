@@ -713,42 +713,42 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     # pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
     # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
 
-    start, end = ax_pv.get_xlim()
-    pv_tick_labels = (np.linspace(start, end+1, 5) - np.mean([start, end])) * pixel_to_AU
-    pv_tick_labels = [int(tick) for tick in pv_tick_labels]
-
-    vmin, vmax = ax_pv.get_ylim()
-    vel_tick_labels = np.linspace(vmin, vmax+1, 5) - np.mean([vmin, vmax])
-    vel_tick_labels = [int(tick) for tick in vel_tick_labels]
-
-
-    ax_pv.set_xticklabels(pv_tick_labels)
-    ax_pv.set_yticklabels(vel_tick_labels)
+    # start, end = ax_pv.get_xlim()
+    # pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    # pv_tick_labels = [int(tick) for tick in pv_tick_labels]
+    #
+    # vmin, vmax = ax_pv.get_ylim()
+    # vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
+    # vel_tick_labels = [int(tick) for tick in vel_tick_labels]
+    #
+    #
+    # ax_pv.set_xticklabels(pv_tick_labels)
+    # ax_pv.set_yticklabels(vel_tick_labels)
     ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
     ax_pv.set_xlabel("Position Offset (AU)", weight='bold')
     ax_pv.yaxis.tick_right()
     ax_pv.yaxis.set_label_position("right")
 
 
-    start, end = ax_image.get_xlim()
-    image_xtick_labels = (np.linspace(start, end+1, 5) - np.mean([start, end])) * pixel_to_AU
-    image_xtick_labels = [int(tick) for tick in image_xtick_labels]
-
-    start, end = ax_image.get_ylim()
-    image_ytick_labels = (np.linspace(start, end+1, 5) - np.mean([start, end])) * pixel_to_AU
-    image_ytick_labels = [int(tick) for tick in image_ytick_labels]
-
-
-    # x_ts = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
-    # image_xticks = np.linspace(min(x_ts), max(x_ts), 5) - np.mean(x_ts)
-    # image_xtick_labels = [int(tick) for tick in image_xticks]
+    # start, end = ax_image.get_xlim()
+    # image_xtick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    # image_xtick_labels = [int(tick) for tick in image_xtick_labels]
     #
-    # y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
-    # image_yticks = np.linspace(min(y_ts), max(y_ts), 5) - np.mean(y_ts)
-    # image_ytick_labels = [int(tick) for tick in image_yticks]
-
-    ax_image.set_xticklabels(image_xtick_labels)
-    ax_image.set_yticklabels(image_ytick_labels)
+    # start, end = ax_image.get_ylim()
+    # image_ytick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    # image_ytick_labels = [int(tick) for tick in image_ytick_labels]
+    #
+    #
+    # # x_ts = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
+    # # image_xticks = np.linspace(min(x_ts), max(x_ts), 5) - np.mean(x_ts)
+    # # image_xtick_labels = [int(tick) for tick in image_xticks]
+    # #
+    # # y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
+    # # image_yticks = np.linspace(min(y_ts), max(y_ts), 5) - np.mean(y_ts)
+    # # image_ytick_labels = [int(tick) for tick in image_yticks]
+    #
+    # ax_image.set_xticklabels(image_xtick_labels)
+    # ax_image.set_yticklabels(image_ytick_labels)
     ax_image.set_xlabel("Position Offset (AU)", weight='bold')
     ax_image.set_ylabel("Position Offset (AU)", weight='bold')
 
