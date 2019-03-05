@@ -714,11 +714,11 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
 
     start, end = ax_pv.get_xlim()
-    pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    pv_tick_labels = (np.linspace(start, end+1, 5) - np.mean([start, end])) * pixel_to_AU
     pv_tick_labels = [int(tick) for tick in pv_tick_labels]
 
     vmin, vmax = ax_pv.get_ylim()
-    vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
+    vel_tick_labels = np.linspace(vmin, vmax+1, 5) - np.mean([vmin, vmax])
     vel_tick_labels = [int(tick) for tick in vel_tick_labels]
 
 
@@ -731,11 +731,11 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
 
     start, end = ax_image.get_xlim()
-    image_xtick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    image_xtick_labels = (np.linspace(start, end+1, 5) - np.mean([start, end])) * pixel_to_AU
     image_xtick_labels = [int(tick) for tick in image_xtick_labels]
 
     start, end = ax_image.get_ylim()
-    image_ytick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    image_ytick_labels = (np.linspace(start, end+1, 5) - np.mean([start, end])) * pixel_to_AU
     image_ytick_labels = [int(tick) for tick in image_ytick_labels]
 
 
