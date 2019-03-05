@@ -711,7 +711,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
     pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
-    pv_ticks = np.linspace(min(pv_ts), max(ts), 5) - np.mean(pv_ts)
+    pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
     # pv_ticks -= np.mean(pv_ticks)
     pv_tick_labels = [int(tick) for tick in pv_ticks]
     ax_pv.set_xticklabels(pv_tick_labels)
@@ -727,7 +727,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
     image_yticks = np.linspace(min(y_ts), max(y_ts), 5) - np.mean(y_ts)
     image_ytick_labels = [int(tick) for tick in image_yticks]
-    
+
     ax_image.set_xticklabels(image_xtick_labels)
     ax_image.set_yticklabels(image_ytick_labels)
     ax_image.set_xlabel("Position Offset (AU)", weight='bold')
