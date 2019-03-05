@@ -691,7 +691,8 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None):
     pv_slice = extract_pv_slice(data3d, path)
     pv_data = pv_slice.data
 
-    plt.contourf(pv_data, cmap='BrBG')
+    plt.close()
+    plt.contourf(pv_data, cmap='BrBG', levs=50)
     plt.contour(pv_data, cmap='binary')
     plt.savefig(outpath + '.pdf')
     print "Saved PV diagram to {}.pdf".format(outpath)
