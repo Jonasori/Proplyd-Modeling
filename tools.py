@@ -624,148 +624,6 @@ def plot_pv_diagram_casa(image_path, out_path, center=[129, 130], length=25, pa=
 
 
 
-def plot_pv_diagram_miriad(image_path):
-    """
-    Seems like we can use velplot for this and it might be better than CASAs bullshit but a ton of the settings for velplot come through prompted entry, rather than command line arguments, which might make scripting a PITA.
-
-    Docs: https://www.cfa.harvard.edu/sma/miriad/manuals/SMAuguide/smauserhtml/velplot.html
-
-    Good velplot tutorial on p. 162:
-    https://www.cfa.harvard.edu/sma/miriad/manuals/ATNFuserguide_US.pdf
-
-
-    or use pvextractor package
-    """
-    # Start with a reorder from xyv -> vxy
-    # # reorder in=../data/hco/hco-short110.cm out=hco-data.vxy mode=312
-    # region=(ll_x,ll_y,ur_x,ur_y)(chan_i,chan_f)
-    # velplot in=file.cm region=region
-    # response: p     # enters pos-vel diagram option
-
-    # Get the coordinates of the SE and NW corners of the disk from HCO+ mom0 map with
-    # cgcurs in=hco.mom0 device=/xs type=both options=cursor
-    # moment in=data/hco/hco-short110.cm out=hco.mom0 mom=0 region=arcsec,box'(-2,-2,2,2)'
-    # fits op=xyout in=hco.mom0 out=hco-mom0.fits
-    p_se, p_nw = (56.82, 41.15), (27.82, 53.56)
-
-
-    return None
-
-
-
-def plot_pv_diagram_bad(image_path, moment_map_path, outpath, coords=None, save=False):
-    """
-    Fuck Miriad and CASA, let's just use a package.
-
-    Args: image_path (str): path to fits image, including extension.
-          coords (tuple of tuples): if you have x and y values for the
-                                    disk axis, enter them.
-    """
-
-
-    # Can use this to test for points:
-    if coords is None:
-        keep_trying = True
-        xs, ys = [28, 52], [53, 41]
-        while keep_trying:
-            plt.close()
-            print "Find coordinates for a line across the disk axis:"
-            image_data = fits.getdata(moment_map_path).squeeze()
-            plt.contourf(image_data, 50, cmap='BrBG')
-            plt.colorbar(extend='both')
-            plt.contour(image_data, colors='k', linewidths=1)
-            plt.plot(xs, ys, '-k')
-            plt.show(block=False)
-            response = raw_input('Want to try again?\n[y/n]: ').lower()
-            keep_trying = True if response == 'y' or response == 'yes' else False
-            if keep_trying:
-                xs = tuple(int(x.strip())
-                           for x in raw_input(
-                               'Enter the x coordinates:\n[x1, x2]: ').split(','))
-                ys = tuple(int(x.strip())
-                           for x in raw_input(
-                               'Enter the y coordinates:\n[y1, y2]: ').split(','))
-
-
-    data3d = fits.getdata(image_path).squeeze()
-    path = PVPath([(xs[0], ys[0]), (xs[1], ys[1])])
-    pv_data = extract_pv_slice(data3d, path).data.T
-
-
-    # Make the plot.
-    plt.close()
-    fig, (ax_image, ax_pv) = plt.subplots(1, 2, figsize=(10, 5),
-                                          gridspec_kw={'width_ratios':[2, 2]})
-
-    ax_image.contourf(image_data, 50, cmap='BrBG')
-    #   ax_image.colorbar(extend='both')
-    ax_image.contour(image_data, colors='k', linewidths=1)
-    ax_image.plot(xs, ys, '-k')
-
-    ax_pv.contourf(pv_data, 50, cmap='Reds')
-    # ax_pv.colorbar(extend='both')
-    ax_pv.contour(pv_data, 4, colors='k', linewidths=0.5)
-
-
-    # Image aesthetics
-    pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
-    pixel_to_as = 0.045
-    # pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
-    # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
-
-    start, end = ax_pv.get_xlim()
-    pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_as
-    # pv_tick_labels = [int(tick) for tick in pv_tick_labels]
-
-    vmin, vmax = ax_pv.get_ylim()
-    vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
-    # vel_tick_labels = [int(tick) for tick in vel_tick_labels]
-
-
-    ax_pv.set_xticklabels(pv_tick_labels)
-    ax_pv.set_yticklabels(vel_tick_labels)
-    ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
-    ax_pv.set_xlabel("Position Offset (AU)", weight='bold')
-    ax_pv.yaxis.tick_right()
-    ax_pv.yaxis.set_label_position("right")
-
-
-    start, end = ax_image.get_xlim()
-    image_xtick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_as
-    # image_xtick_labels = [int(tick) for tick in image_xtick_labels]
-
-    start, end = ax_image.get_ylim()
-    image_ytick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_as
-    # image_ytick_labels = [int(tick) for tick in image_ytick_labels]
-
-
-    # x_ts = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
-    # image_xticks = np.linspace(min(x_ts), max(x_ts), 5) - np.mean(x_ts)
-    # image_xtick_labels = [int(tick) for tick in image_xticks]
-    #
-    # y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
-    # image_yticks = np.linspace(min(y_ts), max(y_ts), 5) - np.mean(y_ts)
-    # image_ytick_labels = [int(tick) for tick in image_yticks]
-
-    ax_image.set_xticklabels(image_xtick_labels)
-    ax_image.set_yticklabels(image_ytick_labels)
-    ax_image.set_xlabel("Position Offset (AU)", weight='bold')
-    ax_image.set_ylabel("Position Offset (AU)", weight='bold')
-
-
-    # plt.tight_layout()
-
-    if save:
-        plt.savefig(outpath + '.pdf')
-        print "Saved PV diagram to {}.pdf".format(outpath)
-    else:
-        print "Showing:"
-        plt.show(block=False)
-
-
-
-
-
 
 def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     """
@@ -789,8 +647,9 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
             plt.close()
             print "Find coordinates for a line across the disk axis:"
 
-            # Make a quick moment map.
-            image_data_3d = fits.getdata(image_path).squeeze()
+            # Import and crop the data, 70 pixels in each direction.
+            image_data_3d = fits.getdata(image_path).squeeze()[:, 70:186, 70:186]
+            # Make a quick moment map
             image_data = np.sum(image_data_3d, axis=0)
 
             # Plot
