@@ -693,8 +693,8 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None):
 
     plt.close()
     plt.contourf(pv_data, 50, cmap='BrBG')
-    plt.contour(pv_data, cmap='binary')
     plt.colorbar()
+    plt.contour(pv_data, 50, cmap='binary')
     plt.savefig(outpath + '.pdf')
     print "Saved PV diagram to {}.pdf".format(outpath)
 
