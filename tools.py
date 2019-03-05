@@ -780,7 +780,11 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     # Can use this to test for points:
     if coords is None:
         keep_trying = True
+        # For HCN
         xs, ys = [117, 140], [135, 124]
+        # For HCO
+        xs, ys = [114, 138], [135, 124]
+
         while keep_trying:
             plt.close()
             print "Find coordinates for a line across the disk axis:"
@@ -795,15 +799,16 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
             plt.contour(image_data, colors='k', linewidths=0.2)
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
-            response = raw_input('Want to try again?\n[y/n]: ').lower()
+            response = raw_input('\nWant to try again?\n[y/n]: ').lower()
             keep_trying = True if response == 'y' or response == 'yes' else False
             if keep_trying:
-                xs = tuple(int(x.strip())
-                           for x in raw_input(
-                               'Enter the x coordinates:\n[x1, x2]: ').split(','))
-                ys = tuple(int(x.strip())
-                           for x in raw_input(
-                               'Enter the y coordinates:\n[y1, y2]: ').split(','))
+                xs_raw = raw_input('Enter the x coordinates (previous attempt: {}):\n[x1, x2]: '
+                                   .format(xs))
+                xs = tuple(int(x.strip()) for x in xs_raw.split(','))
+
+                ys_raw = raw_input('Enter the x coordinates (previous attempt: {}):\n[y1, y2]: '
+                                   .format(ys))
+                ys = tuple(int(x.strip()) for x in ys_raw.split(','))
     else:
         xs, ys = coords
 
