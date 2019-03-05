@@ -717,8 +717,13 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
     pv_tick_labels = [int(tick) for tick in pv_tick_labels]
 
+    vmin, vmax = ax_pv.get_ylim()
+    vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
+    vel_tick_labels = [int(tick) for tick in vel_tick_labels]
+
 
     ax_pv.set_xticklabels(pv_tick_labels)
+    ax_pv.set_yticklabels(vel_tick_labels)
     ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
     ax_pv.set_xlabel("Position Offset (AU)", weight='bold')
     ax_pv.yaxis.tick_right()
