@@ -694,7 +694,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
     plt.close()
     fig, (ax_image, ax_pv) = plt.subplots(1, 2, figsize=(10, 5),
-                                          gridspec_kw={'width_ratios':[3, 1]})
+                                          gridspec_kw={'width_ratios':[3, 2]})
 
     ax_image.contourf(image_data, 50, cmap='BrBG')
     #   ax_image.colorbar(extend='both')
@@ -708,17 +708,17 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
     pv_ticks = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
-    # pv_tick_labels = [str(tick) for tick in pv_ticks]
-    ax_pv.set_yticklabels(pv_ticks)
+    pv_tick_labels = [round(tick, 0) for tick in pv_ticks]
+    ax_pv.set_yticklabels(pv_tick_labels)
     ax_pv.set_xlabel("Velocity (km/s)", weight='bold')
     ax_pv.set_ylabel("Position Offset (AU)")
 
     image_xticks = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
-    # image_xtick_labels = [str(tick) for tick in image_xticks]
+    image_xtick_labels = [round(tick, 0) for tick in image_xticks]
     image_yticks = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
-    # image_ytick_labels = [str(tick) for tick in image_yticks]
-    ax_image.set_yticklabels(image_xticks)
-    ax_image.set_xticklabels(image_yticks)
+    image_ytick_labels = [round(tick, 0) for tick in image_yticks]
+    ax_image.set_yticklabels(image_xtick_labels)
+    ax_image.set_xticklabels(image_ytick_labels)
     ax_image.set_xlabel("Position Offset (AU)")
     ax_image.set_ylabel("Position Offset (AU)")
 
