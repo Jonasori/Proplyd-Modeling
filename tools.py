@@ -697,6 +697,11 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     plt.colorbar(extend='both')
     plt.contour(pv_data, colors='k', linewidths=1)
 
+    pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
+    plt.xticks(labels=[ax.get_xticklabels(which='major')])
+    plt.xlabel("Velocity (km/s)", weight='bold')
+    plt.ylabel("Position Offset (AU)")
+
     if save:
         plt.savefig(outpath + '.pdf')
         print "Saved PV diagram to {}.pdf".format(outpath)
