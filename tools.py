@@ -792,7 +792,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
             # Plot
             plt.contourf(image_data, 50, cmap='BrBG')
             plt.colorbar(extend='both')
-            plt.contour(image_data, colors='k', linewidths=0.3)
+            plt.contour(image_data, colors='k', linewidths=0.2)
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
             response = raw_input('Want to try again?\n[y/n]: ').lower()
@@ -819,7 +819,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
 
     ax_image.contourf(image_data, 50, cmap='BrBG')
     #   ax_image.colorbar(extend='both')
-    ax_image.contour(image_data, colors='k', linewidths=1)
+    ax_image.contour(image_data, colors='k', linewidths=0.2)
     ax_image.plot(xs, ys, '-k')
 
     ax_pv.contourf(pv_data, 50, cmap='Reds')
