@@ -687,7 +687,7 @@ def plot_pv_diagram(image_path, moment_map_path, coords=None):
 
 
     data3d = fits.getdata('data/hco/hco-short110.fits').squeeze()
-    path = PVPath([[xs[0], ys[0]], xs[1], ys[1]])
+    path = PVPath([(xs[0], ys[0]), (xs[1], ys[1])])
     pv_slice = extract_pv_slice(data3d, path)
     pv_data = pv_slice.data
 
