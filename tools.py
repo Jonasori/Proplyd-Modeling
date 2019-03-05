@@ -671,8 +671,9 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None):
             plt.close()
             print "Find coordinates for a line across the disk axis:"
             data = fits.getdata(moment_map_path).squeeze()
-            plt.contourf(data, cmap='BrBG')
-            plt.contour(data, cmap='binary')
+            plt.contourf(data, 50, cmap='BrBG')
+            plt.colorbar()
+            plt.contour(data, 50, colors='k') # cmap='binary')
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
             response = raw_input('Want to try again?\n[y/n]: ').lower()
@@ -694,7 +695,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None):
     plt.close()
     plt.contourf(pv_data, 50, cmap='BrBG')
     plt.colorbar()
-    plt.contour(pv_data, 50, color='black') # cmap='binary')
+    plt.contour(pv_data, 50, colors='k') # cmap='binary')
     plt.savefig(outpath + '.pdf')
     print "Saved PV diagram to {}.pdf".format(outpath)
 
