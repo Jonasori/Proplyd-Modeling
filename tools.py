@@ -804,7 +804,8 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
                 ys = tuple(int(x.strip())
                            for x in raw_input(
                                'Enter the y coordinates:\n[y1, y2]: ').split(','))
-
+    else:
+        xs, ys = coords
 
     data3d = fits.getdata(image_path).squeeze()
     path = PVPath([(xs[0], ys[0]), (xs[1], ys[1])])
