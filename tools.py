@@ -695,12 +695,12 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     plt.close()
     fig, (ax_image, ax_pv) = plt.subplots(1, 2)
     ax_image.contourf(image_data, 50, cmap='BrBG')
-    ax_image.colorbar(extend='both')
+    # ax_image.colorbar(extend='both')
     ax_image.contour(image_data, colors='k', linewidths=1)
     ax_image.plot(xs, ys, '-k')
 
     ax_pv.contourf(pv_data, 50, cmap='RdBu')
-    ax_pv.colorbar(extend='both')
+    # ax_pv.colorbar(extend='both')
     ax_pv.contour(pv_data, colors='k', linewidths=1)
 
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
