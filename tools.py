@@ -780,7 +780,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     # Can use this to test for points:
     if coords is None:
         keep_trying = True
-        xs, ys = [28, 52], [53, 41]
+        xs, ys = [117, 140], [135, 124]
         while keep_trying:
             plt.close()
             print "Find coordinates for a line across the disk axis:"
@@ -792,7 +792,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
             # Plot
             plt.contourf(image_data, 50, cmap='BrBG')
             plt.colorbar(extend='both')
-            plt.contour(image_data, colors='k', linewidths=1)
+            plt.contour(image_data, colors='k', linewidths=0.3)
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
             response = raw_input('Want to try again?\n[y/n]: ').lower()
