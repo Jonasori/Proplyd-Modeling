@@ -639,9 +639,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     if coords is None:
         keep_trying = True
         # For HCN
-        xs, ys = [117, 140], [135, 124]
-        # For HCO
-        xs, ys = [114, 138], [135, 124]
+        xs, ys = [38, 57], [55, 45]
 
         while keep_trying:
             plt.close()
@@ -686,7 +684,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     ax_image.contour(image_data, colors='k', linewidths=0.2)
     ax_image.plot(xs, ys, '-k')
 
-    ax_pv.contourf(pv_data, 50, cmap='Inferno')
+    ax_pv.contourf(pv_data, 50, cmap='inferno')
     # ax_pv.colorbar(extend='both')
     # ax_pv.contour(pv_data, 4, colors='k', linewidths=0.5)
 
