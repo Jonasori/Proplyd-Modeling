@@ -712,7 +712,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     pv_tick_labels = [int(tick) for tick in pv_ticks]
     ax_pv.set_yticklabels(pv_tick_labels)
     ax_pv.set_xlabel("Velocity (km/s)", weight='bold')
-    ax_pv.set_ylabel("Position Offset (AU)", weight='bold', rotation=180)
+    ax_pv.set_ylabel("Position Offset (AU)", weight='bold', rotation=270)
     ax_pv.yaxis.tick_right()
     ax_pv.yaxis.set_label_position("right")
 
@@ -726,6 +726,8 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     ax_image.set_ylabel("Position Offset (AU)", weight='bold')
 
 
+    plt.tight_layout()
+    sns.despine()
     if save:
         plt.savefig(outpath + '.pdf')
         print "Saved PV diagram to {}.pdf".format(outpath)
