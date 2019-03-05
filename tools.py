@@ -709,12 +709,12 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
     # Image aesthetics
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
-
+    pixel_to_as = 0.045
     # pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
     # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
 
     start, end = ax_pv.get_xlim()
-    pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_as
     pv_tick_labels = [int(tick) for tick in pv_tick_labels]
 
     vmin, vmax = ax_pv.get_ylim()
@@ -731,11 +731,11 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
 
     start, end = ax_image.get_xlim()
-    image_xtick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    image_xtick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_as
     image_xtick_labels = [int(tick) for tick in image_xtick_labels]
 
     start, end = ax_image.get_ylim()
-    image_ytick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+    image_ytick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_as
     image_ytick_labels = [int(tick) for tick in image_ytick_labels]
 
 
