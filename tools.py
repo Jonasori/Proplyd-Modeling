@@ -702,7 +702,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     ax_image.contour(image_data, colors='k', linewidths=1)
     ax_image.plot(xs, ys, '-k')
 
-    ax_pv.contourf(pv_data, 50, cmap='RdBu')
+    ax_pv.contourf(pv_data, 50, cmap='Reds')
     # ax_pv.colorbar(extend='both')
     ax_pv.contour(pv_data, 4, colors='k', linewidths=0.5)
 
