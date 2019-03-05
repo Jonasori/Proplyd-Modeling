@@ -705,14 +705,15 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
-    ylabels_au = np.array(ax_pv.get_yticklabels(which='major')) * pixel_to_AU
-    ax_pv.set_yticks(labels=ylabels_au)
+    pv_tick_labs = np.array(ax_pv.get_xticklabels(which='major').tolist()) * pixel_to_AU
+    ax_pv.set_yticks(labels=pv_tick_labs)
     ax_pv.xlabel("Velocity (km/s)", weight='bold')
     ax_pv.ylabel("Position Offset (AU)")
 
-    labels_au = np.array(ax_image.get_yticklabels(which='major')) * pixel_to_AU
-    ax_image.set_yticks(labels=labels_au)
-    ax_image.set_xticks(labels=labels_au)
+    image_xtick_labs = np.array(ax_image.get_xticklabels(which='major').tolist()) * pixel_to_AU
+    image_ytick_labs = np.array(ax_image.get_yticklabels(which='major').tolist()) * pixel_to_AU
+    ax_image.set_yticks(labels=image_xtick_labs)
+    ax_image.set_xticks(labels=image_ytick_labs)
     ax_image.set_xlabel("Position Offset (AU)")
     ax_image.set_ylabel("Position Offset (AU)")
 
