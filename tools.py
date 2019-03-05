@@ -684,9 +684,9 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     ax_image.contour(image_data, colors='k', linewidths=0.2)
     ax_image.plot(xs, ys, '-k')
 
-    ax_pv.contourf(pv_data, 50, cmap='inferno')
+    ax_pv.contourf(pv_data, 30, cmap='inferno')
     # ax_pv.colorbar(extend='both')
-    # ax_pv.contour(pv_data, 4, colors='k', linewidths=0.5)
+    ax_pv.contour(pv_data, 30, colors='k', linewidths=0.1)
 
 
     # Image aesthetics
