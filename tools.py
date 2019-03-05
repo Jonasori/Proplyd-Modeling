@@ -689,12 +689,13 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
     data3d = fits.getdata(image_path).squeeze()
     path = PVPath([(xs[0], ys[0]), (xs[1], ys[1])])
-    pv_slice = extract_pv_slice(data3d, path)
-    pv_data = pv_slice.data
+    pv_data = extract_pv_slice(data3d, path).data.T
 
+
+    # Make the plot.
     plt.close()
     fig, (ax_image, ax_pv) = plt.subplots(1, 2, figsize=(10, 5),
-                                          gridspec_kw={'width_ratios':[3, 2]})
+                                          gridspec_kw={'width_ratios':[2, 2]})
 
     ax_image.contourf(image_data, 50, cmap='BrBG')
     #   ax_image.colorbar(extend='both')
@@ -705,6 +706,8 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     # ax_pv.colorbar(extend='both')
     ax_pv.contour(pv_data, colors='k', linewidths=1)
 
+
+    # Image aesthetics
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
     pv_ticks = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
@@ -727,7 +730,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
 
     plt.tight_layout()
-    sns.despine()
+
     if save:
         plt.savefig(outpath + '.pdf')
         print "Saved PV diagram to {}.pdf".format(outpath)
