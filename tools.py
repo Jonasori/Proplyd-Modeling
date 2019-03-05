@@ -781,14 +781,13 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     if coords is None:
         keep_trying = True
         xs, ys = [28, 52], [53, 41]
-
-        # Make a quick moment map.
-        image_data_3d = fits.getdata(image_path).squeeze()
-        image_data = np.sum(image_data_3d, axis=0)
-
         while keep_trying:
             plt.close()
             print "Find coordinates for a line across the disk axis:"
+
+            # Make a quick moment map.
+            image_data_3d = fits.getdata(image_path).squeeze()
+            image_data = np.sum(image_data_3d, axis=0)
 
             # Plot
             plt.contourf(image_data, 50, cmap='BrBG')
