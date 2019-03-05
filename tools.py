@@ -695,7 +695,7 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     plt.close()
     fig, (ax_image, ax_pv) = plt.subplots(1, 2)
     ax_image.contourf(image_data, 50, cmap='BrBG')
-    # ax_image.colorbar(extend='both')
+    #   ax_image.colorbar(extend='both')
     ax_image.contour(image_data, colors='k', linewidths=1)
     ax_image.plot(xs, ys, '-k')
 
@@ -705,12 +705,12 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
 
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
-    ylabels_au = ax_pv.get_yticklabels(which='major') * pixel_to_AU
+    ylabels_au = np.array(ax_pv.get_yticklabels(which='major')) * pixel_to_AU
     ax_pv.set_yticks(labels=ylabels_au)
     ax_pv.xlabel("Velocity (km/s)", weight='bold')
     ax_pv.ylabel("Position Offset (AU)")
 
-    labels_au = ax_image.get_yticklabels(which='major') * pixel_to_AU
+    labels_au = np.array(ax_image.get_yticklabels(which='major')) * pixel_to_AU
     ax_image.set_yticks(labels=labels_au)
     ax_image.set_xticks(labels=labels_au)
     ax_image.set_xlabel("Position Offset (AU)")
