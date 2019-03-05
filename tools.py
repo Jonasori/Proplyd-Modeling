@@ -648,7 +648,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
             print "Find coordinates for a line across the disk axis:"
 
             # Import and crop the data, 70 pixels in each direction.
-            image_data_3d = fits.getdata(image_path).squeeze()[:, 70:186, 70:186]
+            image_data_3d = fits.getdata(image_path).squeeze()[:, 80:176, 80:176]
             # Make a quick moment map
             image_data = np.sum(image_data_3d, axis=0)
 
@@ -671,9 +671,9 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     else:
         xs, ys = coords
 
-    data3d = fits.getdata(image_path).squeeze()
+
     path = PVPath([(xs[0], ys[0]), (xs[1], ys[1])])
-    pv_data = extract_pv_slice(data3d, path).data.T
+    pv_data = extract_pv_slice(image_data_3d, path).data.T
 
 
     # Make the plot.
