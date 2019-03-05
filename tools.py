@@ -710,9 +710,12 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     # Image aesthetics
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
-    pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
-    pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
-    pv_ticks -= np.mean(pv_ticks)
+    # pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
+    # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
+
+    start, end = ax_pv.get_xlim()
+    pv_ticks = (np.linspace(start, end, 5) - np.mean(pv_ts)) * pixel_to_AU
+
     pv_tick_labels = [int(tick) for tick in pv_ticks]
     ax_pv.set_xticklabels(pv_tick_labels)
     ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
