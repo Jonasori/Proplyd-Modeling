@@ -710,14 +710,14 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     # Image aesthetics
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
 
-    # pv_ticks = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
-    # pv_ticks -= np.mean(pv_ticks)
-    # pv_tick_labels = [int(tick) for tick in pv_ticks]
-    # ax_pv.set_yticklabels(pv_tick_labels)
-    # ax_pv.set_xlabel("Velocity (km/s)", weight='bold')
-    # ax_pv.set_ylabel("Position Offset (AU)", weight='bold', rotation=270)
-    # ax_pv.yaxis.tick_right()
-    # ax_pv.yaxis.set_label_position("right")
+    pv_ticks = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
+    pv_ticks -= np.mean(pv_ticks)
+    pv_tick_labels = [int(tick) for tick in pv_ticks]
+    ax_pv.set_xticklabels(pv_tick_labels)
+    ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
+    ax_pv.set_xlabel("Position Offset (AU)", weight='bold')
+    ax_pv.yaxis.tick_right()
+    ax_pv.yaxis.set_label_position("right")
 
     image_xticks = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
     image_xtick_labels = [int(tick) for tick in image_xticks]
