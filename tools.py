@@ -653,7 +653,7 @@ def plot_pv_diagram_miriad(image_path):
 
 
 
-def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None):
+def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=False):
     """
     Fuck Miriad and CASA, let's just use a package.
 
@@ -696,8 +696,13 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None):
     plt.contourf(pv_data, 50, cmap='RdBu')
     plt.colorbar(extend='both')
     plt.contour(pv_data, colors='k', linewidth=4) # cmap='binary')
-    plt.savefig(outpath + '.pdf')
-    print "Saved PV diagram to {}.pdf".format(outpath)
+
+    if save:
+        plt.savefig(outpath + '.pdf')
+        print "Saved PV diagram to {}.pdf".format(outpath)
+    else:
+        plt.show()
+
 
 
 def show_mom_map(image_path):
