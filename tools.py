@@ -673,7 +673,7 @@ def plot_pv_diagram(image_path, moment_map_path, coords=None):
             data = fits.getdata(moment_map_path).squeeze()
             plt.contourf(data, cmap='BrBG')
             plt.contour(data, cmap='binary')
-            plt.plot(left, right, '-k')
+            plt.plot(xs, ys, '-k')
             plt.show(block=False)
             response = raw_input('Want to try again?\n[y/n]: ').lower()
             keep_trying = True if response == 'y' or response == 'yes' else False
