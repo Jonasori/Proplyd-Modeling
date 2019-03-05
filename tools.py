@@ -693,7 +693,9 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
     pv_data = pv_slice.data
 
     plt.close()
-    fig, (ax_image, ax_pv) = plt.subplots(1, 2)
+    fig, (ax_image, ax_pv) = plt.subplots(1, 2, figsize=(10, 5),
+                                          gridspec_kw={'width_ratios':[3, 1]})
+
     ax_image.contourf(image_data, 50, cmap='BrBG')
     #   ax_image.colorbar(extend='both')
     ax_image.contour(image_data, colors='k', linewidths=1)
@@ -725,7 +727,8 @@ def plot_pv_diagram(image_path, moment_map_path, outpath, coords=None, save=Fals
         plt.savefig(outpath + '.pdf')
         print "Saved PV diagram to {}.pdf".format(outpath)
     else:
-        plt.show()
+        print "Showing:"
+        plt.show(block=False)
 
 
 
