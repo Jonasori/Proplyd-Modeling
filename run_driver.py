@@ -1,15 +1,13 @@
-"""Cail's mcmc.py run wrapper."""
+"""Run the whole MCMC shindig!"""
 
 # Import some python packages
 import os
-import pickle
-import argparse
 import numpy as np
 import subprocess as sp
 import matplotlib.pyplot as plt
 from astropy.constants import M_sun
 from astropy.io import fits
-from pathlib2 import Path
+# from pathlib2 import Path
 plt.switch_backend('agg')
 M_sun = M_sun.value
 
@@ -30,7 +28,6 @@ nwalkers = 50
 nsteps = 500
 
 
-# Path.cwd()
 
 
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
@@ -49,8 +46,6 @@ run_w_pool = True
 
 pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
 
-pos_A
-pos_B
 
 # An initial list of parameters needed to make a model.
 # These get dynamically updated in lnprob (line 348).
@@ -98,92 +93,6 @@ param_dict = {
     'T_freezeout':         lines[mol]['t_fo']
     }
 
-def main():
-    """Establish and evaluate some custom argument options.
-
-    This is called when we run the whole thing: run_driver.py -r does a run.
-    """
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Python commands associated with emcee run25, which has 50 walkers and varies the the parameters given param_info.''')
-
-    parser.add_argument('-r', '--run', action='store_true',
-                        help='begin or resume eemcee run.')
-
-    parser.add_argument('-a', '--analyze', action='store_true',
-                        help='analyze sampler chain, producing an evolution plot, corner plot, and image domain figure.')
-
-    parser.add_argument('-b', '--burn_in', default=0, type=int,
-                        help='number of steps \'burn in\' steps to exclude')
-
-    parser.add_argument('-bf', '--best_fit', action='store_true',
-                        help='generate best fit model images and residuals')
-
-    parser.add_argument('-con', '--concise', action='store_true',
-                        help='concise best fit')
-
-    parser.add_argument('-c', '--corner', action='store_true',
-                        help='generate corner plot')
-
-    parser.add_argument('-cvars', '--corner_vars', default=None, nargs='+',
-                        help='concise best fit')
-
-    parser.add_argument('-e', '--evolution', action='store_true',
-                        help='generate walker evolution plot.')
-
-    parser.add_argument('-kde', '--kernel_density', action='store_true',
-                        help='generate kernel density estimate (kde) of posterior distribution')
-
-
-    args = parser.parse_args()
-
-    if args.run:
-        print "Starting run:", run_path + run_name
-        print "with {} steps and {} walkers.".format(str(nsteps), str(nwalkers))
-        print '\n\n\n'
-
-        mcmc.run_emcee(run_path=run_path,
-                       run_name=run_name,
-                       mol=mol,
-                       nsteps=nsteps,
-                       nwalkers=nwalkers,
-                       lnprob=lnprob #,
-                       # param_info=param_info
-                       )
-    else:
-        if already_exists(run_path) is False:
-            return 'Go in and specify which run you want.'
-
-        run = mcmc.MCMCrun(run_path,
-                           run_name,
-                           nwalkers=nwalkers,
-                           burn_in=args.burn_in)
-        # old_nsamples = run.groomed.shape[0]
-        # run.groomed = run.groomed[run.groomed['r_in'] + run.groomed['d_r'] > 20]
-        # print('{} samples removed.'.format(old_nsamples - run.groomed.shape[0]))
-
-        # This was down in the arg analysis but seems separate.
-        # Also, aumic_fitting doesn't seem to exist anymore?
-        label_fix(run)
-
-        # Read the arguments passed and execute them.
-        if args.corner_vars:
-            cols = list(run.groomed.columns)
-            col_indices = [cols.index(col) for col in args.corner_vars]
-
-        if args.analyze or args.best_fit:
-            make_best_fits(run, concise=args.concise)
-
-        if args.corner_vars:
-            args.corner_vars = run.groomed.columns[col_indices]
-
-        if args.analyze or args.evolution:
-            run.evolution()
-
-        if args.analyze or args.kernel_density:
-            run.kde()
-
-        if args.analyze or args.corner:
-            run.corner(variables=args.corner_vars)
-
 # model = Model(obs, 'jan22-4', 'jan22-4')
 # mol = 'hco'
 # testing=False
@@ -207,10 +116,6 @@ def make_fits(model, param_dict, mol, testing=False):
         dir_to_make = '/'.join(dir_list) + '/'
         sp.call(['mkdir {}'.format(dir_to_make)])
 
-
-    # for p in param_dict.keys():
-    #     if p != 'obsv':
-    #         print p, ': ', param_dict[p]
 
     # Make Disk 1
     print "Entering make fits; exporting to", model.modelfiles_path
@@ -303,8 +208,6 @@ def make_fits(model, param_dict, mol, testing=False):
     im.data = a + b
 
     # Add the header by modifying a model header.
-
-
     with fits.open(model.modelfiles_path + '-d1.fits') as model_fits:
         model_header = model_fits[0].header
     im.header = model_header
@@ -379,7 +282,7 @@ def lnprob(theta, run_name, param_info, mol):
     model.obs_sample()
     model.chiSq(mol)
     model.delete()
-    # Why is this a sum?
+    # Why is this a sum? Because model.raw_chis is a list maybe
     lnp = -0.5 * sum(model.raw_chis)
     print "Lnprob val: ", lnp
     print '\n'
@@ -503,7 +406,129 @@ def label_fix(run):
             """
     return 'Not a functional function.'
 
+
+
+
+
+
+
+
+
+# The cluster doesn't have argparse, so in
+
+# try:
+import argparse
+
+def main():
+    """Establish and evaluate some custom argument options.
+
+    This is called when we run the whole thing: run_driver.py -r does a run.
+    """
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Python commands associated with emcee run25, which has 50 walkers and varies the the parameters given param_info.''')
+
+    parser.add_argument('-r', '--run', action='store_true',
+                        help='begin or resume eemcee run.')
+
+    parser.add_argument('-a', '--analyze', action='store_true',
+                        help='analyze sampler chain, producing an evolution plot, corner plot, and image domain figure.')
+
+    parser.add_argument('-b', '--burn_in', default=0, type=int,
+                        help='number of steps \'burn in\' steps to exclude')
+
+    parser.add_argument('-bf', '--best_fit', action='store_true',
+                        help='generate best fit model images and residuals')
+
+    parser.add_argument('-con', '--concise', action='store_true',
+                        help='concise best fit')
+
+    parser.add_argument('-c', '--corner', action='store_true',
+                        help='generate corner plot')
+
+    parser.add_argument('-cvars', '--corner_vars', default=None, nargs='+',
+                        help='concise best fit')
+
+    parser.add_argument('-e', '--evolution', action='store_true',
+                        help='generate walker evolution plot.')
+
+    parser.add_argument('-kde', '--kernel_density', action='store_true',
+                        help='generate kernel density estimate (kde) of posterior distribution')
+
+
+    args = parser.parse_args()
+
+    if args.run:
+        print "Starting run:", run_path + run_name
+        print "with {} steps and {} walkers.".format(str(nsteps), str(nwalkers))
+        print '\n\n\n'
+
+        mcmc.run_emcee(run_path=run_path,
+                       run_name=run_name,
+                       mol=mol,
+                       nsteps=nsteps,
+                       nwalkers=nwalkers,
+                       lnprob=lnprob #,
+                       # param_info=param_info
+                       )
+    else:
+        if already_exists(run_path) is False:
+            return 'Go in and specify which run you want.'
+
+        run = mcmc.MCMCrun(run_path,
+                           run_name,
+                           nwalkers=nwalkers,
+                           burn_in=args.burn_in)
+        # old_nsamples = run.groomed.shape[0]
+        # run.groomed = run.groomed[run.groomed['r_in'] + run.groomed['d_r'] > 20]
+        # print('{} samples removed.'.format(old_nsamples - run.groomed.shape[0]))
+
+        # This was down in the arg analysis but seems separate.
+        # Also, aumic_fitting doesn't seem to exist anymore?
+        label_fix(run)
+
+        # Read the arguments passed and execute them.
+        if args.corner_vars:
+            cols = list(run.groomed.columns)
+            col_indices = [cols.index(col) for col in args.corner_vars]
+
+        if args.analyze or args.best_fit:
+            make_best_fits(run, concise=args.concise)
+
+        if args.corner_vars:
+            args.corner_vars = run.groomed.columns[col_indices]
+
+        if args.analyze or args.evolution:
+            run.evolution()
+
+        if args.analyze or args.kernel_density:
+            run.kde()
+
+        if args.analyze or args.corner:
+            run.corner(variables=args.corner_vars)
+
+
+
 #"""
 if __name__ == '__main__':
     main()
 #"""
+#
+# except ImportError:
+#
+#     print "Starting run:", run_path + run_name
+#     print "with {} steps and {} walkers.".format(str(nsteps), str(nwalkers))
+#     print '\n\n\n'
+#
+#     mcmc.run_emcee(run_path=run_path,
+#                    run_name=run_name,
+#                    mol=mol,
+#                    nsteps=nsteps,
+#                    nwalkers=nwalkers,
+#                    lnprob=lnprob #,
+#                    # param_info=param_info
+#                    )
+#
+
+
+
+
+# The End

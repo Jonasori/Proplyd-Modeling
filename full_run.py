@@ -1,6 +1,8 @@
-"""Basically just choose run method. This should be the last step in the chain.
+"""
+Basically just choose run method. This should be the last step in the chain.
 
-Trying to get rid of the reliance on mol in constants.
+This is only run if we're on the VVO machines. If we're clustered,
+run run_driver directly.
 """
 
 import argparse
@@ -33,7 +35,7 @@ if method == 'gs':
 
 elif method == 'mc':
     n = raw_input('How many processors shall we use?\n[2-10]: ')
-    np = '2' if n not in range(2, 11) else n
+    np = '2' if n < 2 else n
     sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
 
 

@@ -6,11 +6,15 @@ Script some commands for easier calling, more specialized usage.
 - imspec: Display a spectrum.
 - icr (invert/clean/restor): Convolve a model with the beam.
 - sample_model_in_uvplane: convert a model fits to a sampled map (im, vis, uvf)
+
+
+As of March 15: Since we apparently can't download os on the cluster, I'm
+rerouting all the output to junk files rather than none.
 """
 
 # Packages
 import os
-import re
+# import re
 import argparse
 import numpy as np
 import seaborn as sns
@@ -23,10 +27,11 @@ from matplotlib.pylab import figure
 from matplotlib.patches import Ellipse as ellipse
 from astropy.visualization import astropy_mpl_style
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
-from pvextractor import extract_pv_slice
-from pvextractor import Path as PVPath
 from pathlib2 import Path
 plt.style.use(astropy_mpl_style)
+
+
+
 
 
 
@@ -634,7 +639,10 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
                                     disk axis, enter them.
     """
 
-
+    # Not all the machines have this package installed,
+    # so don't run it unless necessary.
+    from pvextractor import extract_pv_slice
+    from pvextractor import Path as PVPath
     # Can use this to test for points:
     if coords is None:
         keep_trying = True
@@ -676,6 +684,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
 
     # Make the plot.
     plt.close()
+    plt.clf()
     fig, (ax_image, ax_pv) = plt.subplots(1, 2, figsize=(10, 5),
                                           gridspec_kw={'width_ratios':[2, 2]})
 
@@ -692,7 +701,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     # Image aesthetics
     pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
     pixel_to_as = 0.045
-    # pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
+    pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
     # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
 
     start, end = ax_pv.get_xlim()
@@ -721,20 +730,23 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     image_ytick_labels = [int(tick) for tick in image_ytick_labels]
 
 
-    # x_ts = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
+    x_ts = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
     # image_xticks = np.linspace(min(x_ts), max(x_ts), 5) - np.mean(x_ts)
     # image_xtick_labels = [int(tick) for tick in image_xticks]
     #
-    # y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
+    y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
     # image_yticks = np.linspace(min(y_ts), max(y_ts), 5) - np.mean(y_ts)
     # image_ytick_labels = [int(tick) for tick in image_yticks]
 
+    # ax_image.set_xticklabels(x_ts)
+    # ax_image.set_yticklabels(y_ts)
     ax_image.set_xticklabels(image_xtick_labels)
     ax_image.set_yticklabels(image_ytick_labels)
     ax_image.set_xlabel("Position Offset (AU)", weight='bold')
     ax_image.set_ylabel("Position Offset (AU)", weight='bold')
 
-
+    mol = get_line(image_path).upper()
+    plt.suptitle('Moment Map and PV Diagram for {}'.format(mol), weight='bold')
     # plt.tight_layout()
 
     if save:
@@ -746,7 +758,11 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
 
 
 
-
+def get_line(path):
+    for mol in ['hco', 'hcn', 'co', 'cs']:
+        if mol in path:
+            break
+    return mol
 
 
 

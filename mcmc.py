@@ -4,7 +4,6 @@
 import sys
 import emcee
 import pickle
-import corner
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -54,7 +53,7 @@ class MCMCrun:
         self.image_outpath   = './mcmc_results/' + name
         self.modelfiles_path = run_path + 'model_files/' + name
         self.main            = pd.read_csv(self.runpath + '_chain.csv')
-        self.param_dict = pickle.load(open(run_path + 'param_dict.pkl', 'rb'))
+        self.param_dict      = pickle.load(open(run_path + 'param_dict.pkl', 'rb'))
 
         """
         if path:
@@ -135,7 +134,7 @@ class MCMCrun:
             plt.show()
 
 
-    def evolution_main(self, save=True):
+    def evolution_main(self, min_lnprob=None, save=True):
         """Plot walker evolution.
 
         This one uses the full step log, including bad steps (not groomed).
@@ -165,10 +164,15 @@ class MCMCrun:
             # make y-limits on lnprob subplot reasonable
             # This is not reasonable. Change it?
             #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
-            amin = np.amin(main.lnprob[main.lnprob != -np.inf])
+            amin = np.amin(main.lnprob[main.lnprob != -np.inf]) if not min_lnprob else min_lnprob
             amax = np.amax(main.lnprob)
             axes[-1].set_ylim(amin, amax)
             # axes[-1].set_ylim(-50000, -25000)
+
+
+        # A quick iPython walker lnprob plotter:
+        # for i in range(nwalkers):
+        #   plt.plot(run.main['lnprob'][i+1::nwalkers], linewidth=0.2)
 
         # if you want mean at each step over plotted:
         # main.index //= self.nwalkers
@@ -311,7 +315,11 @@ class MCMCrun:
 
 
     def corner_dfm(self, save_to_thesis=False):
-        """Plot 'corner plot' of fit."""
+        """Make a corner plot using Dan Foreman-Mackey's Corner package."""
+
+        # Not all the machines have this installed, so only load it if necessary.
+        import corner
+
         plt.close()
 
         # Get best_fit and posterior statistics
@@ -360,13 +368,17 @@ class MCMCrun:
 
         # fig, (ax1, ax2) = plt.subplots(1, 2)
         # for ax, df, disk_ID in zip(axes, [groomed_diskA, groomed_diskB], ('A', 'B')):
-        outpath = self.image_outpath + '_' if not save_to_thesis else '/Volumes/disks/jonas/Thesis/Figures/'
+        if save_to_thesis:
+            outpath = '/Volumes/disks/jonas/Thesis/Figures/'
+
+        else:
+            outpath = self.image_outpath + '_'
         for df, disk_ID in zip([groomed_diskA, groomed_diskB], ('A', 'B')):
             print "Making corner plot"
             corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
-            plt.savefig('{}cornerplot-disk{}.png'.format(outpath, disk_ID), dpi=200)
-            print "Saved plot for disk{} to {}".format(disk_ID, outpath)
+            plt.savefig('{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID), dpi=200)
+            print "Saved plot for disk{} to '{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID)'"
 
         # corner.corner(groomed_diskA, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
@@ -375,7 +387,6 @@ class MCMCrun:
 
         # plt.savefig(self.image_outpath + '_corner.pdf')
         # print "Saved plot."
-
 
     def make_best_fits(self):
         """Do some modeling stuff.
@@ -465,9 +476,8 @@ class MCMCrun:
 
         return (models, bf_param_dict)
 
-run_path = './mcmc_runs/jan22/'
-run_name = 'jan22'
-mol = 'hco'
+
+
 
 def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     """
@@ -528,13 +538,13 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     else:
         param_info = [('r_out_A',           500,     300,      (10, 1000)),
                       ('atms_temp_A',       300,     150,      (0, 1000)),
-                      ('m_disk_A',          -1.,      1.,      (-2.5, 0)),
-                      ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
+                      ('m_disk_A',          -1.,      1.,      (-4.5, 0)),
+                      ('temp_struct_A',     -0.,      1.,      (-3., 3.)),
                       ('incl_A',            65.,     30.,      (0, 90.)),
-                      ('pos_angle_A',       70,      45,       (0, 360)),
+                      ('pos_angle_A',        70,      45,      (0, 360)),
                       ('r_out_B',           500,     300,      (10, 1000)),
                       ('atms_temp_B',       200,     150,      (0, 1000)),
-                      # ('m_disk_B',          -1.,      1.,      (-2.5, 0)),
+                      ('m_disk_B',          -4.,      1.,      (-6., 0)),
                       # ('temp_struct_B',     0.,      1,        (-3., 3.)),
                       ('incl_B',            45.,     30,       (0, 90.)),
                       ('pos_angle_B',       136.0,   45,       (0, 360))
@@ -638,7 +648,6 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     # return run
     print "About to loop over run"
     for i, result in enumerate(run):
-        # break
         print "Got a result"
 
         # Maybe do this logging out in the lnprob function itself?
