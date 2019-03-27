@@ -2,13 +2,14 @@
 
 # Import some python packages
 import os
+import argparse
 import numpy as np
 import subprocess as sp
 import matplotlib.pyplot as plt
 from astropy.constants import M_sun
 from astropy.io import fits
 # from pathlib2 import Path
-plt.switch_backend('agg')
+# plt.switch_backend('agg')
 M_sun = M_sun.value
 
 # Import some files from Kevin's modeling code
@@ -18,7 +19,7 @@ from disk_model.disk import Disk
 # Import some local files
 import mcmc
 import fitting
-import plotting
+# import plotting
 from tools import remove, already_exists
 from constants import obs_stuff, lines, today, offsets, mol
 # Unfortunately, we have to import mol as a global var because manually
@@ -40,7 +41,7 @@ while already_exists(run_path) is True:
     run_path = './mcmc_runs/' + run_name + '/'
     counter += 1
 
-print run_path
+print(run_path)
 
 run_w_pool = True
 
@@ -118,7 +119,7 @@ def make_fits(model, param_dict, mol, testing=False):
 
 
     # Make Disk 1
-    print "Entering make fits; exporting to", model.modelfiles_path
+    print("Entering make fits; exporting to" + model.modelfiles_path)
     #print "Fitting disk 1"
     DI = 0
     d1 = Disk(params=[param_dict['temp_struct_A'],
@@ -284,8 +285,8 @@ def lnprob(theta, run_name, param_info, mol):
     model.delete()
     # Why is this a sum? Because model.raw_chis is a list maybe
     lnp = -0.5 * sum(model.raw_chis)
-    print "Lnprob val: ", lnp
-    print '\n'
+    print("Lnprob val: ", lnp)
+    print('\n')
     return lnp
 
 
@@ -302,15 +303,15 @@ def make_best_fits(run, mol):
     # Locate the best fit model from max'ed lnprob.
     max_lnp = subset_df['lnprob'].max()
     model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
-    print 'Model parameters:\n', model_params.to_string(), '\n\n'
+    print('Model parameters:\n', model_params.to_string(), '\n\n')
 
     for param in model_params.columns[:-1]:
         param_dict[param] = model_params[param].values
 
-    disk_params = param_dict.values()
+    disk_params = list(param_dict.values())
 
     # intialize model and make fits image
-    print 'Making model...'
+    print('Making model...')
     # This obviously has to be generalized.
     dataPath = './data/' + mol + '/' + mol + '-short' + lines[mol][min_baseline]
     model = fitting.Model(observation=dataPath,
@@ -318,7 +319,7 @@ def make_best_fits(run, mol):
                           model_name=model_name)
     make_fits(model, disk_params)
 
-    print 'Sampling and cleaning...'
+    print('Sampling and cleaning...')
     paths = []
     for pointing, rms, starflux in zip(model.observations, aumic_fitting.band6_rms_values[:-1], starfluxes):
         ids = []
@@ -410,21 +411,87 @@ def label_fix(run):
 
 
 
+## SCHWIMMBAD EXAMPLE
+# import math
+# def worker(task):
+#     a, b = task
+#     return math.cos(a) + math.sin(b)
+#
+# def main(pool):
+#     # Here we generate some fake data
+#     import random
+#     a = [random.uniform(0, 2*math.pi) for _ in range(10000)]
+#     b = [random.uniform(0, 2*math.pi) for _ in range(10000)]
+#
+#     tasks = list(zip(a, b))
+#     results = pool.map(worker, tasks)
+#     pool.close()
+#
+#     # Now we could save or do something with the results object
+#
+# if __name__ == "__main__":
+#     import schwimmbad
+#
+#     from argparse import ArgumentParser
+#     parser = ArgumentParser(description="Schwimmbad example.")
+#
+#     group = parser.add_mutually_exclusive_group()
+#     group.add_argument("--ncores", dest="n_cores", default=1,
+#                        type=int, help="Number of processes (uses "
+#                                       "multiprocessing).")
+#     group.add_argument("--mpi", dest="mpi", default=False,
+#                        action="store_true", help="Run with MPI.")
+#     args = parser.parse_args()
+#
+#     pool = schwimmbad.choose_pool(mpi=args.mpi, processes=args.n_cores)
+#     main(pool)
+#
+#
+#
+# ## JONAS
+# def main(pool):
+#     print("Starting run:" +  run_path + run_name +\
+#           "\nwith {} steps and {} walkers.".format(str(nsteps), str(nwalkers)))
+#     print('\n\n\n')
+#
+#     mcmc.run_emcee(run_path=run_path,
+#                    run_name=run_name,
+#                    mol=mol,
+#                    nsteps=nsteps,
+#                    nwalkers=nwalkers,
+#                    lnprob=lnprob #,
+#                    # param_info=param_info
+#                    )
+#
+#
+# if __name__ == "__main__":
+#     import schwimmbad
+#
+#     from argparse import ArgumentParser
+#     parser = ArgumentParser(description="Schwimmbad example.")
+#
+#     group = parser.add_mutually_exclusive_group()
+#     group.add_argument("--ncores", dest="n_cores", default=1,
+#                        type=int, help="Number of processes (uses "
+#                                       "multiprocessing).")
+#     group.add_argument("--mpi", dest="mpi", default=False,
+#                        action="store_true", help="Run with MPI.")
+#     args = parser.parse_args()
+#
+#     pool = schwimmbad.choose_pool(mpi=args.mpi, processes=args.n_cores)
+#     main(pool)
+#
 
 
 
 
-# The cluster doesn't have argparse, so in
-
-# try:
-import argparse
 
 def main():
     """Establish and evaluate some custom argument options.
 
     This is called when we run the whole thing: run_driver.py -r does a run.
     """
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Python commands associated with emcee run25, which has 50 walkers and varies the the parameters given param_info.''')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Blah''')
 
     parser.add_argument('-r', '--run', action='store_true',
                         help='begin or resume eemcee run.')
@@ -457,9 +524,9 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        print "Starting run:", run_path + run_name
-        print "with {} steps and {} walkers.".format(str(nsteps), str(nwalkers))
-        print '\n\n\n'
+        print("Starting run:" +  run_path + run_name +\
+              "\nwith {} steps and {} walkers.".format(str(nsteps), str(nwalkers)))
+        print('\n\n\n')
 
         mcmc.run_emcee(run_path=run_path,
                        run_name=run_name,

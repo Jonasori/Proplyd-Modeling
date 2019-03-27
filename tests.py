@@ -277,28 +277,28 @@ def gs_test_param_dependence(vector):
 
     remove(path)
     sp.call(['mkdir', path])
-    print 'Made new directory at ' + path
+    print('Made new directory at ' + path)
 
     # Generate params to be used.
     diskAParams = make_diskA_params(mol, run_length='short')
     diskBParams = make_diskB_params(mol, run_length='short')
     # make_diskX_params() generates lists, so just extract the values.
-    for k in diskAParams.keys():
+    for k in list(diskAParams.keys()):
         diskAParams[k] = diskAParams[k][0]
         diskBParams[k] = diskBParams[k][0]
 
     chisq_list = []
     for p in param_vals:
-        print '\n\n\n'
-        print 'Evaluating {} = {} for DI = {}'.format(param, p, DI)
+        print('\n\n\n')
+        print('Evaluating {} = {} for DI = {}'.format(param, p, DI))
 
         # Edit the appropriate element.
         if DI == 0:
             diskAParams[param] = p
-            print diskAParams[param]
+            print(diskAParams[param])
         else:
             diskBParams[param] = p
-            print diskBParams[param]
+            print(diskBParams[param])
         # Make a model.
         makeModel(diskBParams, path + fname + 'B', 1, mol)
         makeModel(diskAParams, path + fname + 'A', 0, mol)
@@ -307,14 +307,14 @@ def gs_test_param_dependence(vector):
         chisq_val = chiSq(path + fname + 'both', mol)
         chisq_list.append(chisq_val)
 
-        print "Chi2 Value:", chisq_val
+        print("Chi2 Value:", chisq_val)
 
     plt.plot(param_vals, chisq_list, 'or')
     plt.plot(param_vals, chisq_list, '-r')
     plt.xlabel(param, weight='bold')
     plt.ylabel('Chi2 Value', weight='bold')
     plt.savefig(path + 'chisq_plot.pdf')
-    print "Saved figure to {}".format(path + 'chisq_plot.pdf')
+    print("Saved figure to {}".format(path + 'chisq_plot.pdf'))
 
     df = pd.DataFrame({'chisqs': chisq_list, 'param_vals': param_vals})
     df.to_csv('chisq_df.csv')
@@ -325,14 +325,14 @@ def gs_test_param_dependence(vector):
 test_vector = ('co', 'atms_temp_A', [100, 500])
 
 
-co_tatms_A_model = ('co', 'atms_temp_A', range(50, 400, 40))
-co_tatms_B_model = ('co', 'atms_temp_B', range(50, 400, 40))
+co_tatms_A_model = ('co', 'atms_temp_A', list(range(50, 400, 40)))
+co_tatms_B_model = ('co', 'atms_temp_B', list(range(50, 400, 40)))
 
 co_mdisk_A_model = ('co', 'm_disk_A', list(np.arange(-1.25, -0.95, 0.04)))
 co_mdisk_B_model = ('co', 'm_disk_B', list(np.arange(-2.1, -1.7, 0.05)))
 
-co_tatms_A_model_reallylow = ('co', 'atms_temp_A', range(0, 50, 10))
-co_tatms_B_model_low = ('co', 'atms_temp_B', range(50, 150, 10))
+co_tatms_A_model_reallylow = ('co', 'atms_temp_A', list(range(0, 50, 10)))
+co_tatms_B_model_low = ('co', 'atms_temp_B', list(range(50, 150, 10)))
 
 co_mdisk_A_model_mid = ('co', 'm_disk_A', list(np.arange(-2.2, -1.2, 0.1)))
 co_mdisk_B_model_low = ('co', 'm_disk_B', list(np.arange(-7., -3.5, 0.5)))
@@ -345,15 +345,15 @@ def test_param_dependence_model(vector):
 
     remove(path)
     sp.call(['mkdir', path])
-    print 'Made new directory at ' + path
+    print('Made new directory at ' + path)
 
     # Generate params to be used.
     param_dict = get_param_dict(mol)
 
     chisq_list = []
     for p in param_vals:
-        print '\n\n\n'
-        print 'Evaluating {} = {}'.format(param, p)
+        print('\n\n\n')
+        print('Evaluating {} = {}'.format(param, p))
 
         # Edit the appropriate element.
         param_dict[param] = p
@@ -369,7 +369,7 @@ def test_param_dependence_model(vector):
         m.delete()
 
         chisq_list.append(chisq_val)
-        print "Chi2 Value:", chisq_val
+        print("Chi2 Value:", chisq_val)
 
     delta_chisqs = np.array(chisq_list) - min(chisq_list)
     plt.plot(param_vals, delta_chisqs, 'or')
@@ -379,7 +379,7 @@ def test_param_dependence_model(vector):
     plt.ylabel('Chi2 - Min(Chi2)', weight='bold')
     plt.title('Chi2 Vals for {} in {}'.format(param, mol.upper()), weight='bold')
     plt.savefig(path + 'chisq_plot.pdf')
-    print "Saved figure to {}".format(path + 'chisq_plot.pdf')
+    print("Saved figure to {}".format(path + 'chisq_plot.pdf'))
     plt.clf()
 
     df = pd.DataFrame({'chisqs': chisq_list, 'param_vals': param_vals})

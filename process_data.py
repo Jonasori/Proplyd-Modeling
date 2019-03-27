@@ -87,7 +87,7 @@ def casa_sequence(mol, raw_data_path, output_path,
     # If necessary, insert a baseline cutoff. Because we want
     # to keep the ) in the right spot, just put uvrange= in the middle.
     if cut_baselines is True:
-        print "\nCutting baselines in casa_sequence\n"
+        print("\nCutting baselines in casa_sequence\n")
         b_min = lines[mol]['baseline_cutoff']
         split_str = split_str[:-2] + \
             [("uvrange='>" + str(b_min) + "klambda',")] + \
@@ -153,7 +153,7 @@ def baseline_cutter(mol):
     name = mol
     new_name = name + '-short' + str(min_baseline)
 
-    print "\nCompleted uvaver; starting fits uvout\n"
+    print("\nCompleted uvaver; starting fits uvout\n")
     sp.call(['fits',
              'op=uvout',
              'in={}.vis'.format(new_name),
@@ -161,7 +161,7 @@ def baseline_cutter(mol):
             cwd=filepath)
 
     # Now clean that out file.
-    print "\nCompleted fits uvout; starting ICR\n\n"
+    print("\nCompleted fits uvout; starting ICR\n\n")
     icr(filepath + new_name, mol)
 
     # For some reason icr is returning and so it never deletes these. Fix later
@@ -188,10 +188,10 @@ def run_full_pipeline():
         - delete the clutter files: _split, _cvel, _exportuvfits, bm, cl, mp
     """
     t0 = time.time()
-    mol = raw_input('Which line (HCN, HCO, CS, or CO)?\n').lower()
-    cut = raw_input('Cut baselines for better signal (y/n)?\n').lower()
+    mol = input('Which line (HCN, HCO, CS, or CO)?\n').lower()
+    cut = input('Cut baselines for better signal (y/n)?\n').lower()
     cut_baselines = True if cut == 'y' else False
-    remake = raw_input('Remake everything (y/n)?\n')
+    remake = input('Remake everything (y/n)?\n')
     remake_all = True if remake.lower() == 'y' else False
 
     # Paths to the data
@@ -207,22 +207,22 @@ def run_full_pipeline():
 
     if remake_all is True:
         # This doesn't work yet.
-        print "Remaking everything; emptied line dir and remaking."
+        print("Remaking everything; emptied line dir and remaking.")
         remove(final_data_path + '*')
         log += "Full remake occured; all files are fresh.\n\n"
     else:
         log += "Some files already existed and so were not remade.\n"
         log += "Careful for inconsistencies.\n\n"
 
-    print "Now processing data...."
+    print("Now processing data....")
     casa_sequence(mol, raw_data_path,
                   final_data_path + name, cut_baselines)
 
-    print "Running varvis....\n\n"
+    print("Running varvis....\n\n")
     if already_exists(final_data_path + name + '.uvf') is False:
         # Note that var_vis takes in mol_exportuvfits, returns mol.uvf
         var_vis(final_data_path + name)
-    print "Finished varvis; converting uvf to vis now....\n\n"
+    print("Finished varvis; converting uvf to vis now....\n\n")
 
     # Note that this is different than lines[mol][chan0_freq] bc
     # it's dealing with the chopped vis set
@@ -246,11 +246,11 @@ def run_full_pipeline():
                  cwd=final_data_path).wait()
 
 
-    print "Convolving data to get image, converting output to .fits\n\n"
+    print("Convolving data to get image, converting output to .fits\n\n")
     if already_exists(final_data_path + name + '.cm') is False:
         icr(final_data_path + name, mol=mol)
 
-    print "Deleting the junk process files...\n\n"
+    print("Deleting the junk process files...\n\n")
     fpath = final_data_path + name
     files_to_remove = [fpath + '.bm', fpath + '_split.*',
                        fpath + '.cl', fpath + '_cvel.*',
@@ -263,7 +263,7 @@ def run_full_pipeline():
     log += '\nThis processing took ' + str(t_total) + ' minutes.'
     with open(final_data_path + 'file_log.txt', 'w') as f:
         f.write(log)
-    print "All done! This processing took " + str(t_total) + " minutes."
+    print("All done! This processing took " + str(t_total) + " minutes.")
 
 
 # ARGPARSE STUFF

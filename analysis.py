@@ -72,7 +72,7 @@ class GridSearch_Run:
         """
         self.path = path
         self.mol = self.get_line()
-        print self.mol, lines[self.mol]['baseline_cutoff']
+        print((self.mol, lines[self.mol]['baseline_cutoff']))
         self.run_date = path.split('/')[-1].split('_')[0]
         self.out_path = './gridsearch_results/{}-{}'.format(self.run_date, self.mol)
         self.data_path = './data/{}/{}-short{}.fits'.format(self.mol, self.mol,
@@ -146,7 +146,7 @@ class GridSearch_Run:
                                more colors to colors list.
         """
         plt.close()
-        print "\nPlotting step durations..."
+        print("\nPlotting step durations...")
 
         data = pd.read_csv(self.path + '_stepDurations.csv', sep=',')
         xs = data['step']
@@ -180,7 +180,7 @@ class GridSearch_Run:
                   fontweight='bold', fontsize=14)
         if save is True:
             plt.savefig(self.out_path + '_durations.pdf')
-            print "Saved to " + self.out_path + '_durations.pdf'
+            print(("Saved to " + self.out_path + '_durations.pdf'))
         else:
             plt.show()
         plt.clf()
@@ -198,7 +198,7 @@ class GridSearch_Run:
             Assumes fname is './models/dateofrun/dateofrun'
         """
         plt.close()
-        print "\nPlotting best-fit param number lines..."
+        print("\nPlotting best-fit param number lines...")
 
         run_date = self.run_date
         # both_disks = self.steps
@@ -259,7 +259,7 @@ class GridSearch_Run:
         plt.tight_layout()
         if save is True:
             plt.savefig(self.out_path + '_bestfit_params.pdf')
-            print "Saved to " + self.out_path + '_bestfit_params.pdf'
+            print(("Saved to " + self.out_path + '_bestfit_params.pdf'))
         else:
             plt.show()
 
@@ -275,7 +275,7 @@ class GridSearch_Run:
         Some nice cmaps: magma, rainbow
         """
         plt.close()
-        print "\nPlotting DMR images..."
+        print("\nPlotting DMR images...")
 
         model_path = self.path + '_bestFit.fits'
         resid_path = self.path + '_bestFit_resid.fits'
@@ -340,7 +340,7 @@ class GridSearch_Run:
                                                      subplot_spec=big_fig[2],
                                                      wspace=wspace, hspace=hspace)
         # Populate the plots
-        print "Got the necessary info; now plotting..."
+        print("Got the necessary info; now plotting...")
         for i in range(nchans):
             chan = i + chan_offset
             velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
@@ -420,9 +420,9 @@ class GridSearch_Run:
 
         if save is True:
             fig.savefig(out_path)
-            print "Saved to " + out_path
+            print(("Saved to " + out_path))
         else:
-            print "Showing"
+            print("Showing")
             fig.show()
 
 
@@ -434,7 +434,7 @@ class GridSearch_Run:
             - Divide by number of pix (x*y)?
         """
         plt.close()
-        print "\nPlotting DMR spectra..."
+        print("\nPlotting DMR spectra...")
 
         model_spec = np.array([np.sum(self.model_image[i])/self.model_image.shape[1]
                                for i in range(self.model_image.shape[0])])
@@ -463,7 +463,7 @@ class GridSearch_Run:
 
         if save:
             plt.savefig(self.out_path + '_DMR-spectra.pdf')
-            print "Saved to " + self.out_path + '_DMR-spectra.pdf'
+            print(("Saved to " + self.out_path + '_DMR-spectra.pdf'))
         else:
             plt.show()
 
@@ -483,10 +483,10 @@ class GridSearch_Run:
             len_p = len(list(set(df_full[p])))
             if len_p > 1:
                 if p != 'Reduced Chi2' and p != 'Raw Chi2':
-                    print str([i]), p, '(Length: ' + str(len_p) + ')'
+                    print((str([i]), p, '(Length: ' + str(len_p) + ')'))
 
-        p1_idx = int(raw_input('Select the index of the first parameter.\n'))
-        p2_idx = int(raw_input('Select the index of the second parameter.\n'))
+        p1_idx = int(eval(input('Select the index of the first parameter.\n')))
+        p2_idx = int(eval(input('Select the index of the second parameter.\n')))
         param1, param2 = l[p1_idx], l[p2_idx]
 
         # Clear out the parameters that we're not interested in
@@ -504,7 +504,7 @@ class GridSearch_Run:
 
         # Make sure we're looking at an iterated parameter.
         len_p1, len_p2 = len(list(set(df[param1]))), len(list(set(df[param2])))
-        print len_p1, len_p2
+        print((len_p1, len_p2))
         if len_p1 < 2 or len_p2 < 2:
             return 'Use parameters of length greater than 1'
 
@@ -536,8 +536,8 @@ class GridSearch_Run:
         plt.matshow(mat, cmap='jet')  #, vmin=vmin, vmax=vmax)
         plt.xlabel(df[p_j].name)
         plt.ylabel(df[p_i].name)
-        plt.xticks(range(len_p2), sorted(list(set(df[param2]))))
-        plt.yticks(range(len_p1), sorted(list(set(df[param1]))))
+        plt.xticks(list(range(len_p2)), sorted(list(set(df[param2]))))
+        plt.yticks(list(range(len_p1)), sorted(list(set(df[param1]))))
         plt.title('Chi2 Map Over Params')
         plt.grid(False, color='k')  #, alpha=0.5)
         plt.colorbar()
@@ -546,7 +546,7 @@ class GridSearch_Run:
         if save is True:
             out = "{}_param_degens_disk{}.pdf".format(self.out_path, DI)
             plt.savefig(out)
-            print "Saved to ", out
+            print(("Saved to ", out))
         else:
             plt.show() #block=False)
         return None
@@ -674,7 +674,7 @@ class Figure:
             if type(texts.flatten()[0]) is not float:
                 texts = texts.flatten()
 
-            print self.paths, self.mols
+            print((self.paths, self.mols))
             for ax, path, mol in zip(self.axes.flatten(), self.paths, self.mols):
                 self.get_fits(path, mol)
                 self.make_axis(ax)
@@ -682,7 +682,7 @@ class Figure:
 
             if save:
                 plt.savefig(self.outpath, dpi=700)
-                print "Saved image to {}".format(self.outpath)
+                print(("Saved image to {}".format(self.outpath)))
             else:
                 plt.show()
 
@@ -745,8 +745,8 @@ class Figure:
             outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
                                                                    self.moment)
             fits_out.writeto(outpath, overwrite=True)
-            print "Wrote out moment {} fits file to {}".format(self.moment,
-                                                               outpath)
+            print(("Wrote out moment {} fits file to {}".format(self.moment,
+                                                               outpath)))
             # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
@@ -802,9 +802,9 @@ class Figure:
             outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
                                                                    self.moment)
             fits_out.writeto(outpath, overwrite=True)
-            print "Wrote out moment {} fits file to {}".format(self.moment,
-                                                               outpath)
-            print "NOTE: ^^ That moment map was cropped (in line ~800)"
+            print(("Wrote out moment {} fits file to {}".format(self.moment,
+                                                               outpath)))
+            print("NOTE: ^^ That moment map was cropped (in line ~800)")
         # change units to micro Jy
         # self.im *= 1e6
         # self.rms *= 1e6
@@ -950,7 +950,7 @@ class Figure:
                          edgecolor='k', hatch='///', facecolor='white', zorder=10)
             ax.add_artist(el)
         except KeyError:
-            print "Unable to plot beam; couldn't find header info."
+            print("Unable to plot beam; couldn't find header info.")
 
         # Plot the scale bar
         if np.where(self.axes == ax)[1][0] == 0:  # if first plot

@@ -42,7 +42,7 @@ def var_vis(path_to_source):
         imag = vis[:, :, 1]
 
     print('')
-    print("{}: {} visibilities".format(infile, nuv))
+    print(("{}: {} visibilities".format(infile, nuv)))
 
     # estimate good uvwidth using time-smearing equation
     # (eq. 3.194 in "Essential Radio Astronomy")
@@ -62,7 +62,7 @@ def var_vis(path_to_source):
     # make sure it's less than 1/10th of the shortest leg of the
     # rectangle defined by the longest u and v baseline
     uvwidth = delta_uv*2
-    print('uvwidth is {}'.format(uvwidth))
+    print(('uvwidth is {}'.format(uvwidth)))
 
     # nclose: number of nearby visibility points to use when measuring the dispersion
     # cut off at 220
@@ -74,7 +74,7 @@ def var_vis(path_to_source):
 
     going_up = False
     while True:
-        print('nclose is {}'.format(nclose))
+        print(('nclose is {}'.format(nclose)))
 
         real_weight = np.zeros((nuv, nfreq), dtype=np.float32)
         real_nclose_arr = np.zeros(len(u))
@@ -85,7 +85,7 @@ def var_vis(path_to_source):
 
         for iuv in range(nuv):
             # Print counter inline
-            print "IUV: ", iuv
+            print("IUV: ", iuv)
             sys.stdout.write('\033[F')
 
             # Boolean area (mask, basically) I think?
@@ -102,7 +102,7 @@ def var_vis(path_to_source):
                 real_weight[iuv] = 1/np.std(real[w][s][real_wf][:nclose])**2
             else:
                 # print iuv,real_wf.sum(),np.sqrt(u[iuv]**2+v[iuv]**2)
-                print "Bad point added: ", iuv
+                print("Bad point added: ", iuv)
                 bad_points.append(iuv)
 
             # IMAGINARIES
@@ -116,10 +116,10 @@ def var_vis(path_to_source):
                     bad_points.append(iuv)
 
         acceptance_ratio = 1. - len(bad_points)/float(nuv)
-        print "val: ", len(bad_points)/float(nuv)
-        print "len(bad_points): ", len(bad_points)
+        print("val: ", len(bad_points)/float(nuv))
+        print("len(bad_points): ", len(bad_points))
         # print "float(nuv): ", float(nuv)
-        print("acceptance ratio: {}".format(acceptance_ratio))
+        print(("acceptance ratio: {}".format(acceptance_ratio)))
 
         if acceptance_ratio <= 0.99:
             nclose -= 10
@@ -154,7 +154,7 @@ def var_vis(path_to_source):
     im.writeto('{}'.format(outfile))  # , overwrite=True)
     im.close()
 
-    print('Elapsed time (min): {}'.format((time.time()-start)/60.))
+    print(('Elapsed time (min): {}'.format((time.time()-start)/60.)))
 
     return real_weight, imag_weight
 

@@ -13,18 +13,20 @@ import grid_search
 from run_params import make_diskA_params, make_diskB_params
 from constants import today
 from tools import already_exists, remove
+from sys import version_info; print("Python version: " + str(version_info[:3]))
+
 
 
 # If running MCMC, how many processors?
-np = 6
+# np = 6
 
 # Which fitting method?
 method = 'gs'
-m = raw_input("Which type of run?\n['grid', 'mc']: ")
+m = input("Which type of run?\n['grid', 'mc']: ")
 method = 'mc' if 'm' in m else 'gs'
 
 if method == 'gs':
-    mol = raw_input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
+    mol = input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
     if mol in ['hco', 'hcn', 'co', 'cs']:
         diskAParams = make_diskA_params(mol=mol, run_length='long')
         diskBParams = make_diskB_params(mol=mol, run_length='long')
@@ -34,16 +36,21 @@ if method == 'gs':
 
 
 elif method == 'mc':
-    n = raw_input('How many processors shall we use?\n[2-10]: ')
-    np = '2' if n < 2 else n
-    sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
+    n = input('How many processors shall we use?\n[2-n]: ')
+    np = '2' if int(n) < 2 else n
+
+    # sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
+    sp.call(['mpirun', '-np', np, 'nice', 'python', 'run_driver.py', '-r'])
 
 
 elif method == 'fl':
-    n = raw_input('How many processors shall we use?\n[2-10]: ')
-    np = '2' if n not in range(2, 11) else n
-    print "Using {} processors".format(np)
+    n = input('How many processors shall we use?\n[2-n]: ')
+    np = '2' if int(n) < 2 else n
+    print("Using {} processors".format(np))
     sp.call(['mpirun', '-np', np, 'python', 'four_line_run_driver.py', '-r'])
 
+
+else:
+    print('Choose better')
 
 # The End

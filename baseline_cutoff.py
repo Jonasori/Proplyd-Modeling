@@ -37,12 +37,12 @@ def get_baseline_rmss(mol, niters=1e4, baselines=baselines, remake_all=False):
 
     data_list = []
     for b in baselines:
-        print '\n\n\n    NEW ITERATION\nBaseline: ', b, '\n'
+        print('\n\n\n    NEW ITERATION\nBaseline: ', b, '\n')
         name = run_dir + mol + str(b) if b != 0 else run_dir + mol
 
         # Check if we've already icr'ed this one.
         if already_exists(name + '.cm') is True:
-            print "File already exists; going straight to imstat"
+            print("File already exists; going straight to imstat")
             mean, rms = imstat(name, ext='.cm')
 
         else:
@@ -54,7 +54,7 @@ def get_baseline_rmss(mol, niters=1e4, baselines=baselines, remake_all=False):
                        'Baseline': b}
 
         data_list.append(step_output)
-        print step_output
+        print(step_output)
 
     data_pd = pd.DataFrame(data_list)
     return data_pd
@@ -83,9 +83,9 @@ def analysis(df, mol, niters):
 
 def run_noise_analysis(baselines=baselines, niters=1e4):
     """Run the above functions."""
-    print "Baseline range to check: ", baselines[0], baselines[-1]
-    print "Don't forget that plots will be saved to /modeling, not here.\n\n"
-    mol = raw_input('Which mol?\n').lower()
+    print("Baseline range to check: ", baselines[0], baselines[-1])
+    print("Don't forget that plots will be saved to /modeling, not here.\n\n")
+    mol = input('Which mol?\n').lower()
     ds = get_baseline_rmss(mol, niters, baselines)
     analysis(ds, mol, niters)
 

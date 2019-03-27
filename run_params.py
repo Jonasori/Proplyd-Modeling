@@ -20,8 +20,8 @@ def make_diskA_params(mol, run_length='long'):
     r_crit       = np.array([100.])
     rho_p        = np.array([1.])
     t_mid        = np.array([19.])
-    PA           = np.array([69.7])
-    incl         = np.array([65])
+    PA           = np.array([71])
+    incl         = np.array([69.7])
     pos_x        = np.array([offsets[0][0]])
     pos_y        = np.array([offsets[0][1]])
     v_sys        = [vsys[0]]          # np.array([10.70])
@@ -49,6 +49,7 @@ def make_diskA_params(mol, run_length='long'):
     # If we're looking at CO, then fix X_mol and fit for M_disk
     if mol == 'co':
         x_mol = np.array([-4.])
+        r_out = np.array([366])         # From HCO+ March5 fit
         if run_length == 'short':
             m_disk = np.array([-1.10791])
         elif run_length == 'mid':
@@ -85,7 +86,7 @@ def make_diskB_params(mol, run_length='long'):
     rho_p        = np.array([1.])
     t_mid        = np.array([15.])
     PA           = np.array([135])
-    incl         = np.array([30])
+    incl         = np.array([45])
     pos_x        = np.array([offsets[1][0]])
     pos_y        = np.array([offsets[1][1]])
     v_sys        = [vsys[1]]          # np.array([10.70])

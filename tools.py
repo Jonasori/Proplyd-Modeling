@@ -112,7 +112,7 @@ def imstat(modelName, ext='.cm', verbose=False):
     From /Volumes/disks/sam/modeling/clean.csh:
     cgdisp in=gridsearch_runs/oct18_hco/oct18_hco_bestFit.cm,gridsearch_runs/oct18_hco/oct18_hco_bestFit.cm device=oct18_hco_bestFit.ps/cps labtyp=arcsec, options=mirror,full,blacklab,3value,beambl 3format=1pe12.6 olay=centering_for_olay.cgdisp, slev=a,6.2e-3 levs=3,5,7,9 cols1=2 type=pixel,contour nxy=7,5 region='arcsec,box(-2, -2, 2, 2)'
     """
-    print('\nIMSTATING ', modelName, '\n')
+    print(('\nIMSTATING ', modelName, '\n'))
 
     r_offsource = '(-5,-5,5,-1)'
     imstat_raw = sp.check_output(['imstat',
@@ -125,11 +125,11 @@ def imstat(modelName, ext='.cm', verbose=False):
     hdr_idx = 0
     while imstat_out[hdr_idx][-7:] != 'Npoints':
         hdr_idx += 1
-    hdr = filter(None, imstat_out[hdr_idx].split(' '))
+    hdr = [_f for _f in imstat_out[hdr_idx].split(' ') if _f]
 
     plane_to_check = 30 + hdr_idx
     # Split the output on spaces and then drop empty elements.
-    imstat_list = filter(None, imstat_out[plane_to_check].split(' '))
+    imstat_list = [_f for _f in imstat_out[plane_to_check].split(' ') if _f]
 
     """Sometimes the formatting gets weird and two elements get squished
         together. Fix this with the split loop below.
@@ -151,7 +151,7 @@ def imstat(modelName, ext='.cm', verbose=False):
     for i in range(len(hdr) - 1):
         d[hdr[i]] = imstat_list[i]
         if verbose:
-            print(hdr[i], ': ', imstat_list[i])
+            print((hdr[i], ': ', imstat_list[i]))
 
     # Return the mean and rms
     # return d
@@ -159,18 +159,18 @@ def imstat(modelName, ext='.cm', verbose=False):
 
 
 def imstat_single(modelName, ext='.cm', verbose=False):
-    print('\nIMSTATING ', modelName, '\n')
+    print(('\nIMSTATING ', modelName, '\n'))
 
     r_offsource = '(-5,-5,5,-1)'
     imstat_raw = sp.check_output(['imstat',
                                   'in={}{}'.format(modelName, ext),
                                   'region=arcsec,box{}'.format(r_offsource)
                                   ])
-    imstat_out = filter(None, imstat_raw.split('\n'))
+    imstat_out = [_f for _f in imstat_raw.split('\n') if _f]
     # Get column names
-    hdr = filter(None, imstat_out[7].split(' '))
+    hdr = [_f for _f in imstat_out[7].split(' ') if _f]
 
-    imstat_list = filter(None, imstat_out[-3].split(' '))
+    imstat_list = [_f for _f in imstat_out[-3].split(' ') if _f]
 
     for i in range(len(imstat_list)-1):
         if len(imstat_list[i]) > 11:
@@ -185,7 +185,7 @@ def imstat_single(modelName, ext='.cm', verbose=False):
     for i in range(len(hdr) - 1):
         d[hdr[i]] = imstat_list[i]
         if verbose:
-            print(hdr[i], ': ', imstat_list[i])
+            print((hdr[i], ': ', imstat_list[i]))
 
     # Return the mean and rms
     # return d
@@ -336,7 +336,7 @@ def already_exists_oldish(query):
     exist.
     """
     f = query.split('/')
-    f = filter(None, f)
+    f = [_f for _f in f if _f]
     f = f[1:] if f[0] == '.' else f
 
     i = 0
@@ -565,7 +565,7 @@ def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap=
             outpath = '.'.join(image_path.split('.')[:-1]) + '_image.pdf'
 
         plt.savefig(outpath)
-        print('Image saved to ' + outpath)
+        print(('Image saved to ' + outpath))
     if show is True:
         plt.show()
     plt.gca()
@@ -599,7 +599,7 @@ def plot_spectrum(image_path, save=False):
         # outpath = raw_input('Enter path to save image to:\n')
         outpath = '.'.join(image_path.split('.')[:-1]) + '_spectrum.pdf'
         plt.savefig(outpath)
-        print("Saved to " + outpath)
+        print(("Saved to " + outpath))
     else:
         plt.show()
 
@@ -619,7 +619,7 @@ def plot_pv_diagram_casa(image_path, out_path, center=[129, 130], length=25, pa=
           "length    = {},".format(length),
           "pa        = '{} deg')".format(pa)
           ])
-    print "Made PV diagram. Converting to fits now."
+    print("Made PV diagram. Converting to fits now.")
     sp.call(['fits',
              'op=xyout',
              'in={}.cm'.format(out_path),
@@ -651,7 +651,7 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
 
         while keep_trying:
             plt.close()
-            print "Find coordinates for a line across the disk axis:"
+            print("Find coordinates for a line across the disk axis:")
 
             # Import and crop the data, 70 pixels in each direction.
             image_data_3d = fits.getdata(image_path).squeeze()[:, 80:176, 80:176]
@@ -664,14 +664,14 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
             plt.contour(image_data, colors='k', linewidths=0.2)
             plt.plot(xs, ys, '-k')
             plt.show(block=False)
-            response = raw_input('\nWant to try again?\n[y/n]: ').lower()
+            response = input('\nWant to try again?\n[y/n]: ').lower()
             keep_trying = True if response == 'y' or response == 'yes' else False
             if keep_trying:
-                xs_raw = raw_input('Enter the x coordinates (previous attempt: {}):\n[x1, x2]: '
+                xs_raw = input('Enter the x coordinates (previous attempt: {}):\n[x1, x2]: '
                                    .format(xs))
                 xs = tuple(int(x.strip()) for x in xs_raw.split(','))
 
-                ys_raw = raw_input('Enter the x coordinates (previous attempt: {}):\n[y1, y2]: '
+                ys_raw = input('Enter the x coordinates (previous attempt: {}):\n[y1, y2]: '
                                    .format(ys))
                 ys = tuple(int(x.strip()) for x in ys_raw.split(','))
     else:
@@ -751,9 +751,9 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
 
     if save:
         plt.savefig(outpath + '.pdf')
-        print "Saved PV diagram to {}.pdf".format(outpath)
+        print("Saved PV diagram to {}.pdf".format(outpath))
     else:
-        print "Showing:"
+        print("Showing:")
         plt.show(block=False)
 
 

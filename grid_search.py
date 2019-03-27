@@ -6,7 +6,7 @@ import time
 import itertools
 import numpy as np
 import pandas as pd
-import cPickle as pickle
+import pickle as pickle
 import subprocess as sp
 
 
@@ -111,14 +111,14 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
 
     # I think that itertools.product does the same thing as the nested loops above
     # Loop over everything, even though only most params aren't varied.
-    ps = itertools.product(range(len(all_v_turb)), range(len(all_zq)),
-                           range(len(all_r_crit)), range(len(all_rho_p)),
-                           range(len(all_t_mid)),  range(len(all_PA)),
-                           range(len(all_incl)),   range(len(all_pos_x)),
-                           range(len(all_pos_y)),  range(len(all_v_sys)),
-                           range(len(all_t_atms)), range(len(all_t_qq)),
-                           range(len(all_r_out)),  range(len(all_m_disk)),
-                           range(len(all_x_mol)))
+    ps = itertools.product(list(range(len(all_v_turb))), list(range(len(all_zq))),
+                           list(range(len(all_r_crit))), list(range(len(all_rho_p))),
+                           list(range(len(all_t_mid))),  list(range(len(all_PA))),
+                           list(range(len(all_incl))),   list(range(len(all_pos_x))),
+                           list(range(len(all_pos_y))),  list(range(len(all_v_sys))),
+                           list(range(len(all_t_atms))), list(range(len(all_t_qq))),
+                           list(range(len(all_r_out))),  list(range(len(all_m_disk))),
+                           list(range(len(all_x_mol))))
     # Pull floats out of those lists.
     for i, j, k, l, m, n, o, p, q, r, s, t, u, v, w in ps:
         begin = time.time()
@@ -163,16 +163,16 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
         # - df write out (maybe have it write out every step while we're at it)
 
         # Print out some info
-        print "\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        print "Currently fitting for: " + outNameVaried
-        print "Beginning model " + str(counter) + "/" + str(num_iters)
-        print "Fit Params:"
+        print("\n\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Currently fitting for: " + outNameVaried)
+        print("Beginning model " + str(counter) + "/" + str(num_iters))
+        print("Fit Params:")
         for param in params:
-            print param, params[param]
+            print(param, params[param])
         # This isn't really necessary to have
-        print "\nStatic params:"
+        print("\nStatic params:")
         for static in StaticDiskParams:
-            print static, StaticDiskParams[static]
+            print(static, StaticDiskParams[static])
 
         # Make a new disk, sum them, sample in vis-space.
         makeModel(params, outNameVaried, DI, mol)
@@ -191,9 +191,9 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
             diskBRawX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = rawX2
             diskBRedX2[i, j, k, l, m, n, o, p, q, r, s, t, u, v, w] = redX2
 
-        print "\n\n"
-        print "Raw Chi-Squared value:	 ", rawX2
-        print "Reduced Chi-Squared value:", redX2
+        print("\n\n")
+        print("Raw Chi-Squared value:	 ", rawX2)
+        print("Reduced Chi-Squared value:", redX2)
 
         # This is just the params dict, but with chi2 vals and nicer names
         df_row_old = {'V Turb': v_turb,
@@ -227,7 +227,7 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
             sp.call(
                 'mv {}.fits {}_bestFit.fits'.format(modelPath, modelPath),
                 shell=True)
-            print "Best fit happened; moved file"
+            print("Best fit happened; moved file")
 
         # Now clear out all the files (im, vis, uvf, fits)
         remove(modelPath + ".*")
@@ -235,7 +235,7 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
         #         shell=True)
 
         # Loop this.
-        print "Min. Chi-Squared value so far:", minRedX2
+        print("Min. Chi-Squared value so far:", minRedX2)
 
         counter += 1
         finish = time.time()
@@ -244,14 +244,14 @@ def gridSearch(VariedDiskParams, StaticDiskParams,
 
     # Finally, make the best-fit model for this disk
     makeModel(minX2Vals, outNameVaried, DI, mol)
-    print "Best-fit model for disk", dnames[DI], " created: ", modelPath, ".fits\n\n"
+    print("Best-fit model for disk", dnames[DI], " created: ", modelPath, ".fits\n\n")
 
     # Knit the dataframe
     step_log = pd.DataFrame(df_rows)
-    print "Shape of long-log data frame is ", step_log.shape
+    print("Shape of long-log data frame is ", step_log.shape)
 
     # Give the min value and where that value is
-    print "Minimum Chi2 value and where it happened: ", [minRedX2, minX2Vals]
+    print("Minimum Chi2 value and where it happened: ", [minRedX2, minX2Vals])
     return step_log
 
 from run_params import make_diskA_params, make_diskB_params
@@ -317,22 +317,22 @@ def fullRun(diskAParams, diskBParams, mol,
     modelPath += '/' + this_run
 
     # Parameter Check:
-    print "\nThis run will fit for", mol.upper()
-    print "It will iterate through these parameters for Disk A:"
+    print("\nThis run will fit for", mol.upper())
+    print("It will iterate through these parameters for Disk A:")
     for p in diskAParams:
-        print p, ': ', diskAParams[p]
-    print "\nAnd these values for Disk B:"
+        print(p, ': ', diskAParams[p])
+    print("\nAnd these values for Disk B:")
     for p in diskBParams:
-        print p, ': ', diskBParams[p]
+        print(p, ': ', diskBParams[p])
 
 
-    print "\nThis run will take", n, "steps, spanning about", t
-    print "Output will be in", modelPath, '\n'
-    response = raw_input('Sound good? (Enter to begin, anything else to stop)\n')
+    print("\nThis run will take", n, "steps, spanning about", t)
+    print("Output will be in", modelPath, '\n')
+    response = input('Sound good? (Enter to begin, anything else to stop)\n')
     if response != "":
         return "\nGo fix whatever you don't like and try again.\n\n"
     else:
-        print "Sounds good!\n"
+        print("Sounds good!\n")
 
     new_dir = '/Volumes/disks/jonas/modeling/gridsearch_runs/' + this_run
     sp.call(['mkdir', 'gridsearch_runs/' + this_run])
@@ -345,7 +345,7 @@ def fullRun(diskAParams, diskBParams, mol,
     and only fit the disk that needs fitting. That's what this is for."""
     to_skip = ''
     if use_a_previous_result is True:
-        response2 = raw_input(
+        response2 = input(
             'Please enter the path to the .fits file to use from a previous',
             'run (should be ./models/date/run_date/datefitted_[A/B].fits)\n')
         if 'A' in response2:
@@ -353,7 +353,7 @@ def fullRun(diskAParams, diskBParams, mol,
         elif 'B' in response2:
             to_skip = 'fitted_B'
         else:
-            print "Bad path; must have 'fitted_A or fitted_B' in it. Try again"
+            print("Bad path; must have 'fitted_A or fitted_B' in it. Try again")
             return
 
 
@@ -374,14 +374,14 @@ def fullRun(diskAParams, diskBParams, mol,
     # Find where the chi2 is minimized and save it
     idx_of_BF_A = df_A_fit.index[df_A_fit['Reduced Chi2'] == np.min(
         df_A_fit['Reduced Chi2'])][0]
-    print "Index of Best Fit, A is ", idx_of_BF_A
+    print("Index of Best Fit, A is ", idx_of_BF_A)
 
     # Make a list of those parameters to pass the next round of grid searching.
     fit_A_params = {}
     for param in df_A_fit.columns:
         fit_A_params[param] = df_A_fit[param][idx_of_BF_A]
 
-    print "First disk has been fit\n"
+    print("First disk has been fit\n")
 
     # Now search over the other disk
     df_B_fit = gridSearch(diskBParams, fit_A_params, mol, 1, modelPath,
@@ -408,17 +408,17 @@ def fullRun(diskAParams, diskBParams, mol,
     # f = pickle.load(open('{}_step-log.pickle'.format(modelPath), "rb"))
 
     # Finally, Create the final best-fit model and residuals
-    print "\n\nCreating best fit model now"
+    print("\n\nCreating best fit model now")
     sample_model_in_uvplane(modelPath + '_bestFit', mol=mol)
     sample_model_in_uvplane(modelPath + '_bestFit', option='subtract', mol=mol)
     icr(modelPath + '_bestFit', mol=mol)
     icr(modelPath + '_bestFit_resid', mol=mol)
-    print "Best-fit model created: " + modelPath + "_bestFit.im\n\n"
+    print("Best-fit model created: " + modelPath + "_bestFit.im\n\n")
 
     # Calculate and present the final X2 values.
     finalX2s = chiSq(modelPath + '_bestFit', mol)
-    print "Final Raw Chi-Squared Value: ", finalX2s[0]
-    print "Final Reduced Chi-Squared Value: ", finalX2s[1]
+    print("Final Raw Chi-Squared Value: ", finalX2s[0])
+    print("Final Reduced Chi-Squared Value: ", finalX2s[1])
 
     # Clock out
     t1 = time.time()
@@ -430,8 +430,8 @@ def fullRun(diskAParams, diskBParams, mol,
         wr = csv.writer(f)
         wr.writerows(times)
 
-    print "\n\nFinal run duration was", t_total/60, ' hours'
-    print 'with each step taking on average', t_per, ' minutes'
+    print("\n\nFinal run duration was", t_total/60, ' hours')
+    print('with each step taking on average', t_per, ' minutes')
 
     # log file w/ best fit vals, range queried, indices of best vals, best chi2
     with open(modelPath + '_summary.log', 'w') as f:
@@ -454,6 +454,6 @@ def fullRun(diskAParams, diskBParams, mol,
         f.write(s)
 
     run = GridSearch_Run(modelPath, save_all_plots=True)
-    print "Successfully finished everything."
+    print("Successfully finished everything.")
 
 # The End

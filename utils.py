@@ -44,7 +44,7 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     """
     # DI = Disk Index: the index for the tuples below. 0=A, 1=B
 
-    print "[ Entering makeModel() ]"
+    print("[ Entering makeModel() ]")
 
     # Get line-specific stuff
     vsys, restfreq, freq0, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol, short_vis_only=short_vis_only)
@@ -117,7 +117,7 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
                    Jnum=jnum,
                    obsv=obsv)
 
-    print "MakeModel() completed"
+    print("MakeModel() completed")
 
 
 # SUM TWO MODEL DISKS #
@@ -178,7 +178,7 @@ def sumDisks(filePathA, filePathB, outputPath, mol):
     sp.call('rm -rf {}.im'.format(outputPath), shell=True)
     sp.call('rm -rf {}.uvf'.format(outputPath), shell=True)
     sp.call('rm -rf {}.vis'.format(outputPath), shell=True)
-    print "Deleted .im, .uvf, and .vis\n"
+    print("Deleted .im, .uvf, and .vis\n")
 
 
 def chiSq(infile, mol, cut_central_chans=False):

@@ -9,7 +9,7 @@ import datetime
 c = c.to('km/s').value
 
 
-mol = 'hcn'
+mol = 'hco'
 nwalkers, nsteps = 50, 500
 
 

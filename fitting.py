@@ -108,7 +108,7 @@ class Observation:
                                           'in={}.cm'.format(self.path),
                                           "region='boxes(256,0,512,200)'"])
             clean_rms = float(imstat_out[-38:-29])
-            print("Clean rms is {}".format(clean_rms))
+            print(("Clean rms is {}".format(clean_rms)))
 
             # Display
             sp.call(['cgdisp',
@@ -282,7 +282,7 @@ class Model:
                                       "region='boxes(256,0,512,200)'"
                                       ])
         rms = float(imstat_out[-38:-29])
-        print("Clean rms is {} for {}".format(rms, path))
+        print(("Clean rms is {} for {}".format(rms, path)))
 
         # Convert MIRIAD .im image file into fits
         sp.call(['fits',
@@ -306,7 +306,7 @@ class Model:
                      'slev=a,{}'.format(rms), 'levs1=-6,-4,-2,2,4,6',
                      'region=arcsec,box(-5,-5,5,5)',
                      'labtyp=arcsec', 'beamtyp=b,l,3', ])
-            raw_input('\npress enter when ready to go on:')
+            input('\npress enter when ready to go on:')
 
     def chiSq(self, mol):
         """Calculate the goodness of fit between data and model."""
@@ -393,7 +393,7 @@ class Model:
 
         self.raw_chis.append(raw_chi)
         self.reduced_chis.append(reduced_chi)
-        print "Raw Chi2: ", self.raw_chis
+        print("Raw Chi2: ", self.raw_chis)
         #print "Reduced Chi2: ", self.reduced_chis
         return self.raw_chis
 

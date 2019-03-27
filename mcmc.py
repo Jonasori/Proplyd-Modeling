@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import subprocess as sp
+# import matplotlib; matplotlib.use('TkAgg')  # This must be imported first
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from emcee.utils import MPIPool
@@ -18,13 +19,14 @@ from tools import already_exists, remove
 import fitting
 # import plotting
 import run_driver
-import analysis
+# import analysis
 import tools
 
 from pathlib2 import Path
 Path.cwd()
 
 sns.set_style('ticks')
+
 
 run_w_pool = True
 nwalkers, nsteps = 50, 500
@@ -48,22 +50,16 @@ class MCMCrun:
             burn_in (int): how many of the first steps to ignore.
         """
         self.name            = name
-        self.mol             = mol
         self.runpath         = run_path + name
         self.image_outpath   = './mcmc_results/' + name
         self.modelfiles_path = run_path + 'model_files/' + name
         self.main            = pd.read_csv(self.runpath + '_chain.csv')
-        self.param_dict      = pickle.load(open(run_path + 'param_dict.pkl', 'rb'))
-
-        """
-        if path:
-            self.main = pd.read_csv(path + '.csv')
-        else:
-            self.main = pd.read_csv(name + '/' + name + '_chain.csv')
-        """
-
+        self.mol             = self.get_line()
+        # The 'encoding' arg is to rectify confusion that comes up when Pickle
+        # in Py3 tries to read a pickled object that was created in Py2.
+        self.param_dict      = pickle.load(open(run_path + 'param_dict.pkl', 'rb'),
+                                           encoding='latin1')
         self.nwalkers = nwalkers
-
 
         # This only makes sense if it already exists?
         self.nsteps = self.main.shape[0] // nwalkers
@@ -72,6 +68,8 @@ class MCMCrun:
         self.burnt_in = self.main.iloc[burn_in*nwalkers:, :]
 
         # Get rid of steps that resulted in bad lnprobs
+        # I think this might be redundant; no -infs since we immediately reject
+        # them in the priors check?
         lnprob_vals = self.burnt_in.loc[:, 'lnprob']
         self.groomed = self.burnt_in.loc[lnprob_vals != -np.inf, :]
         # print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
@@ -80,118 +78,73 @@ class MCMCrun:
 
         with open(self.runpath + '_log.txt', 'w') as f:
             s0 = 'Run: ' + self.runpath + '\n'
-            s1 = 'Molecular line: ' + mol + '\n'
+            s1 = 'Molecular line: ' + self.mol + '\n'
             s2 = 'Nwalkers: ' + str(nwalkers) + '\n'
             s3 = 'Nsteps: ' + str(nsteps)  + '\n'
             s = s0 + s1 + s2 + s3
             f.write(s)
 
 
-    def evolution(self, save=True):
-        """Plot walker evolution.
+    def get_line(self):
+        for mol in ['hco', 'hcn', 'co', 'cs']:
+            if mol in self.runpath:
+                break
+        return mol
 
-        Uses groomed data, so no infs.
-        """
-        print 'Making walker evolution plot...'
+
+    def evolution(self, save=True):
+        """ Plot walker evolution. """
+        print('Making walker evolution plot...')
         plt.close()
 
         self.nsteps = len(self.groomed)//self.nwalkers
         stepmin, stepmax = 0, self.nsteps
-        print self.nsteps, self.nwalkers
+        print(self.nsteps, self.nwalkers)
 
         main = self.groomed.copy().iloc[stepmin * self.nwalkers:
                                      stepmax * self.nwalkers, :]
 
-        axes = main.iloc[0::self.nwalkers].plot(
-            x=np.arange(stepmin, stepmax),
-            figsize=(9, 1.5*(len(main.columns))),
-            subplots=True,
-            color='black',
-            alpha=0.1)
+        # Horrifying, but maybe functional.
+        base = main.iloc[0::self.nwalkers].assign(step=np.arange(stepmin, stepmax))
+        axes = base.plot(x='step', figsize=(9, 1.5*(len(main.columns))),
+                         subplots=True, color='black', alpha=0.1, legend=False)
 
+        # Add in plot titles
+        for i in range(len(axes)):
+            bf_val = main[main['lnprob'] == np.nanmax(main['lnprob'])][main.columns[i]].values[0]
+            title_str = "{}: {}".format(main.columns[i], round(bf_val, 2))
+            axes[i].set_title(title_str, # weight='bold',
+                              fontdict={'fontsize': 12}, loc='right')
+
+        # Populate the walker plots
         for i in range(self.nwalkers-1):
-            main.iloc[i+1::self.nwalkers].plot(
-                x=np.arange(stepmin, stepmax), subplots=True, ax=axes,
-                legend=False, color='black', alpha=0.1)
+            step_walkers = main.iloc[i+1::self.nwalkers].assign(Step=np.arange(stepmin, stepmax))
+            step_walkers.plot(x='Step', subplots=True, ax=axes,
+                      legend=False, color='black', alpha=0.1)
 
-            # make y-limits on lnprob subplot reasonable
             amin = main.iloc[-1 * self.nwalkers:, -1].min()
             amax = main.lnprob.max()
             axes[-1].set_ylim(amin, amax)
             #axes[-1].set_ylim(-40000, 0)
 
         # if you want mean at each step over plotted:
-        # main.index //= self.nwalkers
-        # walker_means = pd.DataFrame([main.loc[i].mean() for i in range(self.nsteps)])
-        # walker_means.plot(subplots=True, ax=axes, legend=False, color='forestgreen', ls='--')
+        main.index //= self.nwalkers
+        walker_means = pd.DataFrame([main.loc[i].mean() for i in range(self.nsteps)])
+        walker_means.plot(subplots=True, ax=axes, legend=False,
+                          color='forestgreen', ls='--', linewidth=0.75)
 
-        plt.tight_layout()
-        plt.suptitle(self.name + ' walker evolution')
+        plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+        plt.suptitle(self.name + ' walker evolution', weight='bold')
         if save:
             plt.savefig(self.image_outpath + '_evolution.pdf')
-            print 'Image saved image to ' + self.image_outpath + '_evolution.pdf'
-        else:
-            plt.show()
-
-
-    def evolution_main(self, min_lnprob=None, save=True):
-        """Plot walker evolution.
-
-        This one uses the full step log, including bad steps (not groomed).
-        """
-        print 'Making walker evolution plot...'
-        plt.close()
-
-        self.nsteps = len(self.main)//self.nwalkers
-        stepmin, stepmax = 0, self.nsteps
-        print self.nsteps, self.nwalkers
-
-        main = self.main.copy().iloc[stepmin * self.nwalkers:
-                                     stepmax * self.nwalkers, :]
-
-        axes = main.iloc[0::self.nwalkers].plot(
-            x=np.arange(stepmin, stepmax),
-            figsize=(9, 1.5*(len(main.columns))),
-            subplots=True,
-            color='black',
-            alpha=0.1)
-
-        for i in range(self.nwalkers-1):
-            main.iloc[i+1::self.nwalkers].plot(
-                x=np.arange(stepmin, stepmax), subplots=True, ax=axes,
-                legend=False, color='black', alpha=0.1)
-
-            # make y-limits on lnprob subplot reasonable
-            # This is not reasonable. Change it?
-            #axes[-1].set_ylim(main.iloc[-1 * self.nwalkers:, -1].min(), main.lnprob.max())
-            amin = np.amin(main.lnprob[main.lnprob != -np.inf]) if not min_lnprob else min_lnprob
-            amax = np.amax(main.lnprob)
-            axes[-1].set_ylim(amin, amax)
-            # axes[-1].set_ylim(-50000, -25000)
-
-
-        # A quick iPython walker lnprob plotter:
-        # for i in range(nwalkers):
-        #   plt.plot(run.main['lnprob'][i+1::nwalkers], linewidth=0.2)
-
-        # if you want mean at each step over plotted:
-        # main.index //= self.nwalkers
-        # walker_means = pd.DataFrame([main.loc[i].mean() for i in range(self.nsteps)])
-        # walker_means.plot(subplots=True, ax=axes, legend=False, color='forestgreen', ls='--')
-
-        plt.tight_layout()
-        plt.suptitle(self.name + ' walker evolution')
-
-        if save:
-            plt.savefig(self.image_outpath + '_evolution-main.pdf')  # , dpi=1)
-            print 'Image saved image to ' + self.image_outpath + '_evolution-main.pdf'
+            print('Image saved image to ' + self.image_outpath + '_evolution.pdf')
         else:
             plt.show()
 
 
     def kde(self):
         """Make a kernel density estimate (KDE) plot."""
-        print 'Generating posterior kde plots...'
+        print('Generating posterior kde plots...')
         plt.close()
 
         nrows, ncols = (2, int(np.ceil((self.groomed.shape[1] - 1) / 2.)))
@@ -229,7 +182,7 @@ class MCMCrun:
         # adjust spacing and save
         plt.tight_layout()
         plt.savefig(self.image_outpath + '_kde.png', dpi=200)
-        print 'Image saved image to ' + self.image_outpath + '_kde.png'
+        print('Image saved image to ' + self.image_outpath + '_kde.png')
         plt.show()
 
 
@@ -245,31 +198,31 @@ class MCMCrun:
         stats.loc[['16%', '84%'], :] -= stats.loc['50%', :]
         stats = stats.reindex(
             ['50%', '16%', '84%', 'best fit', 'std'], copy=False)
-        print(stats.T.round(6).to_string())
+        print((stats.T.round(6).to_string()))
 
         # make corner plot
-        print "Starting SNS PairGrid"
+        print("Starting SNS PairGrid")
         corner_plt = sns.PairGrid(data=self.groomed, diag_sharey=False, despine=False, vars=variables)
 
-        print "Finished SNS PairGrid"
+        print("Finished SNS PairGrid")
 
         if variables is not None:
-            print "Entering if"
+            print("Entering if")
             corner_plt.map_lower(plt.scatter, s=1, color='#708090', alpha=0.1)
         else:
-            print "Entering else"
+            print("Entering else")
             corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
                                  n_levels=18, shade=True)
             corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
                                  n_levels=5)
 
-        print "finished conditional"
+        print("finished conditional")
         # This is where the error is coming from:
         # ValueError: zero-size array to reduction operation minimum which has no identity
         # corner.map_lower(sns.kdeplot, cut=0, cmap='Blues', n_levels=3, shade=False)
         corner_plt.map_diag(sns.kdeplot, cut=0)
 
-        print "Made it this far"
+        print("Made it this far")
         if variables is None:
             # get best_fit and posterior statistics
             stats = self.groomed.describe(percentiles=[0.16, 0.84]).drop([
@@ -279,7 +232,7 @@ class MCMCrun:
             stats.loc[['16%', '84%'], :] -= stats.loc['50%', :]
             stats = stats.reindex(
                 ['50%', '16%', '84%', 'best fit', 'std'], copy=False)
-            print(stats.T.round(3).to_string())
+            print((stats.T.round(3).to_string()))
             # print(stats.round(2).to_latex())
 
             # add stats to corner plot as table
@@ -309,7 +262,7 @@ class MCMCrun:
         plt.subplots_adjust(top=0.9)
         if save:
             plt.savefig(self.image_outpath + '_corner.pdf')
-            print 'Image saved image to ' + self.image_outpath + '_corner.png'
+            print('Image saved image to ' + self.image_outpath + '_corner.png')
         else:
             plt.show()
 
@@ -330,7 +283,7 @@ class MCMCrun:
         stats.loc[['16%', '84%'], :] -= stats.loc['50%', :]
         stats = stats.reindex(
             ['50%', '16%', '84%', 'best fit', 'std'], copy=False)
-        print(stats.T.round(6).to_string())
+        print((stats.T.round(6).to_string()))
 
 
 
@@ -374,11 +327,11 @@ class MCMCrun:
         else:
             outpath = self.image_outpath + '_'
         for df, disk_ID in zip([groomed_diskA, groomed_diskB], ('A', 'B')):
-            print "Making corner plot"
+            print("Making corner plot")
             corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
             plt.savefig('{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID), dpi=200)
-            print "Saved plot for disk{} to '{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID)'"
+            print("Saved plot for disk{} to '{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID)'")
 
         # corner.corner(groomed_diskA, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
@@ -389,11 +342,7 @@ class MCMCrun:
         # print "Saved plot."
 
     def make_best_fits(self):
-        """Do some modeling stuff.
-
-        Args:
-            run (mcmc.MCMCrun): the
-        """
+        """Make a best-fit model fits file."""
         # run.main is the pd.df that gets read in from the chain.csv
         subset_df = self.main  # [run.main['r_in'] < 15]
 
@@ -401,9 +350,9 @@ class MCMCrun:
         max_lnp = subset_df['lnprob'].max()
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
 
-        print 'Model parameters:\n' #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
+        print('Model parameters:\n') #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
         for mp in list(model_params):
-            print mp, model_params[mp].values[0]
+            print(mp, model_params[mp].values[0])
 
         # Check if we're looking at a one- or four-line fit.
         fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
@@ -413,9 +362,9 @@ class MCMCrun:
         for param in model_params.columns[:-1]:
             bf_param_dict[param] = model_params[param].values
 
-        bf_disk_params = bf_param_dict.keys()
+        bf_disk_params = list(bf_param_dict.keys())
 
-        print 'Making model...'
+        print('Making model...')
 
         def make_model(param_dict, mol, fourlinefit_tf=False):
             # If we're doing four-line fitting, then some values are dictionaries of vals.
@@ -501,7 +450,6 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
                             The second two values set the position & size
                             for a random Gaussian ball of initial positions
     """
-    # print "Made it to run_emcee"
     # Name the chain we're looking for
     chain_filename = run_path + run_name + '_chain.csv'
 
@@ -518,36 +466,37 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     # Note that this is what is fed to MCMC to dictate how the walkers move, not
     # the actual set of vars that make_fits pulls from.
     # ORDER MATTERS here (for comparing in lnprob)
+    # Values that are commented out default to the starting positions in run_driver/param_dict
     # Note that param_info is of form:
     # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
     if mol != 'co':
-        param_info = [('r_out_A',           500,     300,      (10, 1000)),
+        param_info = [('r_out_A',           500,     300,      (10, 700)),
                       ('atms_temp_A',       300,     150,      (0, 1000)),
                       ('mol_abundance_A',   -8,      3,        (-13, -3)),
-                      ('temp_struct_A',    -0.,      1.,       (-3., 3.)),
-                      ('incl_A',            65.,     30.,      (0, 90.)),
-                      ('pos_angle_A',       70,      45,       (0, 360)),
-                      ('r_out_B',           500,     300,      (10, 1000)),
+                      ('temp_struct_A',     -0.,      1.,      (-3., 3.)),
+                      # ('incl_A',            65.,     30.,      (0, 90.)),
+                      # ('pos_angle_A',       70,      45,       (0, 360)),
+                      ('r_out_B',           500,     300,      (10, 400)),
                       ('atms_temp_B',       200,     150,      (0, 1000)),
                       ('mol_abundance_B',   -8,      3,        (-13, -3)),
                       # ('temp_struct_B',     0.,      1,        (-3., 3.)),
-                      ('incl_B',            45.,     30,       (0, 90.)),
-                      ('pos_angle_B',       136.0,   45,       (0, 360))
+                      # ('incl_B',            45.,     30,       (0, 90.)),
+                      ('pos_angle_B',       136.0,   45,       (0, 180))
                       ]
 
     else:
-        param_info = [('r_out_A',           500,     300,      (10, 1000)),
+        param_info = [('r_out_A',           500,     300,      (10, 700)),
                       ('atms_temp_A',       300,     150,      (0, 1000)),
                       ('m_disk_A',          -1.,      1.,      (-4.5, 0)),
                       ('temp_struct_A',     -0.,      1.,      (-3., 3.)),
-                      ('incl_A',            65.,     30.,      (0, 90.)),
-                      ('pos_angle_A',        70,      45,      (0, 360)),
-                      ('r_out_B',           500,     300,      (10, 1000)),
+                      # ('incl_A',            65.,     30.,      (0, 90.)),
+                      ('pos_angle_A',        70,      45,      (0, 180)),
+                      ('r_out_B',           500,     300,      (10, 400)),
                       ('atms_temp_B',       200,     150,      (0, 1000)),
                       ('m_disk_B',          -4.,      1.,      (-6., 0)),
                       # ('temp_struct_B',     0.,      1,        (-3., 3.)),
-                      ('incl_B',            45.,     30,       (0, 90.)),
-                      ('pos_angle_B',       136.0,   45,       (0, 360))
+                      # ('incl_B',            45.,     30,       (0, 90.)),
+                      ('pos_angle_B',       136.0,   45,       (0, 180))
                       ]
 
     # Try to resume an existing run of this name.
@@ -558,30 +507,30 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
         resume = False
 
     if resume is True:
-        print "Resuming run"
+        print("Resuming run")
         chain = pd.read_csv(chain_filename)
         start_step = chain.index[-1] // nwalkers
         pos = np.array(chain.iloc[-nwalkers:, :-1])
-        print 'Resuming {} at step {}'.format(run_name, start_step)
+        print('Resuming {} at step {}'.format(run_name, start_step))
 
         # If we're adding new steps, just put in a new line and get started.
         with open(chain_filename, 'a') as f:
             f.write('\n')
         # Not sure what end looks like.
         end = np.array(chain.iloc[-nwalkers:, :])
-        print 'Start step: {}'.format(np.mean(end[:, -1]))
+        print('Start step: {}'.format(np.mean(end[:, -1])))
 
     # If there's no pre-existing run, set one up, and delete any empty dirs.
     else:
-        print "Setting up directories for new run"
+        print("Setting up directories for new run")
         remove(run_path)
         sp.call(['mkdir', run_path])
         sp.call(['mkdir', run_path + '/model_files'])
 
         # Export the initial param dict for accessing when we want
-        pickle.dump(run_driver.param_dict, open(run_path + 'param_dict.pkl', 'w'))
-        print "Wrote {}param_dict.pkl out".format(run_path)
-        print 'Starting {}'.format(run_path)
+        pickle.dump(run_driver.param_dict, open(run_path + 'param_dict.pkl', 'wb'))
+        print("Wrote {}param_dict.pkl out".format(run_path))
+        print('Starting {}'.format(run_path))
 
         start_step = 0
 
@@ -616,7 +565,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.
-    print "Initializing sampler."
+    print("Initializing sampler.")
     ndim = len(param_info)
     if run_w_pool is True:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
@@ -628,7 +577,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
 
     # Initiate a generator to provide the data. More about generators here:
     # https://medium.freecodecamp.org/how-and-why-you-should-use-python-generators-f6fb56650888
-    print "About to run sampler"
+    print("About to run sampler")
     run = sampler.sample(pos, iterations=nsteps, storechain=False)
     """Note that sampler.sample returns:
             pos: list of the walkers' current positions in an object of shape
@@ -646,9 +595,9 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
 
 
     # return run
-    print "About to loop over run"
+    print("About to loop over run")
     for i, result in enumerate(run):
-        print "Got a result"
+        print("Got a result")
 
         # Maybe do this logging out in the lnprob function itself?
         pos, lnprobs, blob = result
@@ -657,10 +606,10 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
         # Log out the new positions
         with open(chain_filename, 'a') as f:
             new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
-            print "Adding a new step to the chain: ", new_step
+            print("Adding a new step to the chain: ", new_step)
             np.savetxt(f, new_step, delimiter=',')
 
-    print "Ended run"
+    print("Ended run")
     if run_w_pool is True:
         pool.close()
 
