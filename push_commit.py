@@ -41,9 +41,10 @@ def main():
         add()
 
 
+
 def push():
     """Stage, commit, and push an edit."""
-    s = sp.check_output(['git', 'status']).split('\n')
+    s = sp.check_output(['git', 'status']).decode().split('\n')
     p = [_f for _f in s if _f]
 
     print("Committing these files:")

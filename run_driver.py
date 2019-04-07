@@ -233,7 +233,7 @@ def make_fits(model, param_dict, mol, testing=False):
 
 
 
-def lnprob(theta, run_name, param_info, mol):
+def lnprob(theta, run_name, param_info, mol, posang_prior_A=True, posang_prior_B=True):
     """
     Evaluate a set of parameters by making a model and getting its chi2.
 
@@ -248,6 +248,11 @@ def lnprob(theta, run_name, param_info, mol):
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
                             and with length = total number of free params
     """
+
+    # Let's put priors on both position angles, using Williams et al values.
+    # posang_prior_A, posang_prior_B = True, True
+
+
     # Check that the proposed value, theta, is within priors for each var.
     for i, free_param in enumerate(param_info):
         # print '\n', i, free_param
@@ -275,102 +280,39 @@ def lnprob(theta, run_name, param_info, mol):
                           model_name=model_name)
 
 
-    # print "Evaluating lnprob for", model_name
-
-
     # Make the actual model fits files.
     make_fits(model, param_dict, mol)
     model.obs_sample()
     model.chiSq(mol)
     model.delete()
-    # Why is this a sum? Because model.raw_chis is a list maybe
-    lnp = -0.5 * sum(model.raw_chis)
-    print("Lnprob val: ", lnp)
+
+    if posang_prior_A:
+        mu_posangA = param_dict['pos_angle_A'] - 69.7
+        sig_posangA = 1.4 # standard deviation on prior
+        # Wikipedia Normal Dist. PDF for where this comes from
+        lnprior_posangA = -np.log(np.sqrt(2 * np.pi * sig_posangA**2)) \
+                          - mu_posangA**2 / (2 * sig_posangA**2)
+    else:
+        lnprior_posangA = 0.0
+
+    if posang_prior_B:
+        mu_posangB = param_dict['pos_angle_B'] - 135.
+        sig_posangB = 15.    # standard deviation on prior
+        lnprior_posangB = -np.log(np.sqrt(2 * np.pi * sig_posangB**2)) \
+                          - mu_posangB**2 / (2 * sig_posangB**2)
+    else:
+        lnprior_posangB = 0.0
+
+
+
+    lnlikelihood = -0.5 * sum(model.raw_chis)
+
+    # Subtracting (not *ing) because its prior*likelihood -> ln(prior) + ln(likelihood)
+    lnprob = lnlikelihood + lnprior_posangA + lnprior_posangB
+
+    print("Lnprob val: ", lnprob)
     print('\n')
-    return lnp
-
-
-# This still needs a bunch of cleaning up.
-def make_best_fits(run, mol):
-    """Do some modeling stuff.
-
-    Args:
-        run (mcmc.MCMCrun): the
-    """
-    # run.main is the pd.df that gets read in from the chain.csv
-    subset_df = run.main  # [run.main['r_in'] < 15]
-
-    # Locate the best fit model from max'ed lnprob.
-    max_lnp = subset_df['lnprob'].max()
-    model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
-    print('Model parameters:\n', model_params.to_string(), '\n\n')
-
-    for param in model_params.columns[:-1]:
-        param_dict[param] = model_params[param].values
-
-    disk_params = list(param_dict.values())
-
-    # intialize model and make fits image
-    print('Making model...')
-    # This obviously has to be generalized.
-    dataPath = './data/' + mol + '/' + mol + '-short' + lines[mol][min_baseline]
-    model = fitting.Model(observation=dataPath,
-                          run_name=run_path,
-                          model_name=model_name)
-    make_fits(model, disk_params)
-
-    print('Sampling and cleaning...')
-    paths = []
-    for pointing, rms, starflux in zip(model.observations, aumic_fitting.band6_rms_values[:-1], starfluxes):
-        ids = []
-        for obs in pointing:
-            fix_fits(model, obs, starflux)
-
-            ids.append('_' + obs.name[12:20])
-            model.obs_sample(obs, ids[-1])
-            model.make_residuals(obs, ids[-1])
-
-        cat_string1 = ','.join([model.path+ident+'.vis' for ident in ids])
-        cat_string2 = ','.join([model.path+ident+'.residuals.vis' for ident in ids])
-        paths.append('{}_{}'.format(model.path, obs.name[12:15]))
-
-        sp.call(['uvcat', 'vis={}'.format(cat_string2), 'out={}.residuals.vis'.format(paths[-1])], stdout=open(os.devnull, 'wb'))
-
-        sp.call(['uvcat', 'vis={}'.format(cat_string1), 'out={}.vis'.format(paths[-1])], stdout=open(os.devnull, 'wb'))
-
-        model.clean(paths[-1] + '.residuals', rms, show=False)
-        model.clean(paths[-1], rms, show=False)
-
-    cat_string1 = ','.join([path + '.vis' for path in paths])
-    cat_string2 = ','.join([path + '.residuals.vis' for path in paths])
-
-    sp.call(['uvcat', 'vis={}'.format(cat_string1), 'out={}_all.vis'.format(model.path)], stdout=open(os.devnull, 'wb'))
-
-    sp.call(['uvcat', 'vis={}'.format(cat_string2), 'out={}_all.residuals.vis'.format(model.path)], stdout=open(os.devnull, 'wb'))
-
-    model.clean(model.path + '_all',
-                aumic_fitting.band6_rms_values[-1],
-                show=False)
-    model.clean(model.path + '_all.residuals',
-                aumic_fitting.band6_rms_values[-1],
-                show=False)
-
-    paths.append('{}_all'.format(model.path))
-
-    print('Making figure...')
-
-    fig = plotting.Figure(layout=(1, 3),
-                          paths=[aumic_fitting.band6_fits_images[-1],
-                                 paths[-1] + '.fits',
-                                 paths[-1] + '.residuals.fits'],
-                          rmses=3*[aumic_fitting.band6_rms_values[-1]],
-                          texts=[[[4.6, 4.0, 'Data']],
-                                 [[4.6, 4.0, 'Model']],
-                                 [[4.6, 4.0, 'Residuals']]
-                                 ],
-                          title=r'Run 6 Global Best Fit Model & Residuals',
-                          savefile=run.name + '/' + run.name + '_bestfit_concise.pdf',
-                          show=True)
+    return lnprob
 
 
 def label_fix(run):
@@ -426,7 +368,6 @@ def label_fix(run):
 #     tasks = list(zip(a, b))
 #     results = pool.map(worker, tasks)
 #     pool.close()
-#
 #     # Now we could save or do something with the results object
 #
 # if __name__ == "__main__":
@@ -445,42 +386,57 @@ def label_fix(run):
 #
 #     pool = schwimmbad.choose_pool(mpi=args.mpi, processes=args.n_cores)
 #     main(pool)
+
+
+
+## JONAS
+# def main():
 #
+#     print("Starting run:" +  run_path + run_name)
+#     parser = argparse.ArgumentParser(description="Add cores.")
+#     group = parser.add_mutually_exclusive_group()
 #
+#     parser.add_argument("--ncores", dest="n_cores", default=4,
+#                        type=int, help="Number of processes (uses "
+#                                       "multiprocessing).")
+#     args = parser.parse_args()
 #
-# ## JONAS
-# def main(pool):
-#     print("Starting run:" +  run_path + run_name +\
-#           "\nwith {} steps and {} walkers.".format(str(nsteps), str(nwalkers)))
-#     print('\n\n\n')
+#     print("This run will have {} walkers taking {} steps each.".format(str(nsteps),
+#                                                                        str(nwalkers)))
+#     print('and will be distributed over {} cores.\n\n\n'.format(args.n_cores))
+#
+#     # Set up the parallelization
+#     # This is maybe bad. These are two fundamentally different ways of doing
+#     # this, but is a temp option.
+#     from emcee import __version__ as emcee_version
+#     if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
+#         from emcee.utils import MPIPool
+#         pool = MPIPool()
+#
+#         # Tell the difference between master and worker processes
+#         if not pool.is_master():
+#             pool.wait()
+#             sys.exit(0)
+#     else:
+#         from schwimmbad import MultiPool
+#         pool = MultiPool(args.n_cores)
+#
 #
 #     mcmc.run_emcee(run_path=run_path,
 #                    run_name=run_name,
 #                    mol=mol,
 #                    nsteps=nsteps,
 #                    nwalkers=nwalkers,
-#                    lnprob=lnprob #,
-#                    # param_info=param_info
+#                    lnprob=lnprob,
+#                    # param_info=param_info,
+#                    pool=pool
 #                    )
+#     pool.close()
 #
 #
 # if __name__ == "__main__":
-#     import schwimmbad
-#
-#     from argparse import ArgumentParser
-#     parser = ArgumentParser(description="Schwimmbad example.")
-#
-#     group = parser.add_mutually_exclusive_group()
-#     group.add_argument("--ncores", dest="n_cores", default=1,
-#                        type=int, help="Number of processes (uses "
-#                                       "multiprocessing).")
-#     group.add_argument("--mpi", dest="mpi", default=False,
-#                        action="store_true", help="Run with MPI.")
-#     args = parser.parse_args()
-#
-#     pool = schwimmbad.choose_pool(mpi=args.mpi, processes=args.n_cores)
-#     main(pool)
-#
+#     main()
+
 
 
 
@@ -528,14 +484,36 @@ def main():
               "\nwith {} steps and {} walkers.".format(str(nsteps), str(nwalkers)))
         print('\n\n\n')
 
+
+        # Set up the parallelization
+        # This is maybe bad. These are two fundamentally different ways of doing
+        # this, but is a temp option.
+        from emcee import __version__ as emcee_version
+        if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
+            print("Emcee v2; we're on a Linux box.")
+            from emcee.utils import MPIPool
+            pool = MPIPool()
+
+            # Tell the difference between master and worker processes
+            if not pool.is_master():
+                pool.wait()
+                sys.exit(0)
+        else:
+            print("Emcee v3; we're on the cluster.")
+            from schwimmbad import MultiPool
+            pool = MultiPool(args.n_cores)
+
+
         mcmc.run_emcee(run_path=run_path,
                        run_name=run_name,
                        mol=mol,
                        nsteps=nsteps,
                        nwalkers=nwalkers,
-                       lnprob=lnprob #,
+                       lnprob=lnprob,
                        # param_info=param_info
-                       )
+                       pool=pool)
+        pool.close()
+
     else:
         if already_exists(run_path) is False:
             return 'Go in and specify which run you want.'
@@ -574,26 +552,9 @@ def main():
 
 
 
-#"""
+
 if __name__ == '__main__':
     main()
-#"""
-#
-# except ImportError:
-#
-#     print "Starting run:", run_path + run_name
-#     print "with {} steps and {} walkers.".format(str(nsteps), str(nwalkers))
-#     print '\n\n\n'
-#
-#     mcmc.run_emcee(run_path=run_path,
-#                    run_name=run_name,
-#                    mol=mol,
-#                    nsteps=nsteps,
-#                    nwalkers=nwalkers,
-#                    lnprob=lnprob #,
-#                    # param_info=param_info
-#                    )
-#
 
 
 

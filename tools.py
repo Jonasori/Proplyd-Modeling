@@ -112,13 +112,13 @@ def imstat(modelName, ext='.cm', verbose=False):
     From /Volumes/disks/sam/modeling/clean.csh:
     cgdisp in=gridsearch_runs/oct18_hco/oct18_hco_bestFit.cm,gridsearch_runs/oct18_hco/oct18_hco_bestFit.cm device=oct18_hco_bestFit.ps/cps labtyp=arcsec, options=mirror,full,blacklab,3value,beambl 3format=1pe12.6 olay=centering_for_olay.cgdisp, slev=a,6.2e-3 levs=3,5,7,9 cols1=2 type=pixel,contour nxy=7,5 region='arcsec,box(-2, -2, 2, 2)'
     """
-    print(('\nIMSTATING ', modelName, '\n'))
+    print('\nIMSTATING ', modelName, '\n')
 
     r_offsource = '(-5,-5,5,-1)'
     imstat_raw = sp.check_output(['imstat',
                                   'in={}{}'.format(modelName, ext),
                                   'region=arcsec,box{}'.format(r_offsource)
-                                  ])
+                                  ]).decode()
     imstat_out = imstat_raw.split('\n')
 
     # Get column names. First, find which line the header is at.
@@ -165,7 +165,7 @@ def imstat_single(modelName, ext='.cm', verbose=False):
     imstat_raw = sp.check_output(['imstat',
                                   'in={}{}'.format(modelName, ext),
                                   'region=arcsec,box{}'.format(r_offsource)
-                                  ])
+                                  ]).decode()
     imstat_out = [_f for _f in imstat_raw.split('\n') if _f]
     # Get column names
     hdr = [_f for _f in imstat_out[7].split(' ') if _f]
@@ -192,7 +192,7 @@ def imstat_single(modelName, ext='.cm', verbose=False):
     return float(d['Mean']), float(d['rms'])
 
 
-def icr(visPath, mol='hco', min_baseline=0, niters=1e4):
+def icr(visPath, mol, min_baseline=0, niters=1e4):
     """Invert/clean/restor: Turn a vis into a convolved clean map.
 
     .vis -> .bm, .mp, .cl, .cm, .fits

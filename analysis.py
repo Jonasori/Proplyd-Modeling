@@ -561,50 +561,6 @@ class GridSearch_Run:
 # run = GridSearch_Run('gridsearch_runs/jan21_hco/jan21_hco')
 # run.plot_best_fit_params()
 
-class MomentMaps:
-    def __init__(self, path):
-        self.path = path
-        self.outpath = 'something'
-        d = fits.getdata(path + '.fits')
-        self.data = d[0] if d.shape[0] == 1 else d
-        self.crop_factor = 2
-
-        try:
-            self.mean, self.rms = imstat(self.path)
-        except sp.CalledProcessError:
-            self.levels = []
-            pass
-
-    def moment0(self, save=False):
-        im = np.sum(self.data, axis=0)
-
-        cmap = plt.imshow(im,
-                         # extent=self.extent,
-                         vmin=np.nanmin(im),
-                         vmax=np.nanmax(im),
-                         cmap='jet')
-        if self.rms:
-            levels = np.arange(3, 100, 3) * self.rms
-
-            # plt.contourf(im, cmap='jet', levels=self.levels)
-            plt.contour(im, colors='black', levels=levels)
-            # plt.contour(im, colors='black', levels=-1*np.flip(levels, axis=0))
-
-        if save:
-            plt.savefig(self.outpath + '_moment0.pdf')
-        else:
-            plt.show()
-
-    # def moment1(self, save=False):
-
-
-# m = MomentMaps('gridsearch_runs/jan19_hco/jan19_hco_bestFit')
-# d = MomentMaps('data/hco/hco-short110')
-#
-# d.moment0()
-# m.moment0()
-#
-# Path.cwd()
 
 
 class Figure:
@@ -653,8 +609,9 @@ class Figure:
                     self.mols.append(mol)
                     break
 
-        self.outpath = '../Thesis/Figures/m{}-map_{}.pdf'.format(moment,
-                                                                '-'.join(self.mols))
+        self.outpath = '../Thesis/Figures/m{}-map_{}.png'.format(moment,
+                                                                '-'.join(self.mols),
+                                                                dpi=300)
 
 
         # Clear any pre existing figures, then create figure
@@ -861,6 +818,7 @@ class Figure:
         self.extent = [self.ra_offset[0], self.ra_offset[-1],
                        self.dec_offset[-1], self.dec_offset[0]]
 
+
     def fill_axis(self, ax, mol):
         """Docstring."""
         # Plot image as a colour map
@@ -966,12 +924,28 @@ class Figure:
         ax.plot([posx_B], [posy_B], '+', markersize=6,
                 markeredgewidth=2, color='darkorange')
 
-        # Print the name of the line:
-        mol = r'HCO$^+$' if mol is 'hco' else mol
-        ax.text(-1.8, 1.7, mol.upper(),
-                fontsize=18, weight='bold', horizontalalignment='right',
-                path_effects=[PathEffects.withStroke(linewidth=3,
+        # Annotate with some text:
+        freq = str(round(lines[mol]['restfreq'], 2)) + ' GHz'
+        trans = '({}-{})'.format(lines[mol]['jnum'] + 1, lines[mol]['jnum'])
+        molname = r'HCO$^+$(4-3)' if mol is 'hco' else mol.upper() + trans
+        sysname = 'd253-1536'
+
+        # Print the system name.
+        ax.text(1.8, 1.6, sysname,
+                fontsize=20, weight='bold', horizontalalignment='left',
+                path_effects=[PathEffects.withStroke(linewidth=2,
                                                      foreground="w")])
+
+        ax.text(-1.85, 1.7, molname,
+                fontsize=13, weight='bold', horizontalalignment='right',
+                path_effects=[PathEffects.withStroke(linewidth=1,
+                                                     foreground="w")])
+
+        ax.text(-1.8, 1.5, freq,
+                fontsize=13, horizontalalignment='right',
+                path_effects=[PathEffects.withStroke(linewidth=1,
+                                                     foreground="w")])
+
         # Add figure text
         # if text is not None:
         #     for t in text:
@@ -982,12 +956,12 @@ class Figure:
             plt.suptitle(self.title, weight='bold')
 
 
+modeling = '/Volumes/disks/jonas/modeling/'
+path_hco, path_hcn = modeling + 'data/hco/hco-short110.fits', modeling + 'data/hcn/hcn-short80.fits'
+path_co, path_cs = modeling + 'data/co/co-short60.fits', modeling + 'data/cs/cs-short0.fits'
+path_modelhco = modeling + 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
 
-path_hco, path_hcn = 'data/hco/hco-short110.fits', 'data/hcn/hcn-short80.fits'
-path_co, path_cs = 'data/co/co-short60.fits', 'data/cs/cs-short0.fits'
-path_modelhco = 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
-
-# f = Figure([path_co, path_modelhco], moment=1, remove_bg=True, save=True)
+f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
 
 # f2 = Figure([path_hco, path_co], moment=1)
 

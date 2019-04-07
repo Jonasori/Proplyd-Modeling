@@ -1,7 +1,6 @@
 """Set up and make an MCMC run."""
 
 
-import os
 import sys
 import emcee
 import pickle
@@ -12,6 +11,7 @@ import subprocess as sp
 # import matplotlib; matplotlib.use('TkAgg')  # This must be imported first
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+from emcee.utils import MPIPool
 from constants import today #, mol
 from tools import already_exists, remove
 #from analysis import plot_fits
@@ -59,9 +59,6 @@ class MCMCrun:
         # in Py3 tries to read a pickled object that was created in Py2.
         self.param_dict      = pickle.load(open(run_path + 'param_dict.pkl', 'rb'),
                                            encoding='latin1')
-        # I think below is equivalent to ^^?
-        # self.param_dict      = pickle.load(open(run_path + 'param_dict.pkl', 'r'))
-
         self.nwalkers = nwalkers
 
         # This only makes sense if it already exists?
@@ -346,9 +343,8 @@ class MCMCrun:
 
     def make_best_fits(self):
         """Make a best-fit model fits file."""
-
         # run.main is the pd.df that gets read in from the chain.csv
-        subset_df = self.main
+        subset_df = self.main  # [run.main['r_in'] < 15]
 
         # Locate the best fit model from max'ed lnprob.
         max_lnp = subset_df['lnprob'].max()
@@ -432,7 +428,7 @@ class MCMCrun:
 
 
 
-def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
+def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob):
     """
     Make an actual MCMC run.
 
@@ -457,6 +453,15 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
     # Name the chain we're looking for
     chain_filename = run_path + run_name + '_chain.csv'
 
+    # Set up the parallelization
+    # pool = MPIPool()
+    # if run_w_pool:
+    #     pool = MPIPool()
+    #     if not pool.is_master():
+    #         pool.wait()
+    #         sys.exit(0)
+
+
 
     # Note that this is what is fed to MCMC to dictate how the walkers move, not
     # the actual set of vars that make_fits pulls from.
@@ -464,15 +469,13 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
     # Values that are commented out default to the starting positions in run_driver/param_dict
     # Note that param_info is of form:
     # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
-
-    # ALL BUT CO
     if mol != 'co':
         param_info = [('r_out_A',           500,     300,      (10, 700)),
                       ('atms_temp_A',       300,     150,      (0, 1000)),
                       ('mol_abundance_A',   -8,      3,        (-13, -3)),
                       ('temp_struct_A',     -0.,      1.,      (-3., 3.)),
                       # ('incl_A',            65.,     30.,      (0, 90.)),
-                      ('pos_angle_A',       70,      45,       (0, 360)),
+                      # ('pos_angle_A',       70,      45,       (0, 360)),
                       ('r_out_B',           500,     300,      (10, 400)),
                       ('atms_temp_B',       200,     150,      (0, 1000)),
                       ('mol_abundance_B',   -8,      3,        (-13, -3)),
@@ -480,7 +483,7 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
                       # ('incl_B',            45.,     30,       (0, 90.)),
                       ('pos_angle_B',       136.0,   45,       (0, 180))
                       ]
-    # CO ONLY
+
     else:
         param_info = [('r_out_A',           500,     300,      (10, 700)),
                       ('atms_temp_A',       300,     150,      (0, 1000)),
@@ -493,70 +496,89 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
                       ('m_disk_B',          -4.,      1.,      (-6., 0)),
                       # ('temp_struct_B',     0.,      1,        (-3., 3.)),
                       # ('incl_B',            45.,     30,       (0, 90.)),
-                      # ('pos_angle_B',       136.0,   45,       (0, 180))
+                      ('pos_angle_B',       136.0,   45,       (0, 180))
                       ]
 
+    # Try to resume an existing run of this name.
+    # There's gotta be a more elegant way of doing this.
+    if already_exists(chain_filename) is True:
+        resume = True if len(pd.read_csv(chain_filename).index) > 0 else False
+    else:
+        resume = False
 
-    print("Setting up directories for new run")
-    remove(run_path)
-    sp.call(['mkdir', run_path])
-    sp.call(['mkdir', run_path + '/model_files'])
+    if resume is True:
+        print("Resuming run")
+        chain = pd.read_csv(chain_filename)
+        start_step = chain.index[-1] // nwalkers
+        pos = np.array(chain.iloc[-nwalkers:, :-1])
+        print('Resuming {} at step {}'.format(run_name, start_step))
 
-    # Export the initial param dict for accessing when we want
-    pickle.dump(run_driver.param_dict, open(run_path + 'param_dict.pkl', 'wb'))
-    print("Wrote {}param_dict.pkl out".format(run_path))
-    print('Starting {}'.format(run_path))
+        # If we're adding new steps, just put in a new line and get started.
+        with open(chain_filename, 'a') as f:
+            f.write('\n')
+        # Not sure what end looks like.
+        end = np.array(chain.iloc[-nwalkers:, :])
+        print('Start step: {}'.format(np.mean(end[:, -1])))
 
-    start_step = 0
+    # If there's no pre-existing run, set one up, and delete any empty dirs.
+    else:
+        print("Setting up directories for new run")
+        remove(run_path)
+        sp.call(['mkdir', run_path])
+        sp.call(['mkdir', run_path + '/model_files'])
 
-    # Start a new file for the chain; set up a header line
-    with open(chain_filename, 'w') as f:
-        param_names = [param[0] for param in param_info]
-        np.savetxt(f, (np.append(param_names, 'lnprob'), ),
-                   delimiter=',', fmt='%s')
+        # Export the initial param dict for accessing when we want
+        pickle.dump(run_driver.param_dict, open(run_path + 'param_dict.pkl', 'wb'))
+        print("Wrote {}param_dict.pkl out".format(run_path))
+        print('Starting {}'.format(run_path))
 
-    # Set up initial positions
-    # randn makes an n-dimensional array of rands in [0,1]
-    # param[2] is the sigma of the param
-    # This is bad because it doesn't check for positions outside of priors.
-    # pos = [[param[1] + param[2]*np.random.randn()
-    #         for param in param_info]
-    #        for i in range(nwalkers)]
+        start_step = 0
 
-    pos = []
-    for i in range(nwalkers):
-        pos_walker = []
-        for param in param_info:
-            pos_i = param[1] + param[2]*np.random.randn()
-            # Make sure we're starting within priors
-            lower_bound, upper_bound = param[-1]
-            # If it is, put it into the dict that make_fits calls from
-            # while pos_i < param[3][0] or pos_i > param[3][1]:
-            while not lower_bound < pos_i < upper_bound:
+        # Start a new file for the chain; set up a header line
+        with open(chain_filename, 'w') as f:
+            param_names = [param[0] for param in param_info]
+            np.savetxt(f, (np.append(param_names, 'lnprob'), ),
+                       delimiter=',', fmt='%s')
+
+        # Set up initial positions
+        # randn makes an n-dimensional array of rands in [0,1]
+        # param[2] is the sigma of the param
+        # This is bad because it doesn't check for positions outside of priors.
+        # pos = [[param[1] + param[2]*np.random.randn()
+        #         for param in param_info]
+        #        for i in range(nwalkers)]
+
+        pos = []
+        for i in range(nwalkers):
+            pos_walker = []
+            for param in param_info:
                 pos_i = param[1] + param[2]*np.random.randn()
+                # Make sure we're starting within priors
+                lower_bound, upper_bound = param[-1]
+                # If it is, put it into the dict that make_fits calls from
+                # while pos_i < param[3][0] or pos_i > param[3][1]:
+                while not lower_bound < pos_i < upper_bound:
+                    pos_i = param[1] + param[2]*np.random.randn()
 
-            pos_walker.append(pos_i)
-        pos.append(pos_walker)
-
+                pos_walker.append(pos_i)
+            pos.append(pos_walker)
     # Initialize sampler chain
     # Recall that param_info is a list of length len(d1_params)+len(d2_params)
     # There's gotta be a more elegant way of doing this.
-
-
     print("Initializing sampler.")
     ndim = len(param_info)
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
-                                    args=(run_name, param_info, mol),
-                                    pool=pool)
-
-    # Initiate a generator to provide the data. They changed the arg
-    # storechain -> store sometime between v2.2.1 (iorek) and v3.0rc2 (cluster)
-    from emcee import __version__ as emcee_version
-    print("About to run sampler")
-    if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
-        run = sampler.sample(pos, iterations=nsteps, storechain=False)  # for iorek
+    if run_w_pool is True:
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+                                         args=(run_name, param_info, mol),
+                                        pool=pool)
     else:
-        run = sampler.sample(pos, iterations=nsteps, store=False)   # for cluster
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+                                        args=(run_name, param_info, mol))
+
+    # Initiate a generator to provide the data. More about generators here:
+    # https://medium.freecodecamp.org/how-and-why-you-should-use-python-generators-f6fb56650888
+    print("About to run sampler")
+    run = sampler.sample(pos, iterations=nsteps, storechain=False)
     """Note that sampler.sample returns:
             pos: list of the walkers' current positions in an object of shape
                     [nwalkers, ndim]
@@ -573,7 +595,6 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
 
 
     # return run
-    print("THIS CURRENT WORKING DIRECTORY IS" + os.getcwd() + '\n\n')
     print("About to loop over run")
     for i, result in enumerate(run):
         print("Got a result")
@@ -589,6 +610,8 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
             np.savetxt(f, new_step, delimiter=',')
 
     print("Ended run")
+    if run_w_pool is True:
+        pool.close()
 
 
 
