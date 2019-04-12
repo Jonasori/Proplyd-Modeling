@@ -519,7 +519,7 @@ class MCMCrun:
         plt.show(block=False)
 
 
-    def plot_structure(self, save=False):
+    def plot_structure(self, zmax=150, save=False, save_to_thesis=False):
         """
         Plot temperature and density structure of the disk.
         Drawn from Kevin's code.
@@ -534,10 +534,26 @@ class MCMCrun:
 
         param_dict = self.bf_param_dict
         rmax_a, rmax_b = self.bf_param_dict['r_out_A'], self.bf_param_dict['r_out_B']
+        rmax = max(rmax_a, rmax_b)
 
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True,
-                                         gridspec_kw = {'width_ratios':[rmax_a, rmax_b]}) # , sharex=True)
-        plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0., hspace=None)
+        # fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True,
+        #                                  gridspec_kw = {'width_ratios':[rmax_a, rmax_b]}) # , sharex=True)
+        fig, ((cbar_axes), (im_axes)) = plt.subplots(2, 2, figsize=(18, 4), # sharex=True,
+                                                     gridspec_kw={'height_ratios':[1,9],
+                                                                  # 'width_ratios':[rmax_a/rmax, rmax_b/rmax],
+                                                                  'width_ratios':[1, 1]})
+        plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.05, hspace=0.05)
+
+        # full_fig = gridspec.GridSpec(2, 2, width_ratios=[1, 1], height_ratios=[1, 9]) #, figsize=(12, 6))
+        # # full_fig.set_figheight(6)
+        # # full_fig.set_figwidth(15)
+        # cbar_axes = (plt.subplot(full_fig[0], figsize=(6, 0.5)), plt.subplot(full_fig[1]), figsize=(6, 0.5))
+        # im_axes = (plt.subplot(full_fig[2], figsize=(6, 4)), plt.subplot(full_fig[3]), figsize=(6, 4))
+        # im_axes = plt.subplots((full_fig[2], full_fig[3]))
+        # ax1 = plt.subplot(gs[0])
+
+
+
         # fig = plt.figure(figsize=(10, 5), sharey=True)
         # fig.subplots_adjust(wspace=0.0, hspace=0.2)
         # plt.rc('axes',lw=2)
@@ -545,53 +561,70 @@ class MCMCrun:
         lab_locs = [[(275, 25), (325, 50), (375, 80)],
                     [(154, -14.4), (200, -35.4), (261, -83)]]
         for i in range(2):
-            d = [self.diskA, self.diskB][i]
+            d = [d1, d2][i]
             manual_locations=[(300,30),(250,60),(180,50),
                               (180,70),(110,60),(45,30)]
 
             manual_locations=[(300,30),(250,60),(180,50)]
-            dens_contours = axes[i].contourf(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/d.AU,
-                                             np.log10((d.rhoG/d.Xmol)[0,:,:]),
-                                             np.arange(0, 11, 0.1),
-                                             cmap='inferno', levels=8)
+            dens_contours = im_axes[i].contourf(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/d.AU,
+                                                np.log10((d.rhoG/d.Xmol)[0,:,:]),
+                                                # np.arange(0, 11, 0.1),
+                                                cmap='inferno', levels=50)
 
-            col_dens_contours = axes[i].contour(d.r[0,:,:]/d.AU, d.Z[0,:,:]/d.AU,
+            col_dens_contours = im_axes[i].contour(d.r[0,:,:]/d.AU, d.Z[0,:,:]/d.AU,
                                                 np.log10(d.sig_col[0,:,:]), (-3, -2,-1),
                                                 linestyles=':', linewidths=3,
                                                 colors='k')
 
-            temp_contours = axes[i].contour(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/Disk.AU,
+            temp_contours = im_axes[i].contour(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/Disk.AU,
                                             d.T[0,:,:], (50, 100, 150), #(20, 40, 60, 80, 100, 120),
                                             colors='b', linestyles='--')
 
-            axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
+            im_axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
 
             # This is kinda janky, but whatever. Need colorbar set to the wider ranged one.
-            if i == 0:
-                cb = plt.colorbar(dens_contours, label=r"$\log{ N(H_2)}$") #, cax=cbaxes) #, orientation='horizontal')
-
+            # cb = plt.colorbar(dens_contours, label=r"$\log{ N(H_2)}$") #, cax=cbaxes) #, orientation='horizontal')
+            # dens_contours.set_clim(0, 20)
+            cbar = plt.colorbar(dens_contours, cax=cbar_axes[i],
+                                orientation='horizontal', label=r"$\log{ N(H_2)}$")
+            # plt.clim(-1, 1)
 
         font_cb = matplotlib.font_manager.FontProperties(family='times new roman',
                                                          style='italic', size=16) #, rotation=180)
-        cb.ax.yaxis.label.set_font_properties(font_cb)
+        # cb.ax.yaxis.label.set_font_properties(font_cb)
         # cb.ax.yaxis.set_ticks_position('left')
 
         #plt.colorbar(cs2,label='log $\Sigma_{FUV}$')
-        axes[0].set_xlabel('R (AU)',fontsize=20)
-        axes[0].set_ylabel('Z (AU)',fontsize=20)
+        im_axes[0].set_ylabel('Disk Scale Height (AU)',fontsize=16, weight='bold')
+        im_axes[0].set_xlabel('Disk A Outer Radius (AU)',fontsize=16, weight='bold')
+        im_axes[1].set_xlabel('Disk B Outer Radius (AU)',fontsize=16, weight='bold')
 
-        axes[0].set_xlim(rmax_a, 0)
-        axes[0].set_ylim(-zmax, zmax)
+        im_axes[0].set_xlim(rmax_a, 0)
+        im_axes[0].set_ylim(-zmax, zmax)
 
-        axes[1].set_xlim(0, rmax_b)
-        axes[1].set_ylim(-zmax, zmax)
+        im_axes[1].set_xlim(0, rmax_b)
+        im_axes[1].set_ylim(-zmax, zmax)
 
-        axes[0].set_title('Disk A', weight='bold')
-        axes[1].set_title('Disk B', weight='bold')
+        im_axes[0].yaxis.set_ticks_position('left')
+        im_axes[1].yaxis.set_ticks_position('right')
+
+
+        # cbar_axes[0].set_title('Disk A', weight='bold')
+        # cbar_axes[1].set_title('Disk B', weight='bold')
+        cbar_axes[0].xaxis.set_ticks_position('top')
+        cbar_axes[1].xaxis.set_ticks_position('top')
+
+        cbar_axes[1].xaxis.set_label_position('top')
+        cbar_axes[1].xaxis.set_label_position('top')
+
 
         if save:
-            outname = self.image_outpath + '_disk-strs.png'
-            plt.savefig(outname, dpi=300)
+            if save_to_thesis:
+                outname = '../Thesis/Figures/diskstructures-{}.pdf'.format(self.mol)
+            else:
+                outname = self.image_outpath + '_disk-strs.pdf'
+
+            plt.savefig(outname)
             print("Saved to {}".format(outname))
         else:
             fig.show()
