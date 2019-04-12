@@ -5,15 +5,21 @@ import os
 import sys
 import emcee
 import pickle
+import matplotlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import subprocess as sp
 # import matplotlib; matplotlib.use('TkAgg')  # This must be imported first
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Ellipse
 from matplotlib.ticker import FormatStrFormatter
-from constants import today #, mol
-from tools import already_exists, remove
+from disk_model.disk import Disk
+from astropy.io import fits
+
+from constants import today, lines #, mol
+from tools import already_exists, remove, imstat
 #from analysis import plot_fits
 #from four_line_run_driver import make_fits
 import fitting
@@ -63,6 +69,8 @@ class MCMCrun:
         # self.param_dict      = pickle.load(open(run_path + 'param_dict.pkl', 'r'))
 
         self.nwalkers = nwalkers
+        self.data_path  = './data/{}/{}-short{}'.format(self.mol, self.mol,
+                                                        lines[self.mol]['baseline_cutoff'])
 
         # This only makes sense if it already exists?
         self.nsteps = self.main.shape[0] // nwalkers
@@ -74,9 +82,12 @@ class MCMCrun:
         # I think this might be redundant; no -infs since we immediately reject
         # them in the priors check?
         lnprob_vals = self.burnt_in.loc[:, 'lnprob']
-        self.groomed = self.burnt_in.loc[lnprob_vals != -np.inf, :]
+        self.groomed = self.burnt_in.loc[lnprob_vals != -np.inf,
+                                         :].reset_index().drop('index', axis=1)
         # print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
 
+        # Get a dictionary of the best-fit param values (for use in structure plotting)
+        self.get_bestfit_dict()
 
 
         with open(self.runpath + '_log.txt', 'w') as f:
@@ -95,6 +106,73 @@ class MCMCrun:
         return mol
 
 
+    def get_bestfit_dict(self):
+        subset_df = self.main
+        # Locate the best fit model from max'ed lnprob.
+        max_lnp = subset_df['lnprob'].max()
+        model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
+
+        print('Model parameters:\n') #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
+        for mp in list(model_params):
+            print(mp, round(model_params[mp].values[0], 2))
+
+        # Make a complete dictionary of all the parameters
+        self.bf_param_dict = self.param_dict.copy()
+        for param in model_params.columns[:-1]:
+            self.bf_param_dict[param] = model_params[param].values[0]
+        return None
+
+
+    def get_disk_objects(self):
+        self.get_bestfit_dict()
+        param_dict = self.bf_param_dict
+        print(param_dict)
+        # Generate a Disk object
+        DI = 0
+        d1 = Disk(params=[param_dict['temp_struct_A'],
+                          10**param_dict['m_disk_A'],
+                          param_dict['surf_dens_str_A'],
+                          param_dict['r_ins'][DI],
+                          param_dict['r_out_A'],
+                          param_dict['r_crit'],
+                          param_dict['incl_A'],
+                          param_dict['m_stars'][DI],
+                          10**param_dict['mol_abundance_A'],
+                          param_dict['v_turb'],
+                          param_dict['vert_temp_str'],
+                          param_dict['T_mids'][DI],
+                          param_dict['atms_temp_A'],
+                          param_dict['column_densities'],
+                          [param_dict['r_ins'][DI], param_dict['r_out_A']],
+                          param_dict['rot_hands'][DI]],
+                  rtg=False)
+        d1.Tco = param_dict['T_freezeout']
+        d1.set_rt_grid()
+        # Now do Disk 2
+        DI = 1
+        d2 = Disk(params=[param_dict['temp_struct_B'],
+                          10**param_dict['m_disk_B'],
+                          param_dict['surf_dens_str_B'],
+                          param_dict['r_ins'][DI],
+                          param_dict['r_out_B'],
+                          param_dict['r_crit'],
+                          param_dict['incl_B'],
+                          param_dict['m_stars'][DI],
+                          10**param_dict['mol_abundance_B'],
+                          param_dict['v_turb'],
+                          param_dict['vert_temp_str'],
+                          param_dict['T_mids'][DI],
+                          param_dict['atms_temp_B'],
+                          param_dict['column_densities'],
+                          [param_dict['r_ins'][DI], param_dict['r_out_B']],
+                          param_dict['rot_hands'][DI]],
+                  rtg=False)
+        d2.Tco = param_dict['T_freezeout']
+        d2.set_rt_grid()
+        self.diskA, self.diskB = d1, d2
+        return None
+
+
     def evolution(self, save=True):
         """ Plot walker evolution. """
         print('Making walker evolution plot...')
@@ -105,7 +183,7 @@ class MCMCrun:
         print(self.nsteps, self.nwalkers)
 
         main = self.groomed.copy().iloc[stepmin * self.nwalkers:
-                                     stepmax * self.nwalkers, :]
+                                        stepmax * self.nwalkers, :]
 
         # Horrifying, but maybe functional.
         base = main.iloc[0::self.nwalkers].assign(step=np.arange(stepmin, stepmax))
@@ -189,7 +267,7 @@ class MCMCrun:
         plt.show()
 
 
-    def corner(self, variables=None, save=True):
+    def corner(self, variables=None, save=True, save_to_thesis=False):
         """Plot 'corner plot' of fit."""
         plt.close()
 
@@ -205,7 +283,9 @@ class MCMCrun:
 
         # make corner plot
         print("Starting SNS PairGrid")
-        corner_plt = sns.PairGrid(data=self.groomed, diag_sharey=False, despine=False, vars=variables)
+        # corner_plt = sns.PairGrid(data=self.groomed, diag_sharey=False, despine=False, vars=variables)
+        corner_df = self.groomed.drop('lnprob', axis=1)
+        corner_plt = sns.PairGrid(data=corner_df, diag_sharey=False, despine=False, vars=variables)
 
         print("Finished SNS PairGrid")
 
@@ -264,8 +344,13 @@ class MCMCrun:
 
         plt.subplots_adjust(top=0.9)
         if save:
-            plt.savefig(self.image_outpath + '_corner.pdf')
-            print('Image saved image to ' + self.image_outpath + '_corner.png')
+            if save_to_thesis:
+                image_path = '../Thesis/Figures/cornerplots-{}.pdf'.format(self.mol)
+            else:
+                image_path = self.image_outpath + '_corner.pdf'
+
+            plt.savefig(image_path)
+            print('Image saved image to ' + image_path)
         else:
             plt.show()
 
@@ -329,12 +414,14 @@ class MCMCrun:
 
         else:
             outpath = self.image_outpath + '_'
-        for df, disk_ID in zip([groomed_diskA, groomed_diskB], ('A', 'B')):
+        for df, disk_ID in zip([groomed_diskA, groomed_diskB], ['A', 'B']):
             print("Making corner plot")
-            corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
+            corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False,
+                          #, labels=labels,title_args={'fontsize': 12})
+                          show_titles=True, truths=bestfit)
 
-            plt.savefig('{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID), dpi=200)
-            print("Saved plot for disk{} to '{}cornerplot-{}-disk{}.png'.format(outpath, mol, disk_ID)'")
+            plt.savefig('{}cornerplot-{}-disk{}.png'.format(outpath, self.mol, disk_ID), dpi=200)
+            print("Saved plot for disk{} to {}cornerplot-{}-disk{}.png".format(outpath, self.mol, disk_ID))
 
         # corner.corner(groomed_diskA, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
@@ -344,57 +431,50 @@ class MCMCrun:
         # plt.savefig(self.image_outpath + '_corner.pdf')
         # print "Saved plot."
 
-    def make_best_fits(self):
+
+    def make_best_fits(self, plot_bf=True):
         """Make a best-fit model fits file."""
 
-        # run.main is the pd.df that gets read in from the chain.csv
-        subset_df = self.main
-
-        # Locate the best fit model from max'ed lnprob.
-        max_lnp = subset_df['lnprob'].max()
-        model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
-
-        print('Model parameters:\n') #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
-        for mp in list(model_params):
-            print(mp, model_params[mp].values[0])
-
-        # Check if we're looking at a one- or four-line fit.
-        fourlinefit_tf = True if 'r_out_A-cs' in model_params.columns else False
-
-        # Make a complete dictionary of all the parameters
-        bf_param_dict = self.param_dict.copy()
-        for param in model_params.columns[:-1]:
-            bf_param_dict[param] = model_params[param].values
-
-        bf_disk_params = list(bf_param_dict.keys())
+        bf_disk_params = list(self.bf_param_dict.keys())
 
         print('Making model...')
 
         def make_model(param_dict, mol, fourlinefit_tf=False):
-            # If we're doing four-line fitting, then some values are dictionaries of vals.
-            # Just want the relevant line.
-            param_dict_mol = param_dict.copy()
-            for p in param_dict_mol:
-                if type(param_dict_mol[p]) == dict:
-                    param_dict_mol[p] = param_dict_mol[p][mol]
+            # # If we're doing four-line fitting, then some values are dictionaries of vals.
+            # # Just want the relevant line.
+            # param_dict_mol = param_dict.copy()
+            # for p in param_dict_mol:
+            #     if type(param_dict_mol[p]) == dict:
+            #         param_dict_mol[p] = param_dict_mol[p][mol]
 
             obs = fitting.Observation(mol, cut_baselines=True)
             model = fitting.Model(observation=obs,
                                   run_name=self.name,
                                   model_name=self.name + '_bestFit')
-            run_driver.make_fits(model, param_dict_mol, mol)
-            tools.sample_model_in_uvplane(model.modelfiles_path, mol=mol)
+            run_driver.make_fits(model, self.bf_param_dict, mol)
+            # Make the normal map, then make a residual map.
+            tools.sample_model_in_uvplane(model.modelfiles_path, mol=mol, option='replace')
+            tools.sample_model_in_uvplane(model.modelfiles_path, mol=mol, option='subtract')
+
+            # Maybe get rid of stuff in the way.
             tools.icr(model.modelfiles_path, mol=mol)
-            tools.plot_fits(model.modelfiles_path + '.fits', mol=mol,
-                               best_fit=True, save=True)
+            tools.icr(model.modelfiles_path + '_resid', mol=mol)
+
+            if plot_bf:
+                tools.plot_fits(model.modelfiles_path + '.fits', mol=mol,
+                                   best_fit=True, save=True)
+                tools.plot_fits(model.modelfiles_path + '_resid.fits', mol=mol,
+                                   best_fit=True, save=True)
             return model
 
         models = []
         # If it's a one line fit, it's easy.
+        fourlinefit_tf = False
         if not fourlinefit_tf:
-            models.append(make_model(bf_param_dict, bf_param_dict['mol']))
+            models.append(make_model(self.bf_param_dict, self.bf_param_dict['mol']))
 
         else:
+            bf_param_dict = self.bf_param_dicts
             # This assumes that outer radius and abundance are the only things
             # being individually varied. Maybe coordinate better.
             for m in ['cs', 'co', 'hco', 'hcn']:
@@ -408,26 +488,444 @@ class MCMCrun:
 
 
 
+        return (models, self.bf_param_dict)
 
-        # This seems cool but I need to get plotting.py going first.
-        #"""
-        """
-        fig = plotting.Figure(layout=(1, 3),
-                              paths=[aumic_fitting.band6_fits_images[-1],
-                                     paths[-1] + '.fits',
-                                     paths[-1] + '.residuals.fits'],
-                              rmses=3*[aumic_fitting.band6_rms_values[-1]],
-                              texts=[[[4.6, 4.0, 'Data']],
-                                     [[4.6, 4.0, 'Model']],
-                                     [[4.6, 4.0, 'Residuals']]
-                                     ],
-                              title=r'Run 6 Global Best Fit Model & Residuals',
-                              savefile=run.name + '/' + run.name + '_bestfit_concise.pdf',
-                              show=True)
-        """
-        # plot_fits(self.runpath)
 
-        return (models, bf_param_dict)
+    def plot_surf_dens(self, save=False):
+        """
+        Plot density structure of the disk.
+        Drawn from Kevin's code.
+        """
+
+        # Generate the Disk objects (from Kevin's code)
+        # Can be nice (in testing) to manually insert these and not regen them every time.
+
+        param_dict = self.bf_param_dict
+
+        gamma = 1
+        R_c = 150 * 1.5e13 # 150 AU in cm
+        # m_gas = 0.1 * 2e33 # 0.1 * Solar mass, in grams
+        m_gas = 10**self.bf_param_dict['m_disk_A'] * 2e33
+        log_r_out = np.log(self.bf_param_dict['r_out_A'] * 1.5e13 )
+        # rs = np.linspace(1*1.5e13, 1000*1.5e13, 100)
+        rs = np.logspace(13, log_r_out, 100)
+
+        surf_dens = (m_gas * (2 - gamma))/(2*np.pi*R_c**2) * (rs/R_c)**2 * np.exp(-(rs/R_c)**(2-gamma))
+
+        fig, ax = plt.subplots()
+        ax.loglog(rs/1.5e13, surf_dens)
+        # ax.set_ylim(1e-4, 1e4)
+        ax.set_xlim(0, self.bf_param_dict['r_out_A'] * 1.5e13)
+        plt.show(block=False)
+
+
+    def plot_structure(self, save=False):
+        """
+        Plot temperature and density structure of the disk.
+        Drawn from Kevin's code.
+        """
+
+        # Generate the Disk objects (from Kevin's code)
+        # Can be nice (in testing) to manually insert these and not regen them every time.
+        if not hasattr(self, 'diskA'):
+            self.get_disk_objects()
+        d1, d2 = self.diskA, self.diskB
+
+
+        param_dict = self.bf_param_dict
+        rmax_a, rmax_b = self.bf_param_dict['r_out_A'], self.bf_param_dict['r_out_B']
+
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True,
+                                         gridspec_kw = {'width_ratios':[rmax_a, rmax_b]}) # , sharex=True)
+        plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0., hspace=None)
+        # fig = plt.figure(figsize=(10, 5), sharey=True)
+        # fig.subplots_adjust(wspace=0.0, hspace=0.2)
+        # plt.rc('axes',lw=2)
+
+        lab_locs = [[(275, 25), (325, 50), (375, 80)],
+                    [(154, -14.4), (200, -35.4), (261, -83)]]
+        for i in range(2):
+            d = [self.diskA, self.diskB][i]
+            manual_locations=[(300,30),(250,60),(180,50),
+                              (180,70),(110,60),(45,30)]
+
+            manual_locations=[(300,30),(250,60),(180,50)]
+            dens_contours = axes[i].contourf(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/d.AU,
+                                             np.log10((d.rhoG/d.Xmol)[0,:,:]),
+                                             np.arange(0, 11, 0.1),
+                                             cmap='inferno', levels=8)
+
+            col_dens_contours = axes[i].contour(d.r[0,:,:]/d.AU, d.Z[0,:,:]/d.AU,
+                                                np.log10(d.sig_col[0,:,:]), (-3, -2,-1),
+                                                linestyles=':', linewidths=3,
+                                                colors='k')
+
+            temp_contours = axes[i].contour(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/Disk.AU,
+                                            d.T[0,:,:], (50, 100, 150), #(20, 40, 60, 80, 100, 120),
+                                            colors='b', linestyles='--')
+
+            axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
+
+            # This is kinda janky, but whatever. Need colorbar set to the wider ranged one.
+            if i == 0:
+                cb = plt.colorbar(dens_contours, label=r"$\log{ N(H_2)}$") #, cax=cbaxes) #, orientation='horizontal')
+
+
+        font_cb = matplotlib.font_manager.FontProperties(family='times new roman',
+                                                         style='italic', size=16) #, rotation=180)
+        cb.ax.yaxis.label.set_font_properties(font_cb)
+        # cb.ax.yaxis.set_ticks_position('left')
+
+        #plt.colorbar(cs2,label='log $\Sigma_{FUV}$')
+        axes[0].set_xlabel('R (AU)',fontsize=20)
+        axes[0].set_ylabel('Z (AU)',fontsize=20)
+
+        axes[0].set_xlim(rmax_a, 0)
+        axes[0].set_ylim(-zmax, zmax)
+
+        axes[1].set_xlim(0, rmax_b)
+        axes[1].set_ylim(-zmax, zmax)
+
+        axes[0].set_title('Disk A', weight='bold')
+        axes[1].set_title('Disk B', weight='bold')
+
+        if save:
+            outname = self.image_outpath + '_disk-strs.png'
+            plt.savefig(outname, dpi=300)
+            print("Saved to {}".format(outname))
+        else:
+            fig.show()
+
+
+    def plot_chi2(self, save=False):
+        # Very incomplete
+        chi2s = self.groomed
+        return None
+
+
+    def DMR_images(self, cmap='RdBu', save=False, save_to_thesis=False):
+        """
+        Plot a triptych of data, model, and residuals.
+
+        It would be nice to have an option to also plot the grid search results.
+        Still need to:
+        - Get the beam to plot
+        - Get the velocity labels in the right places
+
+        Some nice cmaps: magma, rainbow
+        """
+        plt.close()
+        print("\nPlotting DMR images...")
+
+
+        data_path  = self.data_path + '.fits'
+        resid_path = self.modelfiles_path + '_bestFit_resid.fits'
+        model_path = self.modelfiles_path + '_bestFit.fits'
+        if not Path(model_path).exists():
+            print("No best-fit model made yet; making now...")
+            self.make_best_fits(plot_bf=False)
+
+        real_data    = fits.getdata(data_path, ext=0).squeeze()
+        model_data   = fits.getdata(model_path, ext=0).squeeze()
+        resid_data   = fits.getdata(resid_path, ext=0).squeeze()
+        image_header = fits.getheader(data_path, ext=0)
+        model_header = fits.getheader(model_path, ext=0)
+        resid_header = fits.getheader(resid_path, ext=0)
+
+        # Define some plotting params
+        hspace = -0.
+        wspace = -0.
+
+        # Set up some physical params
+        # vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
+        vmax = np.nanmax((np.nanmax(real_data), -np.nanmin(real_data)))
+        vmin = -vmax
+
+        offsets = self.param_dict['offsets']
+        offsets_dA, offsets_dB = offsets[0], offsets[1]
+        x_center = int(np.floor(real_data.shape[1] / 2))
+        crop_arcsec = 2
+        crop_pix = int(crop_arcsec / 0.045)
+        xmin, xmax = x_center - crop_pix, x_center + crop_pix
+        offsets_dA_pix = [44 - offsets_dA[0]/0.045, 44 - offsets_dA[1]/0.045]
+        offsets_dB_pix = [44 - offsets_dB[0]/0.045, 44 + offsets_dB[1]/0.045]
+
+        chanstep_vel = image_header['CDELT3'] * 0.001
+        chan0_vel = image_header['CRVAL3'] * 0.001 - image_header['CRPIX3'] * chanstep_vel
+
+        ch_offsets = {'co':2, 'hco':17, 'hcn': 20, 'cs': 10}
+        chan_offset = ch_offsets[self.mol]
+        nchans = 30
+
+        rms = imstat(data_path[:-5])[1]
+        contours = [rms * i for i in range(3, 30, 3)]
+
+
+        # Add beam info for the data
+        add_beam_d = True if 'bmaj' in image_header else False
+        if add_beam_d is True:
+            bmin = image_header['bmin'] * 3600.0
+            bmaj = image_header['bmaj'] * 3600.0
+            bpa = image_header['bpa']
+
+        # Set up which channels are getting plotted, checking to make sure its legal
+        if real_data.shape[0] < nchans + chan_offset:
+            return 'Aborting; not enough channels to satisfy chan_offset and nchans requested'
+
+        # Add an extra row for the colorbar
+        n_rows = 3
+        n_cols = int(np.ceil(nchans/3))
+
+        # Get the plots going
+        # fig = plt.figure(figsize=(n_rows * 3, 7))
+        fig = plt.figure(figsize=(18, 18))
+        big_fig = gridspec.GridSpec(3, 1)
+
+        data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
+                                                    wspace=wspace, hspace=hspace,
+                                                    subplot_spec=big_fig[0])
+        model_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
+                                                     wspace=wspace, hspace=hspace,
+                                                     subplot_spec=big_fig[1])
+        resid_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
+                                                     wspace=wspace, hspace=hspace,
+                                                     subplot_spec=big_fig[2])
+        # Populate the plots
+        print("Got the necessary info; now plotting...")
+        for i in range(nchans):
+            chan = i + chan_offset
+            velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
+            ax_d = plt.Subplot(fig, data_ims[i])
+            ax_m = plt.Subplot(fig, model_ims[i])
+            ax_r = plt.Subplot(fig, resid_ims[i])
+
+            if i == int(np.floor(n_cols / 2)):
+                ax_d.set_title('Data', weight='bold')
+                ax_m.set_title('Model', weight='bold')
+                ax_r.set_title('Residuals', weight='bold')
+
+            # Plot the data
+            im_d = ax_d.contourf(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 levels=30, cmap=cmap, vmin=vmin, vmax=vmax)
+            im_m = ax_m.contourf(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 levels=30, cmap=cmap, vmin=vmin, vmax=vmax)
+            im_r = ax_r.contourf(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 levels=30, cmap=cmap, vmin=vmin, vmax=vmax)
+
+
+            # Add n-sigma contours
+            im_d = ax_d.contour(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 levels=contours)
+            im_m = ax_m.contour(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 levels=contours)
+            im_r = ax_r.contour(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 levels=contours)
+
+
+
+
+            # Aesthetic stuff
+            # This is all in arcsecs right now. Should be in pix
+            # crop_arcsec of 2 translates to 88 pixels across
+            # 0, 0 in upper left
+            ax_d.grid(False)
+            ax_d.set_xticklabels([]), ax_d.set_yticklabels([])
+            ax_d.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
+            ax_d.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
+
+            ax_m.grid(False)
+            ax_m.set_xticklabels([]), ax_m.set_yticklabels([])
+            ax_m.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
+            ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
+
+            ax_r.grid(False)
+            ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
+            ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
+            ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
+
+            # Add velocity info
+            ax_d.text(44, 80, velocity + ' km/s', fontsize=6, color='k',
+                    horizontalalignment='center', verticalalignment='center')
+            ax_m.text(44, 80, velocity + ' km/s', fontsize=6, color='k',
+                    horizontalalignment='center', verticalalignment='center')
+            ax_r.text(44, 80, velocity + ' km/s', fontsize=6, color='k',
+                    horizontalalignment='center', verticalalignment='center')
+
+            if i == n_cols * (n_rows - 1) and add_beam_d is True:
+                el = Ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_pix],
+                             width=bmin, height=bmaj, angle=-bpa,
+                             fc='k', ec='k', fill=False, hatch='////////')
+                ax_d.add_artist(el)
+
+            fig.add_subplot(ax_m)
+            fig.add_subplot(ax_d)
+            fig.add_subplot(ax_r)
+            fig.tight_layout()
+
+
+
+        fig.tight_layout()
+        fig.subplots_adjust(wspace=0., hspace=0.1, top=0.95, right=0.9)
+
+        cmaps = plt.imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                           extent=(crop_arcsec, -crop_arcsec, crop_arcsec, -crop_arcsec),
+                           cmap=cmap, vmin=vmin, vmax=vmax)
+
+        cax = plt.axes([0.91, 0.01, 0.03, 0.94]) # [l, b, w, h]
+        cbar = plt.colorbar(cmaps, cax=cax, orientation='vertical')
+        cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold')
+        cbar.set_ticks(np.linspace(vmin, vmax, 6))
+
+
+
+        out_path = self.image_outpath + '_DMR-images.png'
+        thesis_fig_path = '../Thesis/Figures/chanmaps-{}.pdf'.format(self.mol)
+        if save:
+            if save_to_thesis:
+                plt.savefig(thesis_fig_path)
+                print("Saved to " + thesis_fig_path)
+            else:
+                plt.savefig(out_path, dpi=300)
+                print("Saved to " + out_path)
+        else:
+            print("Showing")
+            plt.show(block=False)
+
+
+    def plot_pv_diagram(self, coords=None, save=False):
+        """
+        Fuck Miriad and CASA, let's just use a package.
+
+        Args: image_path (str): path to fits image, including extension.
+              coords (tuple of tuples): if you have x and y values for the
+                                        disk axis, enter them.
+        """
+
+        image_path = self.data_path + '.fits'
+        # Not all the machines have this package installed,
+        # so don't run it unless necessary.
+        from pvextractor import extract_pv_slice
+        from pvextractor import Path as PVPath
+        # Can use this to test for points:
+        if coords is None:
+            keep_trying = True
+            # For HCN
+            xs, ys = [38, 57], [55, 45]
+            xs, ys = [110, 142], [135, 124]
+
+            while keep_trying:
+                plt.close()
+                print("Find coordinates for a line across the disk axis:")
+
+                # Import and crop the data, 70 pixels in each direction.
+                image_data_3d = fits.getdata(image_path).squeeze() #[:, 80:176, 80:176]
+                # Make a quick moment map
+                image_data = np.sum(image_data_3d, axis=0)
+
+                # Plot
+                plt.contourf(image_data, 50, cmap='BrBG')
+                plt.colorbar(extend='both')
+                plt.contour(image_data, colors='k', linewidths=0.2)
+                plt.plot(xs, ys, '-k')
+                plt.show(block=False)
+                response = input('\nWant to try again?\n[y/n]: ').lower()
+                keep_trying = True if response == 'y' or response == 'yes' else False
+                if keep_trying:
+                    xs_raw = input('Enter the x coordinates (previous attempt: {}):\n[x1, x2]: '
+                                       .format(xs))
+                    xs = tuple(int(x.strip()) for x in xs_raw.split(','))
+
+                    ys_raw = input('Enter the x coordinates (previous attempt: {}):\n[y1, y2]: '
+                                       .format(ys))
+                    ys = tuple(int(x.strip()) for x in ys_raw.split(','))
+        else:
+            xs, ys = coords
+
+
+        path = PVPath([(xs[0], ys[0]), (xs[1], ys[1])])
+        pv_data = extract_pv_slice(image_path, path).data.T
+        # pv_data = extract_pv_slice(image_data_3d, path).data.T
+
+
+        # Make the plot.
+        plt.close()
+        plt.clf()
+        fig, (ax_image, ax_pv) = plt.subplots(1, 2, figsize=(10, 5),
+                                              gridspec_kw={'width_ratios':[2, 2]})
+
+        ax_image.contourf(image_data, 50, cmap='BrBG')
+        #   ax_image.colorbar(extend='both')
+        ax_image.contour(image_data, colors='k', linewidths=0.2)
+        ax_image.plot(xs, ys, '-k')
+
+        ax_pv.contourf(pv_data, 30, cmap='inferno')
+        # ax_pv.colorbar(extend='both')
+        ax_pv.contour(pv_data, 30, colors='k', linewidths=0.1)
+
+
+        # Image aesthetics
+        pixel_to_AU = 0.045 * 389   # arcsec/pixel * distance -> AU
+        pixel_to_as = 0.045
+        pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
+        # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
+
+        start, end = ax_pv.get_xlim()
+        pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+        pv_tick_labels = [int(tick) for tick in pv_tick_labels]
+
+        vmin, vmax = ax_pv.get_ylim()
+        vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
+        vel_tick_labels = [int(tick) for tick in vel_tick_labels]
+
+
+        # ax_pv.set_xticklabels(pv_tick_labels)
+        # ax_pv.set_yticklabels(vel_tick_labels)
+        # ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
+        # ax_pv.set_xlabel("Position Offset (AU)", weight='bold')
+        # ax_pv.yaxis.tick_right()
+        # ax_pv.yaxis.set_label_position("right")
+        #
+        #
+        # start, end = ax_image.get_xlim()
+        # image_xtick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+        # image_xtick_labels = [int(tick) for tick in image_xtick_labels]
+        #
+        # start, end = ax_image.get_ylim()
+        # image_ytick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+        # image_ytick_labels = [int(tick) for tick in image_ytick_labels]
+        #
+        #
+        # x_ts = np.array(ax_image.get_xticks().tolist()) * pixel_to_AU
+        # # image_xticks = np.linspace(min(x_ts), max(x_ts), 5) - np.mean(x_ts)
+        # # image_xtick_labels = [int(tick) for tick in image_xticks]
+        # #
+        # y_ts = np.array(ax_image.get_yticks().tolist()) * pixel_to_AU
+        # # image_yticks = np.linspace(min(y_ts), max(y_ts), 5) - np.mean(y_ts)
+        # # image_ytick_labels = [int(tick) for tick in image_yticks]
+        #
+        # # ax_image.set_xticklabels(x_ts)
+        # # ax_image.set_yticklabels(y_ts)
+        # ax_image.set_xticklabels(image_xtick_labels)
+        # ax_image.set_yticklabels(image_ytick_labels)
+        # ax_image.set_xlabel("Position Offset (AU)", weight='bold')
+        # ax_image.set_ylabel("Position Offset (AU)", weight='bold')
+
+        mol = self.mol
+        plt.suptitle('Moment Map and PV Diagram for {}'.format(mol), weight='bold')
+        # plt.tight_layout()
+
+        outpath = self.image_outpath + '_pv-diagram'
+        if save:
+            plt.savefig(outpath + '.pdf')
+            print("Saved PV diagram to {}.pdf".format(outpath))
+        else:
+            print("Showing:")
+            plt.show(block=False)
+
+
+
+
+
 
 
 
@@ -596,6 +1094,9 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
 
 
 
+
+
+# The End
 
 
 # The End

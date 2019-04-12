@@ -5,6 +5,7 @@ Testing a change.
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import argparse as ap
 import subprocess as sp
 import matplotlib.pyplot as plt
@@ -88,6 +89,51 @@ def run_noise_analysis(baselines=baselines, niters=1e4):
     mol = input('Which mol?\n').lower()
     ds = get_baseline_rmss(mol, niters, baselines)
     analysis(ds, mol, niters)
+
+
+
+
+
+
+
+
+def fourmol_analysis(dfs):
+    """Read the df from find_baseline_cutoff and do cool shit with it."""
+    f, axarr = plt.subplots(2, sharex=True)
+    # axarr[0].set_ylabel('RMS Off-Source Flux (Jy/Beam)')
+    # axarr[0].plot(df['Baseline'], df['RMS'], 'or')
+
+    colors = sns.diverging_palette(220, 20, n=4, center='dark')
+    for df, color in zip(dfs, colors):
+        rms_max = max(np.nanmax(df['RMS']), -np.nanmin(df['RMS']))
+        mean_max = max(np.nanmax(df['Mean']), -np.nanmin(df['Mean']))
+        axarr[0].plot(df['Baseline'], df['RMS']/rms_max,
+                      ls='-', lw=2, color=color)
+        axarr[1].plot(df['Baseline'], df['Mean']/mean_max,
+                      ls='-', lw=2, color=color)
+
+    axarr[0].grid(axis='x')
+    axarr[1].grid(axis='x')
+    axarr[0].set_title('RMS Noise', weight='bold')
+    axarr[1].set_title('Mean Noise', weight='bold')
+    axarr[1].set_xlabel('Baseline length (k-lambda)', weight='bold')
+    # axarr[1].set_ylabel('Mean Off-Source Flux (Jy/Beam)')
+    # axarr[1].plot(df['Baseline'], df['Mean'], 'or')
+
+    image_path = '../Thesis/Figures/full_baseline_analysis.pdf'
+    plt.savefig(image_path)
+    print('Saved image to ' + image_path)
+    # plt.show(block=False)
+    # return [df['Baseline'], df['Mean'], df['RMS']]
+
+
+def run_fourmol_noise_analysis(baselines=baselines, niters=1e4):
+    """Run the above functions."""
+    print("Baseline range to check: ", baselines[0], baselines[-1])
+    print("Don't forget that plots will be saved to /modeling, not here.\n\n")
+    dfs = [get_baseline_rmss(mol, niters, baselines)
+           for mol in ['hco', 'hcn', 'co', 'cs']]
+    fourmol_analysis(dfs)
 
 
 

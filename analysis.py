@@ -565,7 +565,9 @@ class GridSearch_Run:
 
 class Figure:
     """
-    Make publication-quality zeroth- and first-moment maps.
+    Make publication-quality plots:
+    - zeroth- and first-moment maps
+    - Disk structure
 
     Note that there are some big assumptions about file names/structures made here:
     1. Images are saved to ../Thesis/Figures/. If this doesn't exist, then trouble.

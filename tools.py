@@ -229,7 +229,7 @@ def icr(visPath, mol, min_baseline=0, niters=1e4):
              stdout=open(os.devnull, 'wb'),
              cwd=filepath).wait()
 
-    for end in ['.cm', '.cl', '.bm', '.mp']:
+    for end in ['.cm', '.cl', '.bm']:
         remove(outName + end)
         # sp.Popen('rm -rf {}.{}'.format(outName, end), shell=True, cwd=filepath).wait()
 
@@ -250,7 +250,7 @@ def icr(visPath, mol, min_baseline=0, niters=1e4):
     sp.Popen(invert_str, stdout=open(os.devnull, 'wb'), cwd=filepath).wait()
 
     # Grab the rms
-    rms = imstat(filepath + outName, ext='.mp')[1]
+    rms = imstat(filepath + outName, ext='.im')[1]
 
     sp.Popen(['clean',
               'map={}.mp'.format(outName),
@@ -448,7 +448,7 @@ def moment_maps(im_path, out_path, clip_val, moment=0):
     # remove('moment_map')
 
 
-def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='magma', save=False, use_cut_baselines=True, best_fit=False):
+def plot_fits(image_path, mol=mol, scale_cbar_to_mol=False, crop_arcsec=2, cmap='RdBu', save=False, use_cut_baselines=True, best_fit=False):
     """
     Plot some fits image data.
 
@@ -604,28 +604,105 @@ def plot_spectrum(image_path, save=False):
         plt.show()
 
 
-def plot_pv_diagram_casa(image_path, out_path, center=[129, 130], length=25, pa=70):
-    """
-    Make a position-velocity diagram.
 
-    https://casa.nrao.edu/casadocs/casa-5.1.0/global-task-list/task_impv/about
-    """
-    pipe(["impv(",
-          "imagename = '{}.cm',".format(image_path),
-          "outfile   = '{}.cm',".format(out_path),
-          # "overwrite = True,",
-          "mode      = 'length',",
-          "center    = {},".format(center),
-          "length    = {},".format(length),
-          "pa        = '{} deg')".format(pa)
+def plot_pv_diagram_casa(diskID='A', save=False):
+    # impv(imagename='iras16293_CH3OH.image’,
+    #     outfile='iras16293A-ch3oh_pv.image’,
+    #     chans='20~90', mode='length’,
+    #     center=['16h32m22.9s','-24d28m36.6s'],
+    #     length='3.6arcsec', pa='54deg’)
+
+    # Center ra, dec = '05h35m25.30s', '-05d15m35.40s'
+    # offsets = [[0.0002, 0.082], [-1.006, -0.3]]
+    if diskID.lower() == 'a':
+        ra, dec = "0h0m0.0002s", "0d0m0.082s"
+        length = '6'
+        pa = '70'
+    elif diskID.lower() == 'b':
+        ra, dec = "-0h0m1.006", "-0d0m0.3s"
+        length = '0.1'
+        pa = '136'
+    else:
+        print("Choose 'a' or 'b'.")
+        return None
+
+    pvd_im_name = './pv_diagrams/pvd_hco_disk{}'.format(diskID.lower())
+    pipe(['impv(', "imagename='./data/hco/hco-short110.cm',",
+          "outfile='{}.im',".format(pvd_im_name),
+          # "chans='0~50',",
+          "mode='length',", "center=['{}','{}'],".format(ra, dec),
+          "length='{}arcsec',".format(length), "pa='{}deg',".format(pa),
+          "overwrite=True)"
           ])
-    print("Made PV diagram. Converting to fits now.")
-    sp.call(['fits',
-             'op=xyout',
-             'in={}.cm'.format(out_path),
-             'out={}.fits'.format(out_path)])
 
-    remove(out_path + '.cm')
+    pipe(['exportfits(', "imagename='{}.im',".format(pvd_im_name),
+          "fitsimage='{}.fits',", "overwrite=True)".format(pvd_im_name)
+          ])
+
+    d = fits.getdata(pvd_im_name + '.fits').squeeze().T
+    vmax = max(np.nanmax(d), -np.nanmin(d))
+
+    rms = imstat('data/hco/hco-short110')[1]
+
+    plot_pv_diagram_fits(pvd_im_name + '.fits', diskID=diskID)
+
+
+
+
+def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 130], length=25, pa=70):
+    """
+    Make a position-velocity diagram with Casa
+    https://casa.nrao.edu/casadocs/casa-5.1.0/global-task-list/task_impv/about
+
+    Use imview to imview a .cm image. Click the tiny "P/V" icon under the toolbar,
+    manually give a line that is approximately the disk's axis of rotation,
+    and save out as a fits. This script just makes it a pretty picture.
+    """
+    #image_path = './pv_diagrams/pvd_casa_byhand_hco{}.fits'.format(diskID.upper())
+    d = fits.getdata(image_path).squeeze()
+    vmax = max(np.nanmax(d), -np.nanmin(d))
+
+    rms = imstat('data/hco/hco-short110')[1]
+    print (rms)
+    levs = [rms * i for i in np.linspace(2, 30, 3)]
+    fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[9, 1]})
+    im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
+    im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
+    im_ax.set_ylim(12, 50)
+    im_ax.set_xlabel('Offset (pix)', weight='bold')
+    im_ax.set_ylabel('Velocity (km/s)', weight='bold')
+
+    cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
+    cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold')
+    cbar.set_ticks(np.linspace(np.nanmin(d), np.nanmax(d), 4))
+
+
+
+    # Get the axes set in good values
+
+    rms = imstat('data/hco/hco-short110')[1]
+    levs = [rms * i for i in np.linspace(2, 30, 3)]
+    fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[10, 1]})
+    im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
+    im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
+    im_ax.set_ylim(12, 50)
+    # im_ax.set_xlabel('Offset (pix)', weight='bold')
+    # im_ax.set_ylabel('Velocity (km/s)', weight='bold')
+
+    cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
+    cbar.set_ticks(np.linspace(np.nanmin(d), np.nanmax(d), 4))
+    cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold', rotation=270)
+    im_ax.set_ylabel("Velocity (km/s)", weight='bold') #, rotation=270)
+    im_ax.set_xlabel("Position Offset (pix)", weight='bold')
+
+    fig.tight_layout(w_pad=0.05)
+
+    if save:
+        out_path='../Thesis/Figures/pvd_{}.pdf'.format(diskID)
+        fig.savefig(out_path)
+        print("Saving figure to " + out_path)
+    else:
+        fig.show()
 
 
 
@@ -758,13 +835,12 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
 
 
 
+
 def get_line(path):
     for mol in ['hco', 'hcn', 'co', 'cs']:
         if mol in path:
             break
     return mol
-
-
 
 
 
@@ -780,6 +856,40 @@ def show_mom_map(image_path):
 
 
 
+def get_int_line_flux(data_path='./data/hco/hco-short110_moment0.cm'):
+
+    # moment in=data/hcn/hcn.cm out=data/hcn/hcn_moment0.cm mom=0
+    # imstat in=data/hco/hco-short110_moment0.cm
+    # cgcurs in=data/hco/hco-short110_moment0.cm,data/hco/hco-short110_moment0.cm slev=a,0.62 levs=1,2,3 type=both options=stats region=arcsec,box'( -2,-2,2,2 )' device=/xs
+    region='(-2,-2,2,2)'
+
+    sp.call(['imstat',
+             'in={}'.format(data_path)])
+    rms = input('Enter the RMS from the imstat call:\n')
+    sp.call(['cgcurs',
+             'in={},{}'.format(data_path, data_path),
+             'slev=a,{}'.format(rms),
+             'levs=1,2,3',
+             'type=both',
+             'options=stats',
+             #"region=arcsec,box'{}'".format(region),
+             "device=/xs"])
+
+    """
+    The results:
+    Disk, baselinecut, RMS, diskA(sigma), diskB(sigma)
+    HCO+, >110: 0.62,
+    HCO+, all: 0.80, 5.79(0.488), 2.287(0.561)
+
+    CO, all: 0.51: unusable
+    CO, >60: 0.495, 2.579(0.472), 1.855(0.391)
+
+    HCN, all: 0.161, 0.797(0.0673), 0.255(0.077879)
+    HCN, >80, 0.132, 0.690(0.0487), 0.170(0.0775)
+
+    CS, all: 0.023, 0.0242(0.0246), NA
+    return None
+    """
 
 
 

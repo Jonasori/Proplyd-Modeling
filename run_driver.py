@@ -30,7 +30,6 @@ nsteps = 500
 
 
 
-
 # Give the run a name. Exactly equivalent to grid_search.py(250:258)
 run_name = today + '-' + mol
 run_name_basename = run_name
@@ -137,8 +136,10 @@ def make_fits(model, param_dict, mol, testing=False):
                       param_dict['atms_temp_A'],
                       param_dict['column_densities'],
                       [param_dict['r_ins'][DI], param_dict['r_out_A']],
-                      param_dict['rot_hands'][DI]
-                      ])
+                      param_dict['rot_hands'][DI]],
+              rtg=False)
+    d1.Tco = param_dict['T_freezeout']
+    d1.set_rt_grid()
     rt.total_model(d1,
                    imres=param_dict['imres'],
                    distance=param_dict['distance'],
@@ -175,8 +176,10 @@ def make_fits(model, param_dict, mol, testing=False):
                       param_dict['atms_temp_B'],
                       param_dict['column_densities'],
                       [param_dict['r_ins'][DI], param_dict['r_out_B']],
-                      param_dict['rot_hands'][DI]
-                      ])
+                      param_dict['rot_hands'][DI]],
+              rtg=False)
+    d2.Tco = param_dict['T_freezeout']
+    d2.set_rt_grid()
     rt.total_model(d2,
                    imres=param_dict['imres'],
                    distance=param_dict['distance'],
