@@ -36,7 +36,7 @@ from matplotlib.ticker import MultipleLocator, LinearLocator, AutoMinorLocator
 import sys
 sys.version
 
-
+from mcmc import MCMCrun
 from tools import imstat, imstat_single, pipe, moment_maps
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 import constants
@@ -611,11 +611,10 @@ class Figure:
                     self.mols.append(mol)
                     break
 
+
         self.outpath = '../Thesis/Figures/m{}-map_{}.png'.format(moment,
                                                                 '-'.join(self.mols),
                                                                 dpi=300)
-
-
         # Clear any pre existing figures, then create figure
         plt.close()
         if make_plot:
@@ -643,7 +642,7 @@ class Figure:
                 plt.savefig(self.outpath, dpi=700)
                 print(("Saved image to {}".format(self.outpath)))
             else:
-                plt.show()
+                plt.show(block=False)
 
 
     def get_fits_manually(self, path, mol):
@@ -822,8 +821,7 @@ class Figure:
 
 
     def fill_axis(self, ax, mol):
-        """Docstring."""
-        # Plot image as a colour map
+        """Plot image as a colour map."""
 
         # This is massively hacky, but works. Basically, if we're plotting as
         # moment1 map, we still want to contour with moment0 lines. So this:
@@ -835,12 +833,15 @@ class Figure:
             im = self.im
             cbar_lab = r'$Jy / beam$'
             vmin, vmax = np.nanmin(im), np.nanmax(im)
+
         cmap = ax.imshow(im,
                          extent=self.extent,
                          vmin=vmin,
                          vmax=vmax,
                          # cmap='afmhot_r')
                          cmap='seismic')
+
+
         if self.rms:
             cont_levs = np.arange(3, 15, 2) * self.rms
             # add residual contours if resdiual exists; otherwise, add image contours
@@ -926,6 +927,30 @@ class Figure:
         ax.plot([posx_B], [posy_B], '+', markersize=6,
                 markeredgewidth=2, color='darkorange')
 
+        # Plot ellipses with each disk's best-fit radius and inclination:
+        print('\n\n\n\nLine is {}\n\n\n\n\n'.format(mol))
+        if mol.lower() == 'hcn':
+            print("\n\n\nAdding ellipses\n\n\n\n\n")
+            # ax.set_xlim(-1, 2)
+            # ax.set_ylim(-1, 2)
+            r_A = 334/389
+            r_B1 = 324/389
+            r_B2 = 145/389
+            PA_A, PA_B = 90 - 69, 136
+            incl_A, incl_B = 65, 45
+            ellipse_A = Ellipse(xy=(posx_A, posy_A),
+                                width=r_A, height=r_A*np.sin(incl_A), angle=PA_A,
+                                fill=False, edgecolor='orange', ls='-', lw=5, label='R = 334 AU')
+            ellipse_B1 = Ellipse(xy=(posx_B, posy_B),
+                                 width=r_B1, height=r_B1*np.sin(incl_B), angle=PA_B,
+                                 fill=False, edgecolor='orange', ls='-', lw=5, label='R = 324 AU')
+            ellipse_B2 = Ellipse(xy=(posx_B, posy_B),
+                                 width=r_B2, height=r_B2*np.sin(incl_B), angle=PA_B,
+                                 fill=False, edgecolor='r', ls='-', lw=5, label='R = 145 AU')
+            # ax.add_artist(ellipse_A)
+            # ax.add_artist(ellipse_B1)
+            # ax.add_artist(ellipse_B2)
+
         # Annotate with some text:
         freq = str(round(lines[mol]['restfreq'], 2)) + ' GHz'
         trans = '({}-{})'.format(lines[mol]['jnum'] + 1, lines[mol]['jnum'])
@@ -963,7 +988,7 @@ path_hco, path_hcn = modeling + 'data/hco/hco-short110.fits', modeling + 'data/h
 path_co, path_cs = modeling + 'data/co/co-short60.fits', modeling + 'data/cs/cs-short0.fits'
 path_modelhco = modeling + 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
 
-f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
+# f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
 
 # f2 = Figure([path_hco, path_co], moment=1)
 
@@ -973,3 +998,4 @@ f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
 # The End
 
 # The End
+#

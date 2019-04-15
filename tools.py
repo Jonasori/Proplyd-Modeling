@@ -665,7 +665,7 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
     rms = imstat('data/hco/hco-short110')[1]
     print (rms)
     levs = [rms * i for i in np.linspace(2, 30, 3)]
-    fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[9, 1]})
+    fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[12, 1]})
     im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
 
     # Can we scale the axes of d to put things in good units?

@@ -519,7 +519,7 @@ class MCMCrun:
         plt.show(block=False)
 
 
-    def plot_structure(self, zmax=150, save=False, save_to_thesis=False):
+    def plot_structure(self, zmax=150, cmap='inferno', save=False, save_to_thesis=False):
         """
         Plot temperature and density structure of the disk.
         Drawn from Kevin's code.
@@ -538,7 +538,7 @@ class MCMCrun:
 
         # fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey=True,
         #                                  gridspec_kw = {'width_ratios':[rmax_a, rmax_b]}) # , sharex=True)
-        fig, ((cbar_axes), (im_axes)) = plt.subplots(2, 2, figsize=(18, 4), # sharex=True,
+        fig, ((cbar_axes), (im_axes)) = plt.subplots(2, 2, figsize=(18, 5), # sharex=True,
                                                      gridspec_kw={'height_ratios':[1,9],
                                                                   # 'width_ratios':[rmax_a/rmax, rmax_b/rmax],
                                                                   'width_ratios':[1, 1]})
@@ -568,17 +568,18 @@ class MCMCrun:
             manual_locations=[(300,30),(250,60),(180,50)]
             dens_contours = im_axes[i].contourf(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/d.AU,
                                                 np.log10((d.rhoG/d.Xmol)[0,:,:]),
-                                                # np.arange(0, 11, 0.1),
-                                                cmap='inferno', levels=50)
+                                                np.arange(2, 15, 0.25),
+                                                cmap=cmap) #, levels=50)
 
             col_dens_contours = im_axes[i].contour(d.r[0,:,:]/d.AU, d.Z[0,:,:]/d.AU,
-                                                np.log10(d.sig_col[0,:,:]), (-3, -2,-1),
-                                                linestyles=':', linewidths=3,
-                                                colors='k')
+                                                   np.log10(d.sig_col[0,:,:]), (-3, -2,-1),
+                                                   linestyles=':', #linewidths=3,
+                                                   colors='k', label='Column Density')
 
             temp_contours = im_axes[i].contour(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/Disk.AU,
-                                            d.T[0,:,:], (50, 100, 150), #(20, 40, 60, 80, 100, 120),
-                                            colors='b', linestyles='--')
+                                               d.T[0,:,:], (50, 100, 150), #(20, 40, 60, 80, 100, 120),
+                                               colors='grey', linestyles='--',
+                                               label='Temperature')
 
             im_axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
 
@@ -609,13 +610,22 @@ class MCMCrun:
         im_axes[1].yaxis.set_ticks_position('right')
 
 
+        dark_cm = matplotlib.cm.get_cmap(cmap)(0.)
+        im_axes[0].set_facecolor(dark_cm)
+        im_axes[1].set_facecolor(dark_cm)
+
+
         # cbar_axes[0].set_title('Disk A', weight='bold')
         # cbar_axes[1].set_title('Disk B', weight='bold')
         cbar_axes[0].xaxis.set_ticks_position('top')
         cbar_axes[1].xaxis.set_ticks_position('top')
 
+        cbar_axes[0].xaxis.set_label_position('top')
         cbar_axes[1].xaxis.set_label_position('top')
-        cbar_axes[1].xaxis.set_label_position('top')
+
+        im_axes[1].legend()
+        mol = 'HCO+' if self.mol is 'hco' else self.mol.upper
+        #plt.set_title('d253-1536ab Temperature and Density Structures ({})'.format(mol))
 
 
         if save:
@@ -654,9 +664,11 @@ class MCMCrun:
         data_path  = self.data_path + '.fits'
         resid_path = self.modelfiles_path + '_bestFit_resid.fits'
         model_path = self.modelfiles_path + '_bestFit.fits'
-        if not Path(model_path).exists():
-            print("No best-fit model made yet; making now...")
-            self.make_best_fits(plot_bf=False)
+
+        # if not Path(model_path).exists():
+        #     print("No best-fit model made yet; making now...")
+        tools.remove(self.modelfiles_path + '_bestFit*')
+        self.make_best_fits(plot_bf=False)
 
         real_data    = fits.getdata(data_path, ext=0).squeeze()
         model_data   = fits.getdata(model_path, ext=0).squeeze()
