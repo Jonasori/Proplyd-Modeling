@@ -600,11 +600,14 @@ class MCMCrun:
         im_axes[0].set_xlabel('Disk A Outer Radius (AU)',fontsize=16, weight='bold')
         im_axes[1].set_xlabel('Disk B Outer Radius (AU)',fontsize=16, weight='bold')
 
+
+        # zmin = -zmax
+        zmin = 0
         im_axes[0].set_xlim(rmax_a, 0)
-        im_axes[0].set_ylim(-zmax, zmax)
+        im_axes[0].set_ylim(zmin, zmax)
 
         im_axes[1].set_xlim(0, rmax_b)
-        im_axes[1].set_ylim(-zmax, zmax)
+        im_axes[1].set_ylim(zmin, zmax)
 
         im_axes[0].yaxis.set_ticks_position('left')
         im_axes[1].yaxis.set_ticks_position('right')

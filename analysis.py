@@ -16,8 +16,8 @@ import argparse
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import subprocess as sp
 import numpy.ma as ma
+import subprocess as sp
 import matplotlib.pyplot as plt
 # import matplotlib.pyplot.RcParams
 import matplotlib.gridspec as gridspec
@@ -988,10 +988,24 @@ path_hco, path_hcn = modeling + 'data/hco/hco-short110.fits', modeling + 'data/h
 path_co, path_cs = modeling + 'data/co/co-short60.fits', modeling + 'data/cs/cs-short0.fits'
 path_modelhco = modeling + 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
 
+model_hcn_april9 = modeling + 'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits'
+model_hcn_april9_resid = modeling + 'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'
+
+model_co_april9 = modeling + 'mcmc_runs/april9-co/model_files/april9-co_bestFit.fits'
+model_co_april9_resid = modeling + 'mcmc_runs/april9-co/model_files/april9-co_bestFit_resid.fits'
+
+model_hco_april9 = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco_bestFit.fits'
+model_hco_april9_resid = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco_bestFit_resid.fits'
+
+
+
 # f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
 
 # f2 = Figure([path_hco, path_co], moment=1)
 
+# f_hco_a9 = Figure([path_hco, model_hco_april9, model_hco_april9_resid], moment=0, remove_bg=True, save=True)
+# f_co_a9 = Figure([path_co, model_co_april9, model_co_april9_resid], moment=0, remove_bg=True, save=True)
+# f_hcn_a9 = Figure([path_hcn, model_hcn_april9, model_hcn_april9_resid], moment=0, remove_bg=True, save=True)
 
 
 
