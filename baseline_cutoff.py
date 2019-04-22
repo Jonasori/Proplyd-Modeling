@@ -61,7 +61,7 @@ def get_baseline_rmss(mol, niters=1e4, baselines=baselines, remake_all=False):
     return data_pd
 
 
-def analysis(df, mol, niters):
+def analysis(df, mol, niters, save_to_thesis=False):
     """Read the df from find_baseline_cutoff and do cool shit with it."""
     f, axarr = plt.subplots(2, sharex=True)
     axarr[0].grid(axis='x')
@@ -76,19 +76,24 @@ def analysis(df, mol, niters):
     # axarr[1].set_ylabel('Mean Off-Source Flux (Jy/Beam)')
     # axarr[1].plot(df['Baseline'], df['Mean'], 'or')
     axarr[1].plot(df['Baseline'], df['Mean'], '-b')
-    im_name = './data/' + mol + '/images/' + mol + '-imnoise.png'
-    plt.savefig(im_name)
+
+    if save_to_thesis:
+        image_outpath = '../Thesis/Figures/imnoise-{}.pdf'.format(mol)
+    else:
+        image_outpath = './data/{}/images/{}-imnoise.pdf'.format(mol, mol)
+    plt.savefig(image_outpath)
+    print('Saved to ' + image_outpath)
     # plt.show(block=False)
     return [df['Baseline'], df['Mean'], df['RMS']]
 
 
-def run_noise_analysis(baselines=baselines, niters=1e4):
+def run_noise_analysis(mol, baselines=baselines, niters=1e4, save_to_thesis=False):
     """Run the above functions."""
     print("Baseline range to check: ", baselines[0], baselines[-1])
-    print("Don't forget that plots will be saved to /modeling, not here.\n\n")
-    mol = input('Which mol?\n').lower()
+    # print("Don't forget that plots will be saved to /modeling, not here.\n\n")
+    # mol = input('Which mol?\n').lower()
     ds = get_baseline_rmss(mol, niters, baselines)
-    analysis(ds, mol, niters)
+    analysis(ds, mol, niters, save_to_thesis=save_to_thesis)
 
 
 

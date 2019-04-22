@@ -462,7 +462,8 @@ class GridSearch_Run:
         sns.despine()
 
         if save:
-            plt.savefig(self.out_path + '_DMR-spectra.pdf')
+
+            fig(self.out_path + '_DMR-spectra.pdf')
             print(("Saved to " + self.out_path + '_DMR-spectra.pdf'))
         else:
             plt.show()
@@ -581,7 +582,8 @@ class Figure:
     sns.set_context("paper")
 
     def __init__(self, paths, make_plot=True, save=False, moment=0, remove_bg=True,
-                 texts=None, title=None, export_fits_mom=False):
+                 texts=None, title=None, image_outpath=None, export_fits_mom=False,
+                 plot_bf_ellipses=False):
         """
         Make a nice image from a fits file.
 
@@ -601,7 +603,7 @@ class Figure:
         self.export_fits_mom = export_fits_mom
         self.remove_bg = remove_bg
         self.paths = np.array(([paths]) if type(paths) is str else paths)
-
+        self.plot_bf_ellipses = plot_bf_ellipses
         # This is gross but functional. The break is important.
         self.mols = []
         mols = ['hco', 'hcn', 'cs', 'co']
@@ -632,6 +634,7 @@ class Figure:
             if type(texts.flatten()[0]) is not float:
                 texts = texts.flatten()
 
+            # Populate the stuff
             print((self.paths, self.mols))
             for ax, path, mol in zip(self.axes.flatten(), self.paths, self.mols):
                 self.get_fits(path, mol)
@@ -639,8 +642,12 @@ class Figure:
                 self.fill_axis(ax, mol)
 
             if save:
-                plt.savefig(self.outpath, dpi=700)
-                print(("Saved image to {}".format(self.outpath)))
+                if image_outpath:
+                    plt.savefig(image_outpath, dpi=200)
+                    print("Saved image to {}.png".format(image_outpath))
+                else:
+                    plt.savefig(self.outpath, dpi=200)
+                    print("Saved image to {}".format(self.outpath))
             else:
                 plt.show(block=False)
 
@@ -828,7 +835,8 @@ class Figure:
         try:
             im = self.im_mom1
             cbar_lab = r'$km \, s^{-1}$'
-            vmin, vmax = 5, 15
+            vmin, vmax = 7, 13
+
         except AttributeError:
             im = self.im
             cbar_lab = r'$Jy / beam$'
@@ -839,7 +847,7 @@ class Figure:
                          vmin=vmin,
                          vmax=vmax,
                          # cmap='afmhot_r')
-                         cmap='seismic')
+                         cmap='RdBu_r')
 
 
         if self.rms:
@@ -871,10 +879,9 @@ class Figure:
         # Create the colorbar
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("top", size="8%", pad=0.0)
-        cbar = self.fig.colorbar(cmap, ax=ax, cax=cax,
-                                 orientation='horizontal')
+        cbar = self.fig.colorbar(cmap, ax=ax, cax=cax, orientation='horizontal')
         cbar.ax.xaxis.set_tick_params(direction='out', length=3, which='major',
-                                      bottom='off', top='on', labelsize=8, pad=-2,
+                                      bottom='off', top='on', labelsize=12, pad=-2,
                                       labeltop='on', labelbottom='off')
 
         cbar.ax.xaxis.set_tick_params(direction='out', length=2, which='minor',
@@ -890,16 +897,23 @@ class Figure:
             tickmaj, tickmin = 20, 5
 
 
-        minorLocator = AutoMinorLocator(tickmaj / tickmin)
-        cbar.ax.xaxis.set_minor_locator(minorLocator)
-        cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(),
-                                rotation=45, fontsize=18)
+        # minorLocator = AutoMinorLocator(tickmaj / tickmin)
+        # cbar.ax.xaxis.set_minor_locator(minorLocator)
+        # cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(),
+        #                         rotation=45, fontsize=18)
+        # cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), fontsize=18)
         # cbar.set_ticks(np.arange(-10*tickmaj, 10*tickmaj, tickmaj))
 
-        # Colorbar label
+        # Colorbar label. No idea why the location of this is so weird.
         # cbar.ax.text(0.425, 0.320, r'$\mu Jy / beam$', fontsize=12,
-        cbar.ax.text(0.425, 0.320, cbar_lab, fontsize=12,
+        # cbar.ax.text(0.425, 0.320, cbar_lab, fontsize=12,
+
+        cbar_x, cbar_y = np.mean((vmin, vmax)), np.mean((vmin, vmax))
+        cbar.ax.text(cbar_x, cbar_y, cbar_lab, fontsize=12, ha='center', va='center',
                      path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
+        # cbar.set_label(cbar_lab, fontsize=13, path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
+        #                labelpad=-5)
+
 
         # Overplot the beam ellipse
         try:
@@ -929,8 +943,11 @@ class Figure:
 
         # Plot ellipses with each disk's best-fit radius and inclination:
         print('\n\n\n\nLine is {}\n\n\n\n\n'.format(mol))
-        if mol.lower() == 'hcn':
-            print("\n\n\nAdding ellipses\n\n\n\n\n")
+        # if mol.lower() == 'hcn':
+        if self.plot_bf_ellipses is True:
+            print("\n\n\nAdding ellipses")
+            print("Note that this is manually HCN specific rn, with:")
+            print("rA = {}\nrB_out = {}\nrB_in = {}\nand some PAs/incls\n\n\n\n".format(r_A, r_B1, r_B2))
             # ax.set_xlim(-1, 2)
             # ax.set_ylim(-1, 2)
             r_A = 334/389
@@ -999,6 +1016,7 @@ model_hco_april9_resid = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco
 
 
 
+
 # f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
 
 # f2 = Figure([path_hco, path_co], moment=1)
@@ -1007,9 +1025,23 @@ model_hco_april9_resid = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco
 # f_co_a9 = Figure([path_co, model_co_april9, model_co_april9_resid], moment=0, remove_bg=True, save=True)
 # f_hcn_a9 = Figure([path_hcn, model_hcn_april9, model_hcn_april9_resid], moment=0, remove_bg=True, save=True)
 
-
-
-# The End
-
-# The End
+# fig35_hco = Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=0, remove_bg=True, save=True)
+# fig36_hco = Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=1, remove_bg=True, save=True)
 #
+
+# fig35_hcn = Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=0, remove_bg=True, save=True)
+# fig36_hcn = Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=1, remove_bg=True, save=True)
+#
+# fig35_co = Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=0, remove_bg=True, save=True)
+# fig36_co = Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=1, remove_bg=True, save=True)
+
+
+# test = Figure('data/hco/hco.fits', moment=0, remove_bg=True, save=False, title='Test Title')
+
+
+
+
+
+
+
+# The End
