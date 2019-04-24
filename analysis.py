@@ -840,7 +840,9 @@ class Figure:
         except AttributeError:
             im = self.im
             cbar_lab = r'$Jy / beam$'
-            vmin, vmax = np.nanmin(im), np.nanmax(im)
+            vmax = max((-np.nanmin(im), np.nanmax(im)))
+            vmin = -vmax
+            # vmin, vmax = np.nanmin(im), np.nanmax(im)
 
         cmap = ax.imshow(im,
                          extent=self.extent,
