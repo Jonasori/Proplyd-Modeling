@@ -86,8 +86,18 @@ class MCMCrun:
                                          :].reset_index().drop('index', axis=1)
         # print 'Removed burn-in phase (step 0 through {}).'.format(burn_in)
 
+        self.plot_labels_dict = {'atms_temp_A': 'Atms. Temp, 150 au\n(Disk A)', 'atms_temp_B': 'Atms. Temp, 150 au\n(Disk B)',
+                                 'r_out_A': 'Outer Radius\n(Disk A)', 'r_out_B': 'Outer Radius\n(Disk B)',
+                                 'm_disk_A': 'Log Mass\n(Disk A)', 'm_disk_B': 'Log Mass\n(Disk B)',
+                                 'mol_abundance_A': 'Log Abundance\n(Disk A)', 'mol_abundance_B': 'Log Abundance\n(Disk B)',
+                                 'pos_angle_A': 'Position Angle\n(Disk A)', 'pos_angle_B': 'Position Angle\n(Disk B)',
+                                 'incl_A': 'Inclination\n(Disk A)', 'incl_B': 'Inclination\n(Disk B)',
+                                 'temp_struct_A': 'q\n(Disk A)', 'temp_struct_B': 'q\n(Disk B)'}
+
+
         # Get a dictionary of the best-fit param values (for use in structure plotting)
         self.get_bestfit_dict()
+        self.get_fit_stats()
 
 
         with open(self.runpath + '_log.txt', 'w') as f:
@@ -112,9 +122,9 @@ class MCMCrun:
         max_lnp = subset_df['lnprob'].max()
         model_params = subset_df[subset_df['lnprob'] == max_lnp].drop_duplicates()
 
-        print('Model parameters:\n') #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
-        for mp in list(model_params):
-            print(mp, round(model_params[mp].values[0], 2))
+        # print('Model parameters:\n') #, [mp, model_params[mp], '\n' for mp in list(model_params)], '\n\n'
+        # for mp in list(model_params):
+        #     print(mp, round(model_params[mp].values[0], 2))
 
         # Make a complete dictionary of all the parameters
         self.bf_param_dict = self.param_dict.copy()
@@ -267,6 +277,89 @@ class MCMCrun:
         plt.show()
 
 
+    def get_fit_stats(self):
+        stats = self.groomed.describe(percentiles=[0.16, 0.84]).drop([
+            'count', 'min', 'max', 'mean'])
+        stats.loc['best fit'] = self.main.loc[self.main['lnprob'].idxmax()]
+        stats = stats.iloc[[-1]].append(stats.iloc[:-1])
+        stats.loc[['16%', '84%'], :] -= stats.loc['50%', :]
+        stats = stats.reindex(
+            ['50%', '16%', '84%', 'best fit', 'std'], copy=False)
+        print(stats.T.round(6).to_string())
+        self.fit_stats = stats.T.round(6)
+
+
+    def posteriors(self, save=False, save_to_thesis=False):
+        """
+        Plot just the walkers'  posteriors (i.e. the diagonal of a corner plot).
+
+        Would be nice to plot dotted vertical lines marking best fit, +/- 1 sigmas.
+        """
+        df = self.groomed #.drop('lnprob', axis=1)
+
+        df_a_params = [p for p in df.columns if '_A' in p]
+        df_b_params = [p for p in df.columns if '_B' in p]
+
+        n_cols = max((len(df_a_params), len(df_b_params)))
+
+        plt.close()
+        fig, axes = plt.subplots(2, n_cols,
+                                 figsize=(3*n_cols, 5))
+
+        for ax, param in zip(axes[0], df_a_params):
+            print("Adding posterior for {} to plot.".format(param))
+            sns.distplot(df[param], kde=True, ax=ax)
+            xlab = ax.xaxis.get_label().get_text()
+            ax.set_xlabel(self.plot_labels_dict[xlab]) #, weight='bold')
+
+            # Plot best-fit line
+            x = self.bf_param_dict[param]
+            ymin, ymax = ax.get_ylim()
+            ax.plot((x, x), (ymin, ymax), '--r')
+
+
+        for ax, param in zip(axes[1], df_b_params):
+            print("Adding posterior for {} to plot.".format(param))
+            sns.distplot(df[param], kde=True, ax=ax)
+            xlab = ax.xaxis.get_label().get_text()
+            ax.set_xlabel(self.plot_labels_dict[xlab]) #, weight='bold')
+
+            # Plot best-fit line
+            x = self.bf_param_dict[param]
+            ymin, ymax = ax.get_ylim()
+            ax.plot((x, x), (ymin, ymax), '--r')
+
+        # If there are empties, delete them.
+        # This hardcodes in the assumption that disk B's list is shorter.
+        empties = len(axes[1]) - len(df_b_params)
+        for i in range(len(axes[1]) - empties, len(axes[1])):
+            fig.delaxes(axes[1][i])
+
+        if self.mol is 'hco':
+            mol_name = r"HCO$^+$(4-3)"
+        else:
+            j = lines[self.mol]['jnum']
+            mol_name = self.mol.upper() + "({}-{})".format(j, j-1)
+
+        plt.suptitle('{} MCMC Posteriors'.format(mol_name), weight='bold')
+        plt.tight_layout()
+
+        plt.subplots_adjust(left=None, bottom=None, right=None, top=0.9,
+                            wspace=None, hspace=None)
+
+        if save:
+            if save_to_thesis:
+                image_outpath = '../Thesis/Figures/posteriors_{}.pdf'.format(self.mol)
+            else:
+                image_outpath = './mcmc_runs/{}-posteriors.pdf'.format(self.name)
+            plt.savefig(image_outpath)
+            print("Saved image to " + image_outpath)
+        else:
+            plt.show(block=False)
+
+
+
+
     def corner(self, variables=None, save=True, save_to_thesis=False):
         """Plot 'corner plot' of fit."""
         plt.close()
@@ -306,7 +399,7 @@ class MCMCrun:
         corner_plt.map_diag(sns.kdeplot, cut=0)
 
         print("Made it this far")
-        if variables is None:
+        if save and save_to_thesis:
             # get best_fit and posterior statistics
             stats = self.groomed.describe(percentiles=[0.16, 0.84]).drop([
                 'count', 'min', 'max', 'mean'])
@@ -329,9 +422,7 @@ class MCMCrun:
                                 .format(self.groomed.shape[1], self.nwalkers,
                                         self.groomed.shape[0]//self.nwalkers, self.groomed.shape[0],
                                         fontsize=25))
-            tag = ''
-        else:
-            tag = '_subset'
+
 
         # hide upper triangle, so that it's a conventional corner plot
         for i, j in zip(*np.triu_indices_from(corner_plt.axes, 1)):
