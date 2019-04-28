@@ -59,6 +59,494 @@ Path.cwd()
 
 
 
+
+
+class Figure:
+    """
+    Make publication-quality plots:
+    - zeroth- and first-moment maps
+    - Disk structure
+
+    Note that there are some big assumptions about file names/structures made here:
+    1. Images are saved to ../Thesis/Figures/. If this doesn't exist, then trouble.
+    2. Assumes that the name of the molecular line of the observation is in the
+        fits file name. Without this (or with conflicting ones), it won't be able
+        to determine which line a fits file is represents.
+    """
+
+    # Set seaborn plot styles and color pallete
+    sns.set_style("ticks", {"xtick.direction": "in", "ytick.direction": "in"})
+    sns.set_context("paper")
+
+    def __init__(self, paths, make_plot=True, save=False, moment=0, remove_bg=True,
+                 texts=None, title=None, image_outpath=None, export_fits_mom=False,
+                 plot_bf_ellipses=False):
+        """
+        Make a nice image from a fits file.
+
+        Args:
+            paths (list or str): paths to the fits file to be used, including .fits
+            make_plot (bool): Whether or not to actually make the plots at all.
+            save (bool): Whether or not to save the image.
+                         If False, it will be shown instead.
+            moment (0 or 1): Which moment map to make.
+            remove_bg (bool): Whether or not to generate a mask to white out
+                              pixels with intensities less than n*sigma
+            texts (str): Idk. Thinking about getting rid of this.
+            title (str): Title for the whole plot.
+        """
+        self.title = title
+        self.moment = moment
+        self.export_fits_mom = export_fits_mom
+        self.remove_bg = remove_bg
+        self.paths = np.array(([paths]) if type(paths) is str else paths)
+        self.plot_bf_ellipses = plot_bf_ellipses
+        # This is gross but functional. The break is important.
+        self.mols = []
+        mols = ['hco', 'hcn', 'cs', 'co']
+        for path in self.paths:
+            for mol in mols:
+                if mol in path:
+                    self.mols.append(mol)
+                    break
+
+
+        self.outpath = '../Thesis/Figures/m{}-map_{}.png'.format(moment,
+                                                                '-'.join(self.mols),
+                                                                dpi=300)
+        # Clear any pre existing figures, then create figure
+        plt.close()
+        if make_plot:
+            self.rows, self.columns = (1, len(self.paths))
+            self.fig, self.axes = plt.subplots(self.rows, self.columns,
+                                               figsize=(
+                                                   # 11.6/2 * self.columns, 6.5*self.rows),
+                                                   7*self.columns, 6.5*self.rows),
+                                               sharex=False, sharey=True, squeeze=False)
+            plt.subplots_adjust(wspace=-0.0)
+
+            texts = np.array([texts], dtype=object) if type(texts) is str \
+                else np.array(texts, dtype=object)
+            # What is this doing?
+            if type(texts.flatten()[0]) is not float:
+                texts = texts.flatten()
+
+            # Populate the stuff
+            print((self.paths, self.mols))
+            for ax, path, mol in zip(self.axes.flatten(), self.paths, self.mols):
+                self.get_fits(path, mol)
+                self.make_axis(ax)
+                self.fill_axis(ax, mol)
+
+            if save:
+                if image_outpath:
+                    plt.savefig(image_outpath, dpi=200)
+                    print("Saved image to {}.png".format(image_outpath))
+                else:
+                    plt.savefig(self.outpath, dpi=200)
+                    print("Saved image to {}".format(self.outpath))
+            else:
+                plt.show(block=False)
+
+
+    def get_fits_manually(self, path, mol):
+        """Make moment maps by hand. Should not be used."""
+        fits_file = fits.open(path)
+        self.head = fits_file[0].header
+        self.data = fits_file[0].data.squeeze()
+
+        # Read in header spatial info to create ra
+        nx, ny, nv = self.head['NAXIS1'], self.head['NAXIS2'], self.head['NAXIS3']
+        xpix, ypix = self.head['CRPIX1'], self.head['CRPIX2']
+        xval, yval = self.head['CRVAL1'], self.head['CRVAL2']
+        self.xdelt, self.ydelt = self.head['CDELT1'], self.head['CDELT2']
+
+        # Convert from degrees to arcsecs
+        self.ra_offset = np.array(
+            ((np.arange(nx) - xpix + 1) * self.xdelt) * 3600)
+        self.dec_offset = np.array(
+            ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
+
+        # Assumes we have channels (i.e. nv > 1)
+        try:
+            self.rms = imstat(path.split('.')[-2])[1] * nv
+        except sp.CalledProcessError:
+            self.rms = 0
+        # Decide which moment map to make.
+        # www.atnf.csiro.au/people/Tobias.Westmeier/tools_hihelpers.php#moments
+        if self.moment == 0:
+            # Integrate intensity over pixels.
+            self.im = np.sum(self.data, axis=0)
+            if self.remove_bg:
+                self.im = ma.masked_where(self.im < self.rms, self.im, copy=True)
+
+        elif self.moment == 1:
+            self.im = np.zeros((nx, ny))
+
+            vsys = constants.obs_stuff(mol)[0]
+            obsv = constants.obs_stuff(mol)[3] - vsys[0]
+
+            # There must be a way to do this with array ops.
+            # obsv = obsv.reshape([len(obsv)]).shape
+            # self.im = np.sum(self.data * obsv, axis=0)/np.sum(self.data, axis=0)
+
+            for x in range(nx):
+                for y in range(ny):
+                    # I think this is doing good stuff.
+                    self.im[x, y] = np.sum(self.data[:, x, y] * obsv)
+                    # self.im[x, y] = np.sum(self.data[:, x, y] * obsv)/np.sum(self.data[:, x, y])
+
+        if self.remove_bg:
+            self.im = ma.masked_where(abs(self.im) < self.rms, self.im, copy=True)
+
+        if self.export_fits_mom:
+            fits_out = fits.PrimaryHDU()
+            fits_out.header = self.head
+            fits_out.data = self.im
+            modeling = '/Volumes/disks/jonas/modeling/'
+            outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
+                                                                   self.moment)
+            fits_out.writeto(outpath, overwrite=True)
+            print(("Wrote out moment {} fits file to {}".format(self.moment,
+                                                               outpath)))
+            # change units to micro Jy
+        # self.im *= 1e6
+        # self.rms *= 1e6
+
+
+    def get_fits(self, path, mol):
+        """Docstring."""
+        fits_file = fits.open(path)
+        self.head = fits_file[0].header
+        self.data = fits_file[0].data.squeeze()
+
+        # Read in header spatial info to create ra
+        nx, ny, nv = self.head['NAXIS1'], self.head['NAXIS2'], self.head['NAXIS3']
+        xpix, ypix = self.head['CRPIX1'], self.head['CRPIX2']
+        xval, yval = self.head['CRVAL1'], self.head['CRVAL2']
+        self.xdelt, self.ydelt = self.head['CDELT1'], self.head['CDELT2']
+
+        # Convert from degrees to arcsecs
+        self.ra_offset = np.array(
+            ((np.arange(nx) - xpix + 1) * self.xdelt) * 3600)
+        self.dec_offset = np.array(
+            ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
+
+        # Check if we're looking at 2- or 3-dimensional data
+        if len(self.data.shape) == 3:
+            # Make some moment maps. Make both maps and just choose which data to use.
+            momentmap_basepath = path.split('.')[-2]
+            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
+                        clip_val=0, moment=0)
+            self.rms = imstat_single(momentmap_basepath + '_moment0')[1]
+
+            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
+                        clip_val=self.rms, moment=0)
+
+            self.im = fits.getdata(momentmap_basepath + '_moment0.fits').squeeze()
+            if self.moment == 1:
+                moment_maps(momentmap_basepath,
+                            momentmap_basepath + '_moment1',
+                            clip_val=self.rms, moment=1)
+                self.im_mom1 = fits.getdata(momentmap_basepath + '_moment1.fits').squeeze()
+
+        else:
+            self.im = self.data
+            self.rms = imstat_single(path.split('.')[-2])[1]
+
+
+        if self.export_fits_mom:
+            fits_out = fits.PrimaryHDU()
+            fits_out.header = self.head
+            data = self.im if self.moment is 0 else self.im_mom1
+            fits_out.data = data[100:160, 100:180]
+            modeling = '/Volumes/disks/jonas/modeling/'
+            outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
+                                                                   self.moment)
+            fits_out.writeto(outpath, overwrite=True)
+            print(("Wrote out moment {} fits file to {}".format(self.moment,
+                                                               outpath)))
+            print("NOTE: ^^ That moment map was cropped (in line ~800)")
+        # change units to micro Jy
+        # self.im *= 1e6
+        # self.rms *= 1e6
+
+
+    def make_axis(self, ax):
+        """Docstring."""
+        # Set seaborn plot styles and color pallete
+        sns.set_style("ticks",
+                      {"xtick.direction": "in",
+                       "ytick.direction": "in"})
+        sns.set_context("talk")
+
+        xmin = -2.0
+        xmax = 2.0
+        ymin = -2.0
+        ymax = 2.0
+        ax.set_xlim(xmax, xmin)
+        ax.set_ylim(ymin, ymax)
+        ax.grid(False)
+
+        # Set x and y major and minor tics
+        majorLocator = MultipleLocator(1)
+        ax.xaxis.set_major_locator(majorLocator)
+        ax.yaxis.set_major_locator(majorLocator)
+
+        minorLocator = MultipleLocator(0.2)
+        ax.xaxis.set_minor_locator(minorLocator)
+        ax.yaxis.set_minor_locator(minorLocator)
+
+        # Set x and y labels
+        ax.set_xlabel(r'$\Delta \alpha$ (")', fontsize=18)
+        ax.set_ylabel(r'$\Delta \delta$ (")', fontsize=18)
+
+        # tick_labs = ['', '', '-4', '', '-2', '', '0', '', '2', '', '4', '']
+        tick_labs = ['', '', '-1', '', '1', '', '']
+        ax.xaxis.set_ticklabels(tick_labs, fontsize=18)
+        ax.yaxis.set_ticklabels(tick_labs, fontsize=18)
+        ax.tick_params(which='both', right='on', labelsize=18, direction='in')
+
+        # Set labels depending on position in figure
+        if np.where(self.axes == ax)[1] % self.columns == 0:  # left
+            ax.tick_params(axis='y', labelright='off', right='on')
+        elif np.where(self.axes == ax)[1] % self.columns == self.columns - 1:  # right
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            ax.tick_params(axis='y', labelleft='off', labelright='on')
+        else:  # middle
+            ax.tick_params(axis='y', labelleft='off')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+
+        # Set physical range of colour map
+        self.extent = [self.ra_offset[0], self.ra_offset[-1],
+                       self.dec_offset[-1], self.dec_offset[0]]
+
+
+    def fill_axis(self, ax, mol):
+        """Plot image as a colour map."""
+
+        # This is massively hacky, but works. Basically, if we're plotting as
+        # moment1 map, we still want to contour with moment0 lines. So this:
+        try:
+            im = self.im_mom1
+            cbar_lab = r'$km \, s^{-1}$'
+            vmin, vmax = 7, 13
+
+        except AttributeError:
+            im = self.im
+            cbar_lab = r'$Jy / beam$'
+            vmax = max((-np.nanmin(im), np.nanmax(im)))
+            vmin = -vmax
+            # vmin, vmax = np.nanmin(im), np.nanmax(im)
+
+        cmap = ax.imshow(im,
+                         extent=self.extent,
+                         vmin=vmin,
+                         vmax=vmax,
+                         # cmap='afmhot_r')
+                         cmap='RdBu_r')
+
+
+        if self.rms:
+            cont_levs = np.arange(3, 15, 2) * self.rms
+            # add residual contours if resdiual exists; otherwise, add image contours
+            try:
+                ax.contour(self.resid,
+                           levels=cont_levs,
+                           colors='k',
+                           linewidths=0.75,
+                           linestyles='solid')
+                ax.contour(self.resid,
+                           levels=-1 * np.flip(cont_levs, axis=0),
+                           colors='k',
+                           linewidths=0.75,
+                           linestyles='dashed')
+            except AttributeError:
+                ax.contour(self.ra_offset, self.dec_offset, self.im,
+                           colors='k',
+                           levels=cont_levs,
+                           linewidths=0.75,
+                           linestyles='solid')
+                ax.contour(self.ra_offset, self.dec_offset, self.im,
+                           levels=-1 * np.flip(cont_levs, axis=0),
+                           colors='k',
+                           linewidths=0.75,
+                           linestyles='dashed')
+
+        # Create the colorbar
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("top", size="8%", pad=0.0)
+        cbar = self.fig.colorbar(cmap, ax=ax, cax=cax, orientation='horizontal')
+        cbar.ax.xaxis.set_tick_params(direction='out', length=3, which='major',
+                                      bottom='off', top='on', labelsize=12, pad=-2,
+                                      labeltop='on', labelbottom='off')
+
+        cbar.ax.xaxis.set_tick_params(direction='out', length=2, which='minor',
+                                      bottom='off', top='on')
+
+        if np.nanmax(self.im) > 500:
+            tickmaj, tickmin = 200, 50
+        elif np.nanmax(self.im) > 200:
+            tickmaj, tickmin = 100, 25
+        elif np.nanmax(self.im) > 100:
+            tickmaj, tickmin = 50, 10
+        elif np.nanmax(self.im) <= 100:
+            tickmaj, tickmin = 20, 5
+
+
+        # minorLocator = AutoMinorLocator(tickmaj / tickmin)
+        # cbar.ax.xaxis.set_minor_locator(minorLocator)
+        # cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(),
+        #                         rotation=45, fontsize=18)
+        # cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), fontsize=18)
+        # cbar.set_ticks(np.arange(-10*tickmaj, 10*tickmaj, tickmaj))
+
+        # Colorbar label. No idea why the location of this is so weird.
+        # cbar.ax.text(0.425, 0.320, r'$\mu Jy / beam$', fontsize=12,
+        # cbar.ax.text(0.425, 0.320, cbar_lab, fontsize=12,
+
+        cbar_x, cbar_y = np.mean((vmin, vmax)), np.mean((vmin, vmax))
+        cbar.ax.text(cbar_x, cbar_y, cbar_lab, fontsize=12, ha='center', va='center',
+                     path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
+        # cbar.set_label(cbar_lab, fontsize=13, path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
+        #                labelpad=-5)
+
+
+        # Overplot the beam ellipse
+        try:
+            bmin = self.head['bmin'] * 3600.
+            bmaj = self.head['bmaj'] * 3600.
+            bpa = self.head['bpa']
+
+            el = Ellipse(xy=[1.5, -1.5], width=bmin, height=bmaj, angle=-bpa,
+                         edgecolor='k', hatch='///', facecolor='white', zorder=10)
+            ax.add_artist(el)
+        except KeyError:
+            print("Unable to plot beam; couldn't find header info.")
+
+        # Plot the scale bar
+        if np.where(self.axes == ax)[1][0] == 0:  # if first plot
+            x, y = -0.8, -1.7        # arcsec location
+            ax.plot([x, x - 400/389], [y, y], '-', linewidth=3, color='darkorange')
+            ax.text(x - 0.1, y + 0.15, "400 au", fontsize=12,
+                path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
+
+        # Plot crosses at the source positions
+        (posx_A, posy_A), (posx_B, posy_B) = constants.offsets
+        ax.plot([posx_A], [posy_A], '+', markersize=6,
+                markeredgewidth=2, color='darkorange')
+        ax.plot([posx_B], [posy_B], '+', markersize=6,
+                markeredgewidth=2, color='darkorange')
+
+        # Plot ellipses with each disk's best-fit radius and inclination:
+        print('\n\n\n\nLine is {}\n\n\n\n\n'.format(mol))
+        # if mol.lower() == 'hcn':
+        if self.plot_bf_ellipses is True:
+            print("\n\n\nAdding ellipses")
+            print("Note that this is manually HCN specific rn, with:")
+            print("rA = {}\nrB_out = {}\nrB_in = {}\nand some PAs/incls\n\n\n\n".format(r_A, r_B1, r_B2))
+            # ax.set_xlim(-1, 2)
+            # ax.set_ylim(-1, 2)
+            r_A = 334/389
+            r_B1 = 324/389
+            r_B2 = 145/389
+            PA_A, PA_B = 90 - 69, 136
+            incl_A, incl_B = 65, 45
+            ellipse_A = Ellipse(xy=(posx_A, posy_A),
+                                width=r_A, height=r_A*np.sin(incl_A), angle=PA_A,
+                                fill=False, edgecolor='orange', ls='-', lw=5, label='R = 334 AU')
+            ellipse_B1 = Ellipse(xy=(posx_B, posy_B),
+                                 width=r_B1, height=r_B1*np.sin(incl_B), angle=PA_B,
+                                 fill=False, edgecolor='orange', ls='-', lw=5, label='R = 324 AU')
+            ellipse_B2 = Ellipse(xy=(posx_B, posy_B),
+                                 width=r_B2, height=r_B2*np.sin(incl_B), angle=PA_B,
+                                 fill=False, edgecolor='r', ls='-', lw=5, label='R = 145 AU')
+            # ax.add_artist(ellipse_A)
+            # ax.add_artist(ellipse_B1)
+            # ax.add_artist(ellipse_B2)
+
+        # Annotate with some text:
+        freq = str(round(lines[mol]['restfreq'], 2)) + ' GHz'
+        trans = '({}-{})'.format(lines[mol]['jnum'] + 1, lines[mol]['jnum'])
+        molname = r'HCO$^+$(4-3)' if mol is 'hco' else mol.upper() + trans
+        sysname = 'd253-1536'
+
+        # Print the system name.
+        ax.text(1.8, 1.6, sysname,
+                fontsize=20, weight='bold', horizontalalignment='left',
+                path_effects=[PathEffects.withStroke(linewidth=2,
+                                                     foreground="w")])
+
+        ax.text(-1.85, 1.7, molname,
+                fontsize=13, weight='bold', horizontalalignment='right',
+                path_effects=[PathEffects.withStroke(linewidth=1,
+                                                     foreground="w")])
+
+        ax.text(-1.8, 1.5, freq,
+                fontsize=13, horizontalalignment='right',
+                path_effects=[PathEffects.withStroke(linewidth=1,
+                                                     foreground="w")])
+
+        # Add figure text
+        # if text is not None:
+        #     for t in text:
+        #         ax.text(1, 1, *t, fontsize=18,
+        #                 path_effects=[PathEffects.withStroke(linewidth=3,
+        #                                                      foreground="w")])
+        if self.title:
+            plt.suptitle(self.title, weight='bold')
+
+
+modeling = '/Volumes/disks/jonas/modeling/'
+path_hco, path_hcn = modeling + 'data/hco/hco-short110.fits', modeling + 'data/hcn/hcn-short80.fits'
+path_co, path_cs = modeling + 'data/co/co-short60.fits', modeling + 'data/cs/cs-short0.fits'
+path_modelhco = modeling + 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
+
+model_hcn_april9 = modeling + 'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits'
+model_hcn_april9_resid = modeling + 'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'
+
+model_co_april9 = modeling + 'mcmc_runs/april9-co/model_files/april9-co_bestFit.fits'
+model_co_april9_resid = modeling + 'mcmc_runs/april9-co/model_files/april9-co_bestFit_resid.fits'
+
+model_hco_april9 = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco_bestFit.fits'
+model_hco_april9_resid = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco_bestFit_resid.fits'
+
+
+
+
+# f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
+
+# f2 = Figure([path_hco, path_co], moment=1)
+
+# f_hco_a9 = Figure([path_hco, model_hco_april9, model_hco_april9_resid], moment=0, remove_bg=True, save=True)
+# f_co_a9 = Figure([path_co, model_co_april9, model_co_april9_resid], moment=0, remove_bg=True, save=True)
+# f_hcn_a9 = Figure([path_hcn, model_hcn_april9, model_hcn_april9_resid], moment=0, remove_bg=True, save=True)
+
+# fig35_hco = Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=0, remove_bg=True, save=True)
+# fig36_hco = Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=1, remove_bg=True, save=True)
+#
+
+# fig35_hcn = Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=0, remove_bg=True, save=True)
+# fig36_hcn = Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=1, remove_bg=True, save=True)
+#
+# fig35_co = Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=0, remove_bg=True, save=True)
+# fig36_co = Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=1, remove_bg=True, save=True)
+
+
+# test = Figure('data/hco/hco.fits', moment=0, remove_bg=True, save=False, title='Test Title')
+
+
+
+
+
+
+
+
+
+
+
 class GridSearch_Run:
     def __init__(self, path, save_all_plots=False):
         """
@@ -561,486 +1049,6 @@ class GridSearch_Run:
 
 # run = GridSearch_Run('gridsearch_runs/jan21_hco/jan21_hco')
 # run.plot_best_fit_params()
-
-
-
-class Figure:
-    """
-    Make publication-quality plots:
-    - zeroth- and first-moment maps
-    - Disk structure
-
-    Note that there are some big assumptions about file names/structures made here:
-    1. Images are saved to ../Thesis/Figures/. If this doesn't exist, then trouble.
-    2. Assumes that the name of the molecular line of the observation is in the
-        fits file name. Without this (or with conflicting ones), it won't be able
-        to determine which line a fits file is represents.
-    """
-
-    # Set seaborn plot styles and color pallete
-    sns.set_style("ticks", {"xtick.direction": "in", "ytick.direction": "in"})
-    sns.set_context("paper")
-
-    def __init__(self, paths, make_plot=True, save=False, moment=0, remove_bg=True,
-                 texts=None, title=None, image_outpath=None, export_fits_mom=False,
-                 plot_bf_ellipses=False):
-        """
-        Make a nice image from a fits file.
-
-        Args:
-            paths (list or str): paths to the fits file to be used, including .fits
-            make_plot (bool): Whether or not to actually make the plots at all.
-            save (bool): Whether or not to save the image.
-                         If False, it will be shown instead.
-            moment (0 or 1): Which moment map to make.
-            remove_bg (bool): Whether or not to generate a mask to white out
-                              pixels with intensities less than n*sigma
-            texts (str): Idk. Thinking about getting rid of this.
-            title (str): Title for the whole plot.
-        """
-        self.title = title
-        self.moment = moment
-        self.export_fits_mom = export_fits_mom
-        self.remove_bg = remove_bg
-        self.paths = np.array(([paths]) if type(paths) is str else paths)
-        self.plot_bf_ellipses = plot_bf_ellipses
-        # This is gross but functional. The break is important.
-        self.mols = []
-        mols = ['hco', 'hcn', 'cs', 'co']
-        for path in self.paths:
-            for mol in mols:
-                if mol in path:
-                    self.mols.append(mol)
-                    break
-
-
-        self.outpath = '../Thesis/Figures/m{}-map_{}.png'.format(moment,
-                                                                '-'.join(self.mols),
-                                                                dpi=300)
-        # Clear any pre existing figures, then create figure
-        plt.close()
-        if make_plot:
-            self.rows, self.columns = (1, len(self.paths))
-            self.fig, self.axes = plt.subplots(self.rows, self.columns,
-                                               figsize=(
-                                                   # 11.6/2 * self.columns, 6.5*self.rows),
-                                                   7*self.columns, 6.5*self.rows),
-                                               sharex=False, sharey=True, squeeze=False)
-            plt.subplots_adjust(wspace=-0.0)
-
-            texts = np.array([texts], dtype=object) if type(texts) is str \
-                else np.array(texts, dtype=object)
-            # What is this doing?
-            if type(texts.flatten()[0]) is not float:
-                texts = texts.flatten()
-
-            # Populate the stuff
-            print((self.paths, self.mols))
-            for ax, path, mol in zip(self.axes.flatten(), self.paths, self.mols):
-                self.get_fits(path, mol)
-                self.make_axis(ax)
-                self.fill_axis(ax, mol)
-
-            if save:
-                if image_outpath:
-                    plt.savefig(image_outpath, dpi=200)
-                    print("Saved image to {}.png".format(image_outpath))
-                else:
-                    plt.savefig(self.outpath, dpi=200)
-                    print("Saved image to {}".format(self.outpath))
-            else:
-                plt.show(block=False)
-
-
-    def get_fits_manually(self, path, mol):
-        """Make moment maps by hand. Should not be used."""
-        fits_file = fits.open(path)
-        self.head = fits_file[0].header
-        self.data = fits_file[0].data.squeeze()
-
-        # Read in header spatial info to create ra
-        nx, ny, nv = self.head['NAXIS1'], self.head['NAXIS2'], self.head['NAXIS3']
-        xpix, ypix = self.head['CRPIX1'], self.head['CRPIX2']
-        xval, yval = self.head['CRVAL1'], self.head['CRVAL2']
-        self.xdelt, self.ydelt = self.head['CDELT1'], self.head['CDELT2']
-
-        # Convert from degrees to arcsecs
-        self.ra_offset = np.array(
-            ((np.arange(nx) - xpix + 1) * self.xdelt) * 3600)
-        self.dec_offset = np.array(
-            ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
-
-        # Assumes we have channels (i.e. nv > 1)
-        try:
-            self.rms = imstat(path.split('.')[-2])[1] * nv
-        except sp.CalledProcessError:
-            self.rms = 0
-        # Decide which moment map to make.
-        # www.atnf.csiro.au/people/Tobias.Westmeier/tools_hihelpers.php#moments
-        if self.moment == 0:
-            # Integrate intensity over pixels.
-            self.im = np.sum(self.data, axis=0)
-            if self.remove_bg:
-                self.im = ma.masked_where(self.im < self.rms, self.im, copy=True)
-
-        elif self.moment == 1:
-            self.im = np.zeros((nx, ny))
-
-            vsys = constants.obs_stuff(mol)[0]
-            obsv = constants.obs_stuff(mol)[3] - vsys[0]
-
-            # There must be a way to do this with array ops.
-            # obsv = obsv.reshape([len(obsv)]).shape
-            # self.im = np.sum(self.data * obsv, axis=0)/np.sum(self.data, axis=0)
-
-            for x in range(nx):
-                for y in range(ny):
-                    # I think this is doing good stuff.
-                    self.im[x, y] = np.sum(self.data[:, x, y] * obsv)
-                    # self.im[x, y] = np.sum(self.data[:, x, y] * obsv)/np.sum(self.data[:, x, y])
-
-        if self.remove_bg:
-            self.im = ma.masked_where(abs(self.im) < self.rms, self.im, copy=True)
-
-        if self.export_fits_mom:
-            fits_out = fits.PrimaryHDU()
-            fits_out.header = self.head
-            fits_out.data = self.im
-            modeling = '/Volumes/disks/jonas/modeling/'
-            outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
-                                                                   self.moment)
-            fits_out.writeto(outpath, overwrite=True)
-            print(("Wrote out moment {} fits file to {}".format(self.moment,
-                                                               outpath)))
-            # change units to micro Jy
-        # self.im *= 1e6
-        # self.rms *= 1e6
-
-
-    def get_fits(self, path, mol):
-        """Docstring."""
-        fits_file = fits.open(path)
-        self.head = fits_file[0].header
-        self.data = fits_file[0].data.squeeze()
-
-        # Read in header spatial info to create ra
-        nx, ny, nv = self.head['NAXIS1'], self.head['NAXIS2'], self.head['NAXIS3']
-        xpix, ypix = self.head['CRPIX1'], self.head['CRPIX2']
-        xval, yval = self.head['CRVAL1'], self.head['CRVAL2']
-        self.xdelt, self.ydelt = self.head['CDELT1'], self.head['CDELT2']
-
-        # Convert from degrees to arcsecs
-        self.ra_offset = np.array(
-            ((np.arange(nx) - xpix + 1) * self.xdelt) * 3600)
-        self.dec_offset = np.array(
-            ((np.arange(ny) - ypix + 1) * self.ydelt) * 3600)
-
-        # Check if we're looking at 2- or 3-dimensional data
-        if len(self.data.shape) == 3:
-            # Make some moment maps. Make both maps and just choose which data to use.
-            momentmap_basepath = path.split('.')[-2]
-            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
-                        clip_val=0, moment=0)
-            self.rms = imstat_single(momentmap_basepath + '_moment0')[1]
-
-            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
-                        clip_val=self.rms, moment=0)
-
-            self.im = fits.getdata(momentmap_basepath + '_moment0.fits').squeeze()
-            if self.moment == 1:
-                moment_maps(momentmap_basepath,
-                            momentmap_basepath + '_moment1',
-                            clip_val=self.rms, moment=1)
-                self.im_mom1 = fits.getdata(momentmap_basepath + '_moment1.fits').squeeze()
-
-        else:
-            self.im = self.data
-            self.rms = imstat_single(path.split('.')[-2])[1]
-
-
-        if self.export_fits_mom:
-            fits_out = fits.PrimaryHDU()
-            fits_out.header = self.head
-            data = self.im if self.moment is 0 else self.im_mom1
-            fits_out.data = data[100:160, 100:180]
-            modeling = '/Volumes/disks/jonas/modeling/'
-            outpath = modeling + 'data/{}/{}-moment{}.fits'.format(mol, mol,
-                                                                   self.moment)
-            fits_out.writeto(outpath, overwrite=True)
-            print(("Wrote out moment {} fits file to {}".format(self.moment,
-                                                               outpath)))
-            print("NOTE: ^^ That moment map was cropped (in line ~800)")
-        # change units to micro Jy
-        # self.im *= 1e6
-        # self.rms *= 1e6
-
-
-    def make_axis(self, ax):
-        """Docstring."""
-        # Set seaborn plot styles and color pallete
-        sns.set_style("ticks",
-                      {"xtick.direction": "in",
-                       "ytick.direction": "in"})
-        sns.set_context("talk")
-
-        xmin = -2.0
-        xmax = 2.0
-        ymin = -2.0
-        ymax = 2.0
-        ax.set_xlim(xmax, xmin)
-        ax.set_ylim(ymin, ymax)
-        ax.grid(False)
-
-        # Set x and y major and minor tics
-        majorLocator = MultipleLocator(1)
-        ax.xaxis.set_major_locator(majorLocator)
-        ax.yaxis.set_major_locator(majorLocator)
-
-        minorLocator = MultipleLocator(0.2)
-        ax.xaxis.set_minor_locator(minorLocator)
-        ax.yaxis.set_minor_locator(minorLocator)
-
-        # Set x and y labels
-        ax.set_xlabel(r'$\Delta \alpha$ (")', fontsize=18)
-        ax.set_ylabel(r'$\Delta \delta$ (")', fontsize=18)
-
-        # tick_labs = ['', '', '-4', '', '-2', '', '0', '', '2', '', '4', '']
-        tick_labs = ['', '', '-1', '', '1', '', '']
-        ax.xaxis.set_ticklabels(tick_labs, fontsize=18)
-        ax.yaxis.set_ticklabels(tick_labs, fontsize=18)
-        ax.tick_params(which='both', right='on', labelsize=18, direction='in')
-
-        # Set labels depending on position in figure
-        if np.where(self.axes == ax)[1] % self.columns == 0:  # left
-            ax.tick_params(axis='y', labelright='off', right='on')
-        elif np.where(self.axes == ax)[1] % self.columns == self.columns - 1:  # right
-            ax.set_xlabel('')
-            ax.set_ylabel('')
-            ax.tick_params(axis='y', labelleft='off', labelright='on')
-        else:  # middle
-            ax.tick_params(axis='y', labelleft='off')
-            ax.set_xlabel('')
-            ax.set_ylabel('')
-
-        # Set physical range of colour map
-        self.extent = [self.ra_offset[0], self.ra_offset[-1],
-                       self.dec_offset[-1], self.dec_offset[0]]
-
-
-    def fill_axis(self, ax, mol):
-        """Plot image as a colour map."""
-
-        # This is massively hacky, but works. Basically, if we're plotting as
-        # moment1 map, we still want to contour with moment0 lines. So this:
-        try:
-            im = self.im_mom1
-            cbar_lab = r'$km \, s^{-1}$'
-            vmin, vmax = 7, 13
-
-        except AttributeError:
-            im = self.im
-            cbar_lab = r'$Jy / beam$'
-            vmax = max((-np.nanmin(im), np.nanmax(im)))
-            vmin = -vmax
-            # vmin, vmax = np.nanmin(im), np.nanmax(im)
-
-        cmap = ax.imshow(im,
-                         extent=self.extent,
-                         vmin=vmin,
-                         vmax=vmax,
-                         # cmap='afmhot_r')
-                         cmap='RdBu_r')
-
-
-        if self.rms:
-            cont_levs = np.arange(3, 15, 2) * self.rms
-            # add residual contours if resdiual exists; otherwise, add image contours
-            try:
-                ax.contour(self.resid,
-                           levels=cont_levs,
-                           colors='k',
-                           linewidths=0.75,
-                           linestyles='solid')
-                ax.contour(self.resid,
-                           levels=-1 * np.flip(cont_levs, axis=0),
-                           colors='k',
-                           linewidths=0.75,
-                           linestyles='dashed')
-            except AttributeError:
-                ax.contour(self.ra_offset, self.dec_offset, self.im,
-                           colors='k',
-                           levels=cont_levs,
-                           linewidths=0.75,
-                           linestyles='solid')
-                ax.contour(self.ra_offset, self.dec_offset, self.im,
-                           levels=-1 * np.flip(cont_levs, axis=0),
-                           colors='k',
-                           linewidths=0.75,
-                           linestyles='dashed')
-
-        # Create the colorbar
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("top", size="8%", pad=0.0)
-        cbar = self.fig.colorbar(cmap, ax=ax, cax=cax, orientation='horizontal')
-        cbar.ax.xaxis.set_tick_params(direction='out', length=3, which='major',
-                                      bottom='off', top='on', labelsize=12, pad=-2,
-                                      labeltop='on', labelbottom='off')
-
-        cbar.ax.xaxis.set_tick_params(direction='out', length=2, which='minor',
-                                      bottom='off', top='on')
-
-        if np.nanmax(self.im) > 500:
-            tickmaj, tickmin = 200, 50
-        elif np.nanmax(self.im) > 200:
-            tickmaj, tickmin = 100, 25
-        elif np.nanmax(self.im) > 100:
-            tickmaj, tickmin = 50, 10
-        elif np.nanmax(self.im) <= 100:
-            tickmaj, tickmin = 20, 5
-
-
-        # minorLocator = AutoMinorLocator(tickmaj / tickmin)
-        # cbar.ax.xaxis.set_minor_locator(minorLocator)
-        # cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(),
-        #                         rotation=45, fontsize=18)
-        # cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), fontsize=18)
-        # cbar.set_ticks(np.arange(-10*tickmaj, 10*tickmaj, tickmaj))
-
-        # Colorbar label. No idea why the location of this is so weird.
-        # cbar.ax.text(0.425, 0.320, r'$\mu Jy / beam$', fontsize=12,
-        # cbar.ax.text(0.425, 0.320, cbar_lab, fontsize=12,
-
-        cbar_x, cbar_y = np.mean((vmin, vmax)), np.mean((vmin, vmax))
-        cbar.ax.text(cbar_x, cbar_y, cbar_lab, fontsize=12, ha='center', va='center',
-                     path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
-        # cbar.set_label(cbar_lab, fontsize=13, path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
-        #                labelpad=-5)
-
-
-        # Overplot the beam ellipse
-        try:
-            bmin = self.head['bmin'] * 3600.
-            bmaj = self.head['bmaj'] * 3600.
-            bpa = self.head['bpa']
-
-            el = Ellipse(xy=[1.5, -1.5], width=bmin, height=bmaj, angle=-bpa,
-                         edgecolor='k', hatch='///', facecolor='white', zorder=10)
-            ax.add_artist(el)
-        except KeyError:
-            print("Unable to plot beam; couldn't find header info.")
-
-        # Plot the scale bar
-        if np.where(self.axes == ax)[1][0] == 0:  # if first plot
-            x, y = -0.8, -1.7        # arcsec location
-            ax.plot([x, x - 400/389], [y, y], '-', linewidth=3, color='darkorange')
-            ax.text(x - 0.1, y + 0.15, "400 au", fontsize=12,
-                path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
-
-        # Plot crosses at the source positions
-        (posx_A, posy_A), (posx_B, posy_B) = constants.offsets
-        ax.plot([posx_A], [posy_A], '+', markersize=6,
-                markeredgewidth=2, color='darkorange')
-        ax.plot([posx_B], [posy_B], '+', markersize=6,
-                markeredgewidth=2, color='darkorange')
-
-        # Plot ellipses with each disk's best-fit radius and inclination:
-        print('\n\n\n\nLine is {}\n\n\n\n\n'.format(mol))
-        # if mol.lower() == 'hcn':
-        if self.plot_bf_ellipses is True:
-            print("\n\n\nAdding ellipses")
-            print("Note that this is manually HCN specific rn, with:")
-            print("rA = {}\nrB_out = {}\nrB_in = {}\nand some PAs/incls\n\n\n\n".format(r_A, r_B1, r_B2))
-            # ax.set_xlim(-1, 2)
-            # ax.set_ylim(-1, 2)
-            r_A = 334/389
-            r_B1 = 324/389
-            r_B2 = 145/389
-            PA_A, PA_B = 90 - 69, 136
-            incl_A, incl_B = 65, 45
-            ellipse_A = Ellipse(xy=(posx_A, posy_A),
-                                width=r_A, height=r_A*np.sin(incl_A), angle=PA_A,
-                                fill=False, edgecolor='orange', ls='-', lw=5, label='R = 334 AU')
-            ellipse_B1 = Ellipse(xy=(posx_B, posy_B),
-                                 width=r_B1, height=r_B1*np.sin(incl_B), angle=PA_B,
-                                 fill=False, edgecolor='orange', ls='-', lw=5, label='R = 324 AU')
-            ellipse_B2 = Ellipse(xy=(posx_B, posy_B),
-                                 width=r_B2, height=r_B2*np.sin(incl_B), angle=PA_B,
-                                 fill=False, edgecolor='r', ls='-', lw=5, label='R = 145 AU')
-            # ax.add_artist(ellipse_A)
-            # ax.add_artist(ellipse_B1)
-            # ax.add_artist(ellipse_B2)
-
-        # Annotate with some text:
-        freq = str(round(lines[mol]['restfreq'], 2)) + ' GHz'
-        trans = '({}-{})'.format(lines[mol]['jnum'] + 1, lines[mol]['jnum'])
-        molname = r'HCO$^+$(4-3)' if mol is 'hco' else mol.upper() + trans
-        sysname = 'd253-1536'
-
-        # Print the system name.
-        ax.text(1.8, 1.6, sysname,
-                fontsize=20, weight='bold', horizontalalignment='left',
-                path_effects=[PathEffects.withStroke(linewidth=2,
-                                                     foreground="w")])
-
-        ax.text(-1.85, 1.7, molname,
-                fontsize=13, weight='bold', horizontalalignment='right',
-                path_effects=[PathEffects.withStroke(linewidth=1,
-                                                     foreground="w")])
-
-        ax.text(-1.8, 1.5, freq,
-                fontsize=13, horizontalalignment='right',
-                path_effects=[PathEffects.withStroke(linewidth=1,
-                                                     foreground="w")])
-
-        # Add figure text
-        # if text is not None:
-        #     for t in text:
-        #         ax.text(1, 1, *t, fontsize=18,
-        #                 path_effects=[PathEffects.withStroke(linewidth=3,
-        #                                                      foreground="w")])
-        if self.title:
-            plt.suptitle(self.title, weight='bold')
-
-
-modeling = '/Volumes/disks/jonas/modeling/'
-path_hco, path_hcn = modeling + 'data/hco/hco-short110.fits', modeling + 'data/hcn/hcn-short80.fits'
-path_co, path_cs = modeling + 'data/co/co-short60.fits', modeling + 'data/cs/cs-short0.fits'
-path_modelhco = modeling + 'gridsearch_runs/jan21_hco/jan21_hco_bestFit.fits'
-
-model_hcn_april9 = modeling + 'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits'
-model_hcn_april9_resid = modeling + 'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'
-
-model_co_april9 = modeling + 'mcmc_runs/april9-co/model_files/april9-co_bestFit.fits'
-model_co_april9_resid = modeling + 'mcmc_runs/april9-co/model_files/april9-co_bestFit_resid.fits'
-
-model_hco_april9 = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco_bestFit.fits'
-model_hco_april9_resid = modeling + 'mcmc_runs/april9-hco/model_files/april9-hco_bestFit_resid.fits'
-
-
-
-
-# f = Figure([path_hcn], moment=1, remove_bg=True, save=True)
-
-# f2 = Figure([path_hco, path_co], moment=1)
-
-# f_hco_a9 = Figure([path_hco, model_hco_april9, model_hco_april9_resid], moment=0, remove_bg=True, save=True)
-# f_co_a9 = Figure([path_co, model_co_april9, model_co_april9_resid], moment=0, remove_bg=True, save=True)
-# f_hcn_a9 = Figure([path_hcn, model_hcn_april9, model_hcn_april9_resid], moment=0, remove_bg=True, save=True)
-
-# fig35_hco = Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=0, remove_bg=True, save=True)
-# fig36_hco = Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=1, remove_bg=True, save=True)
-#
-
-# fig35_hcn = Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=0, remove_bg=True, save=True)
-# fig36_hcn = Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=1, remove_bg=True, save=True)
-#
-# fig35_co = Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=0, remove_bg=True, save=True)
-# fig36_co = Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=1, remove_bg=True, save=True)
-
-
-# test = Figure('data/hco/hco.fits', moment=0, remove_bg=True, save=False, title='Test Title')
-
-
 
 
 
