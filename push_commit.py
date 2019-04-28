@@ -60,7 +60,8 @@ def push():
 
     commit_message = str(input('Enter commit message:\n'))
     commit_message = 'Updated' if commit_message == '' else commit_message
-    print(("Committing with commit message of: ", commit_message, '\n\n'))
+    print("Committing with commit message of: ", commit_message)
+    print("\n\n")
     sp.call(['git', 'commit', '-m', '{}'.format(commit_message)])
     sp.call(['git', 'push'])
 
