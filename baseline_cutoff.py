@@ -1,8 +1,6 @@
-"""Run the ICR process while cutting off baselines below b_max.
+"""Run the ICR process while cutting off baselines below b_max."""
 
-Testing a change.
-"""
-
+import matplotlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -99,16 +97,16 @@ def run_noise_analysis(mol, baselines=baselines, niters=1e4, save_to_thesis=Fals
 
 
 
-
-
-
-def fourmol_analysis(dfs):
+def fourmol_analysis_w_means(dfs):
     """Read the df from find_baseline_cutoff and do cool shit with it."""
     f, axarr = plt.subplots(2, sharex=True)
     # axarr[0].set_ylabel('RMS Off-Source Flux (Jy/Beam)')
     # axarr[0].plot(df['Baseline'], df['RMS'], 'or')
 
-    colors = sns.diverging_palette(220, 20, n=4, center='dark')
+    # colors = sns.diverging_palette(220, 20, n=4, center='dark')
+
+    cmap = matplotlib.cm.get_cmap('Spectral')
+    colors = [cmap(c) for c in np.linspace(0, 1, 4)]
     for df, color in zip(dfs, colors):
         rms_max = max(np.nanmax(df['RMS']), -np.nanmin(df['RMS']))
         mean_max = max(np.nanmax(df['Mean']), -np.nanmin(df['Mean']))
@@ -130,6 +128,64 @@ def fourmol_analysis(dfs):
     print('Saved image to ' + image_path)
     # plt.show(block=False)
     # return [df['Baseline'], df['Mean'], df['RMS']]
+
+
+
+
+
+
+
+def fourmol_analysis(cmap='twilight_shifted', save=False):
+    """Read the df from find_baseline_cutoff and do cool shit with it."""
+
+    # Some tunables
+    mols = ['hco', 'hcn', 'co', 'cs']
+    niters = 1e4
+    cuts = [110, 80, 60, 0]
+
+
+    # Get the RMS data
+    dfs = [get_baseline_rmss(mol, niters, baselines) for mol in mols]
+
+    # Get the y extremes, in mJy, for plotting vertical bars.
+    ymin = np.nanmin([np.nanmin(dfs[i]['RMS']) for i in range(len(dfs))]) * 1000
+    ymax = np.nanmax([np.nanmax(dfs[i]['RMS']) for i in range(len(dfs))]) * 1000
+
+
+
+    f, ax = plt.subplots(figsize=(13, 5))
+
+    # colors = sns.diverging_palette(220, 20, n=4, center='dark')
+    cmap = matplotlib.cm.get_cmap(cmap)
+    colors = [cmap(c) for c in np.linspace(0, 1, 4)]
+
+    for mol, df, cut, color in zip(mols, dfs, cuts, colors):
+        ls = ':' if mol is 'cs' else '-'
+        lab = r"HCO$^+$" if mol is 'hco' else mol.upper()
+        rms_max = max(np.nanmax(df['RMS']), -np.nanmin(df['RMS']))
+        ax.plot(df['Baseline'], df['RMS']*1000, #/rms_max,
+                      ls=ls, lw=7, color=color,
+                      label=lab)
+
+        if mol is not 'cs':
+            ax.plot((cut, cut), (ymin, ymax), color=color, ls = '--', lw=4)
+
+    ax.grid(axis='x')
+    ax.set_title('RMS Noises', weight='bold')
+    ax.set_xlabel(r"Baseline length (k$\lambda$)") #, weight='bold')
+    ax.set_ylabel('RMS (mJy/Beam)') #, weight='bold')
+    ax.legend()
+
+    if save:
+        image_path = '../Thesis/Figures/full_baseline_analysis.pdf'
+        plt.savefig(image_path)
+        print('Saved image to ' + image_path)
+
+    else:
+        plt.show(block=False)
+    # return [df['Baseline'], df['Mean'], df['RMS']]
+
+
 
 
 def run_fourmol_noise_analysis(baselines=baselines, niters=1e4):

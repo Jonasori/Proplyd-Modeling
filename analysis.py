@@ -72,6 +72,9 @@ class Figure:
     2. Assumes that the name of the molecular line of the observation is in the
         fits file name. Without this (or with conflicting ones), it won't be able
         to determine which line a fits file is represents.
+
+    Some nice colormaps:
+        RdBu, cividis, Spectral
     """
 
     # Set seaborn plot styles and color pallete
@@ -80,7 +83,7 @@ class Figure:
 
     def __init__(self, paths, make_plot=True, save=False, moment=0, remove_bg=True,
                  texts=None, title=None, image_outpath=None, export_fits_mom=False,
-                 plot_bf_ellipses=False):
+                 plot_bf_ellipses=False, cmap='RdBu'):
         """
         Make a nice image from a fits file.
 
@@ -101,6 +104,7 @@ class Figure:
         self.remove_bg = remove_bg
         self.paths = np.array(([paths]) if type(paths) is str else paths)
         self.plot_bf_ellipses = plot_bf_ellipses
+        self.cmap = cmap
         # This is gross but functional. The break is important.
         self.mols = []
         mols = ['hco', 'hcn', 'cs', 'co']
@@ -341,16 +345,13 @@ class Figure:
             vmin = -vmax
             vmin, vmax = np.nanmin(im), np.nanmax(im)
 
-        cmap = ax.imshow(im,
-                         extent=self.extent,
-                         vmin=vmin,
-                         vmax=vmax,
-                         # cmap='afmhot_r')
-                         # cmap='RdBu_r')
-                         cmap='YlGnBu')
+        cmap = ax.imshow(im, extent=self.extent,
+                         vmin=vmin, vmax=vmax,
+                         cmap=self.cmap)
+
 
         if self.rms:
-            cont_levs = np.arange(3, 15, 2) * self.rms
+            cont_levs = np.arange(3, 70, 3) * self.rms
             # add residual contours if resdiual exists; otherwise, add image contours
             try:
                 ax.contour(self.resid,
@@ -364,12 +365,12 @@ class Figure:
                            linewidths=0.75,
                            linestyles='dashed')
             except AttributeError:
-                ax.contour(self.ra_offset, self.dec_offset, self.im,
+                ax.contour(self.ra_offset, self.dec_offset, im,
                            colors='k',
                            levels=cont_levs,
                            linewidths=0.75,
                            linestyles='solid')
-                ax.contour(self.ra_offset, self.dec_offset, self.im,
+                ax.contour(self.ra_offset, self.dec_offset, im,
                            levels=-1 * np.flip(cont_levs, axis=0),
                            colors='k',
                            linewidths=0.75,

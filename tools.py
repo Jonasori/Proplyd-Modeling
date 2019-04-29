@@ -667,13 +667,17 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
     print (rms)
     levs = [rms * i for i in np.linspace(2, 30, 3)]
     fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[12, 1]})
-    im = im_ax.contourf(d, levels=25, cmap='Spectral') #, vmin=-vmax, vmax=vmax)
+    im = im_ax.contourf(d, levels=25, cmap='Spectral_r', vmin=-vmax, vmax=vmax)
 
     # Can we scale the axes of d to put things in good units?
     im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
-    im_ax.set_ylim(5, 15)
     im_ax.set_xlabel('Offset (pix)', weight='bold')
     im_ax.set_ylabel('Velocity (km/s)', weight='bold')
+
+    raw_labs = im_ax.yaxis.get_ticklabels()
+    # return raw_labs
+    vs = [int(raw_labs[i].get_text())*0.41 for i in range(len(raw_labs))]
+    im_ax.yaxis.set_label(vs)
 
     cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
     cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold')
@@ -698,6 +702,7 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
     im_ax.set_ylabel("Velocity (km/s)", weight='bold') #, rotation=270)
     im_ax.set_xlabel("Position Offset (pix)", weight='bold')
 
+
     fig.tight_layout(w_pad=0.05)
 
     if save:
@@ -706,6 +711,8 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
         print("Saving figure to " + out_path)
     else:
         fig.show()
+
+    return im_ax
 
 
 
