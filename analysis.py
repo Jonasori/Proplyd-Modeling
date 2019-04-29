@@ -339,15 +339,15 @@ class Figure:
             cbar_lab = r'$Jy / beam$'
             vmax = max((-np.nanmin(im), np.nanmax(im)))
             vmin = -vmax
-            # vmin, vmax = np.nanmin(im), np.nanmax(im)
+            vmin, vmax = np.nanmin(im), np.nanmax(im)
 
         cmap = ax.imshow(im,
                          extent=self.extent,
                          vmin=vmin,
                          vmax=vmax,
                          # cmap='afmhot_r')
-                         cmap='RdBu_r')
-
+                         # cmap='RdBu_r')
+                         cmap='YlGnBu')
 
         if self.rms:
             cont_levs = np.arange(3, 15, 2) * self.rms
