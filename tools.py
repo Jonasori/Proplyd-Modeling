@@ -667,11 +667,11 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
     print (rms)
     levs = [rms * i for i in np.linspace(2, 30, 3)]
     fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[12, 1]})
-    im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
+    im = im_ax.contourf(d, levels=25, cmap='Spectral') #, vmin=-vmax, vmax=vmax)
 
     # Can we scale the axes of d to put things in good units?
     im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
-    im_ax.set_ylim(12, 50)
+    im_ax.set_ylim(5, 15)
     im_ax.set_xlabel('Offset (pix)', weight='bold')
     im_ax.set_ylabel('Velocity (km/s)', weight='bold')
 
@@ -683,12 +683,12 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
 
     # Get the axes set in good values
 
-    rms = imstat('data/hco/hco-short110')[1]
-    levs = [rms * i for i in np.linspace(2, 30, 3)]
-    fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[10, 1]})
-    im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
-    im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
-    im_ax.set_ylim(12, 50)
+    # rms = imstat('data/hco/hco-short110')[1]
+    # levs = [rms * i for i in np.linspace(2, 30, 3)]
+    # fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[10, 1]})
+    # im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
+    # im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
+    # im_ax.set_ylim(12, 50)
     # im_ax.set_xlabel('Offset (pix)', weight='bold')
     # im_ax.set_ylabel('Velocity (km/s)', weight='bold')
 
