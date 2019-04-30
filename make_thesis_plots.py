@@ -4,7 +4,7 @@ The final scripts to make thesis plots.
 Would be nice to have these labeled some other way, but heck.
 """
 
-
+import subprocess as sp
 from analysis import Figure
 from tools import plot_pv_diagram_casa
 from mcmc import MCMCrun
@@ -65,6 +65,7 @@ def chap3_pvd():
 
 
 
+
 ###~~~~~~~~~~~~~~~~~~~~~~###
 # Section 4
 ###~~~~~~~~~~~~~~~~~~~~~~###
@@ -79,33 +80,58 @@ def chap4_hcn_ellipses():
 
 
 def chap4_co_results():
-    hostname = sp.check_output('hostname')
-    if hostname is 'iorek':
-        run = MCMCrun('mcmc_runs/april9-co/', 'april9-co', burn_in=50)
-        run.posteriors(save=True, save_to_thesis=True)
-        run.DMR_images(save=True, save_to_thesis=True)
-    else:
-        return "CO has to be run on iorek (or wherever the best run was done)"
+    run = MCMCrun('mcmc_runs/april9-co/', 'april9-co', burn_in=50)
+    run.posteriors(save=True, save_to_thesis=True)
+    run.DMR_images(save=True, save_to_thesis=True)
 
 
 def chap4_hco_results():
-    hostname = sp.check_output('hostname')
-    if hostname is 'iorek':
+    run = MCMCrun('mcmc_runs/april9-hco/', 'april9-hco', burn_in=50)
+    run.posteriors(save=True, save_to_thesis=True)
+    run.DMR_images(save=True, save_to_thesis=True)
+
+
+def chap4_hcn_results(remove_large_r=False):
+    if remove_large_r:
+        run.groomed = run.groomed[run.groomed['r_out_B'] > 250]
+        run.main = run.main[run.main['r_out_B'] > 250]
+        run.get_fit_stats()
+
+    run = MCMCrun('mcmc_runs/april9-hcn/', 'april9-hcn', burn_in=50)
+    run.posteriors(save=True, save_to_thesis=True)
+    run.DMR_images(save=True, save_to_thesis=True)
+
+
+
+# Could just make these three into one function with a mol argument
+def chap4_get_bftab_hco():
         run = MCMCrun('mcmc_runs/april9-hco/', 'april9-hco', burn_in=50)
-        run.posteriors(save=True, save_to_thesis=True)
-        run.DMR_images(save=True, save_to_thesis=True)
-    else:
-        return "HCO has to be run on iorek (or wherever the best run was done)"
+        return run.fit_stats
 
 
-def chap4_hcn_results():
-    hostname = sp.check_output('hostname')
-    if hostname is 'sirius':
-        run = MCMCrun('mcmc_runs/april9-hcn/', 'april9-hcn', burn_in=50)
-        run.posteriors(save=True, save_to_thesis=True)
-        run.DMR_images(save=True, save_to_thesis=True)
-    else:
-        return "HCN has to be run on sirius (or wherever the best run was done)"
+def chap4_get_bftab_co():
+    run = MCMCrun('mcmc_runs/april9-co/', 'april9-co', burn_in=50)
+    return run.fit_stats
+
+
+def chap4_get_bftab_hcn(remove_large_r = False):
+
+    run = MCMCrun('mcmc_runs/april9-hcn/', 'april9-hcn', burn_in=50)
+
+    if remove_large_r:
+        run.groomed = run.groomed[run.groomed['r_out_B'] > 250]
+        run.main = run.main[run.main['r_out_B'] > 250]
+        run.get_fit_stats()
+
+    best_fits = run.fit_stats['best fit']
+
+    return best_fits
+
+
+
+
+
+
 
 
 
