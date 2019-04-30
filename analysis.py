@@ -446,8 +446,6 @@ class Figure:
         # if mol.lower() == 'hcn':
         if self.plot_bf_ellipses is True:
             print("\n\n\nAdding ellipses")
-            print("Note that this is manually HCN specific rn, with:")
-            print("rA = {}\nrB_out = {}\nrB_in = {}\nand some PAs/incls\n\n\n\n".format(r_A, r_B1, r_B2))
             # ax.set_xlim(-1, 2)
             # ax.set_ylim(-1, 2)
             r_A = 340/389
@@ -455,6 +453,8 @@ class Figure:
             r_B2 = 150/389
             PA_A, PA_B = 90 - 69, 136
             incl_A, incl_B = 65, 45
+            print("Note that this is manually HCN specific rn, with:")
+            print("rA = {}\nrB_out = {}\nrB_in = {}\nand some PAs/incls\n\n\n\n".format(r_A, r_B1, r_B2))
             ellipse_A = Ellipse(xy=(posx_A, posy_A),
                                 width=r_A, height=r_A*np.sin(incl_A), angle=PA_A,
                                 fill=False, edgecolor='orange', ls='-', lw=5, label='R = 334 AU')
