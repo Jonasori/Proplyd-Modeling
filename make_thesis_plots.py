@@ -74,7 +74,7 @@ def chap3_pvd():
 # Plot out the HCN moment maps with ellipses overlaid
 def chap4_hcn_ellipses():
     Figure('data/hcn/hcn-short80.fits', moment=1, remove_bg=True, save=True,
-            image_outpath='../Thesis/Figures/moment1_co-baselinecuts', title='HCN Moment 1',
+            image_outpath='../Thesis/Figures/moment1_co-baselinecuts', title='Visualizing HCN Model Radius Fits',
             plot_bf_ellipses=True)
 
 
@@ -83,23 +83,29 @@ def chap4_co_results():
     run = MCMCrun('mcmc_runs/april9-co/', 'april9-co', burn_in=50)
     run.posteriors(save=True, save_to_thesis=True)
     run.DMR_images(save=True, save_to_thesis=True)
+    run.plot_structure(save=True, save_to_thesis=True)
 
 
 def chap4_hco_results():
     run = MCMCrun('mcmc_runs/april9-hco/', 'april9-hco', burn_in=50)
     run.posteriors(save=True, save_to_thesis=True)
     run.DMR_images(save=True, save_to_thesis=True)
+    run.plot_structure(save=True, save_to_thesis=True)
 
 
 def chap4_hcn_results(remove_large_r=False):
     if remove_large_r:
-        run.groomed = run.groomed[run.groomed['r_out_B'] > 250]
+        run.groomed = run.groomed[run.groomed['r_out_B'] < 250]
         run.main = run.main[run.main['r_out_B'] > 250]
         run.get_fit_stats()
 
     run = MCMCrun('mcmc_runs/april9-hcn/', 'april9-hcn', burn_in=50)
     run.posteriors(save=True, save_to_thesis=True)
     run.DMR_images(save=True, save_to_thesis=True)
+    run.plot_structure(save=True, save_to_thesis=True)
+
+
+
 
 
 
@@ -119,13 +125,13 @@ def chap4_get_bftab_hcn(remove_large_r = False):
     run = MCMCrun('mcmc_runs/april9-hcn/', 'april9-hcn', burn_in=50)
 
     if remove_large_r:
-        run.groomed = run.groomed[run.groomed['r_out_B'] > 250]
-        run.main = run.main[run.main['r_out_B'] > 250]
+        run.groomed = run.groomed[run.groomed['r_out_B'] < 250]
+        run.main = run.main[run.main['r_out_B'] < 250]
         run.get_fit_stats()
 
     best_fits = run.fit_stats['best fit']
 
-    return best_fits
+    return run.fit_stats
 
 
 

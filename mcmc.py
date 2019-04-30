@@ -312,10 +312,15 @@ class MCMCrun:
             xlab = ax.xaxis.get_label().get_text()
             ax.set_xlabel(self.plot_labels_dict[xlab]) #, weight='bold')
 
-            # Plot best-fit line
+            # Plot best-fit and +/- 1 sigma lines
             x = self.bf_param_dict[param]
+            x_bf = self.fit_stats['best fit'][param]
+            x_minus = self.fit_stats['best fit'][param] + self.fit_stats['16%'][param]
+            x_plus = self.fit_stats['best fit'][param] + self.fit_stats['84%'][param]
             ymin, ymax = ax.get_ylim()
-            ax.plot((x, x), (ymin, ymax), '--r')
+            ax.plot((x_bf, x_bf), (ymin, ymax), '--r', lw=3)
+            ax.plot((x_minus, x_minus), (ymin, ymax), linestyle=':', color='gray', lw=2)
+            ax.plot((x_plus, x_plus), (ymin, ymax), linestyle=':', color='gray', lw=2)
 
 
         for ax, param in zip(axes[1], df_b_params):
@@ -324,10 +329,15 @@ class MCMCrun:
             xlab = ax.xaxis.get_label().get_text()
             ax.set_xlabel(self.plot_labels_dict[xlab]) #, weight='bold')
 
-            # Plot best-fit line
+            # Plot best-fit and +/- 1 sigma lines
             x = self.bf_param_dict[param]
+            x_bf = self.fit_stats['best fit'][param]
+            x_minus = self.fit_stats['best fit'][param] + self.fit_stats['16%'][param] # this is negative, so don't worry
+            x_plus = self.fit_stats['best fit'][param] + self.fit_stats['84%'][param]
             ymin, ymax = ax.get_ylim()
-            ax.plot((x, x), (ymin, ymax), '--r')
+            ax.plot((x_bf, x_bf), (ymin, ymax), '--r', lw=3)
+            ax.plot((x_minus, x_minus), (ymin, ymax), linestyle=':', color='gray', lw=2)
+            ax.plot((x_plus, x_plus), (ymin, ymax), linestyle=':', color='gray', lw=2)
 
         # If there are empties, delete them.
         # This hardcodes in the assumption that disk B's list is shorter.
@@ -356,8 +366,6 @@ class MCMCrun:
             print("Saved image to " + image_outpath)
         else:
             plt.show(block=False)
-
-
 
 
     def corner(self, variables=None, save=True, save_to_thesis=False):
@@ -687,21 +695,29 @@ class MCMCrun:
         # cb.ax.yaxis.set_ticks_position('left')
 
         #plt.colorbar(cs2,label='log $\Sigma_{FUV}$')
-        im_axes[0].set_ylabel('Disk Scale Height (AU)',fontsize=16, weight='bold')
-        im_axes[0].set_xlabel('Disk A Outer Radius (AU)',fontsize=16, weight='bold')
-        im_axes[1].set_xlabel('Disk B Outer Radius (AU)',fontsize=16, weight='bold')
+        im_axes[0].set_ylabel('Scale Height (au)', fontsize=16) #, weight='bold')
+        im_axes[0].set_xlabel('d253-1536a Outer Radius (au)', fontsize=15) #, weight='bold')
+        im_axes[1].set_xlabel('d253-1536b Outer Radius (au)', fontsize=15) #, weight='bold')
 
 
-        # zmin = -zmax
+        zmin = -zmax
         zmin = 0
         im_axes[0].set_xlim(rmax_a, 0)
         im_axes[0].set_ylim(zmin, zmax)
-
         im_axes[1].set_xlim(0, rmax_b)
         im_axes[1].set_ylim(zmin, zmax)
-
         im_axes[0].yaxis.set_ticks_position('left')
         im_axes[1].yaxis.set_ticks_position('right')
+
+        freq = str(round(lines[self.mol]['restfreq'], 2)) + ' GHz'
+        trans = '({}-{})'.format(lines[self.mol]['jnum'] + 1, lines[self.mol]['jnum'])
+        mol = r"HCO$^+$" if self.mol.lower() == 'hco' else self.mol.upper()
+
+        im_axes[0].text(0.22 * rmax, 0.9 * zmax, mol + trans, color='white',
+                        fontsize=18, weight='bold')
+
+        im_axes[0].text(0.22 * rmax, 0.82 * zmax, freq, color='white',
+                        fontsize=14, weight='bold')
 
 
         dark_cm = matplotlib.cm.get_cmap(cmap)(0.)
@@ -718,9 +734,7 @@ class MCMCrun:
         cbar_axes[1].xaxis.set_label_position('top')
 
         im_axes[1].legend()
-        mol = 'HCO+' if self.mol is 'hco' else self.mol.upper
-        #plt.set_title('d253-1536ab Temperature and Density Structures ({})'.format(mol))
-
+        # fig.suptitle('d253-1536ab Temperature and Density Structures ({})'.format(mol), weight='bold', fontsize=20)
 
         if save:
             if save_to_thesis:
@@ -751,7 +765,7 @@ class MCMCrun:
 
         Some nice cmaps: magma, rainbow
         """
-        plt.close()
+        # plt.close()
         print("\nPlotting DMR images...")
 
 
@@ -761,8 +775,9 @@ class MCMCrun:
 
         # if not Path(model_path).exists():
         #     print("No best-fit model made yet; making now...")
-        tools.remove(self.modelfiles_path + '_bestFit*')
-        self.make_best_fits(plot_bf=False)
+
+        # tools.remove(self.modelfiles_path + '_bestFit*')
+        # self.make_best_fits(plot_bf=False)
 
         real_data    = fits.getdata(data_path, ext=0).squeeze()
         model_data   = fits.getdata(model_path, ext=0).squeeze()
@@ -771,9 +786,6 @@ class MCMCrun:
         model_header = fits.getheader(model_path, ext=0)
         resid_header = fits.getheader(resid_path, ext=0)
 
-        # Define some plotting params
-        hspace = -0.
-        wspace = -0.
 
         # Set up some physical params
         # vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
@@ -820,6 +832,8 @@ class MCMCrun:
         fig = plt.figure(figsize=(18, 18))
         big_fig = gridspec.GridSpec(3, 1)
 
+        # Define some plotting params
+        hspace, wspace = 0.1, 0.1
         data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                     wspace=wspace, hspace=hspace,
                                                     subplot_spec=big_fig[0])
@@ -834,6 +848,7 @@ class MCMCrun:
         for i in range(nchans):
             chan = i + chan_offset
             velocity = str(round(chan0_vel + chan * chanstep_vel, 2))
+            print ("Plotting {} km/s".format(velocity))
             ax_d = plt.Subplot(fig, data_ims[i])
             ax_m = plt.Subplot(fig, model_ims[i])
             ax_r = plt.Subplot(fig, resid_ims[i])
@@ -844,20 +859,27 @@ class MCMCrun:
                 ax_r.set_title('Residuals', weight='bold')
 
             # Plot the data
+            # REWORK contours all black
             im_d = ax_d.contourf(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
                                  levels=30, cmap=cmap, vmin=vmin, vmax=vmax)
             im_m = ax_m.contourf(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
                                  levels=30, cmap=cmap, vmin=vmin, vmax=vmax)
             im_r = ax_r.contourf(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
                                  levels=30, cmap=cmap, vmin=vmin, vmax=vmax)
 
 
             # Add n-sigma contours
             im_d = ax_d.contour(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
                                  levels=contours)
             im_m = ax_m.contour(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
                                  levels=contours)
             im_r = ax_r.contour(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
+                                 # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
                                  levels=contours)
 
 
@@ -878,23 +900,45 @@ class MCMCrun:
             ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             ax_r.grid(False)
+            ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
             ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
             ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             # Add velocity info
-            ax_d.text(44, 80, velocity + ' km/s', fontsize=6, color='k',
+            ax_d.text(44, 75, velocity + ' km/s', fontsize=12, color='k',
                     horizontalalignment='center', verticalalignment='center')
-            ax_m.text(44, 80, velocity + ' km/s', fontsize=6, color='k',
+            ax_m.text(44, 75, velocity + ' km/s', fontsize=12, color='k',
                     horizontalalignment='center', verticalalignment='center')
-            ax_r.text(44, 80, velocity + ' km/s', fontsize=6, color='k',
+            ax_r.text(44, 75, velocity + ' km/s', fontsize=12, color='k',
                     horizontalalignment='center', verticalalignment='center')
 
+            # If we're in the bottom left corner, add a beam and axis labels
             if i == n_cols * (n_rows - 1) and add_beam_d is True:
-                el = Ellipse(xy=[0.8 * crop_arcsec, 0.8 * crop_pix],
+                el = Ellipse(xy=(20, 20),
+                             # xy=(0.8 * crop_arcsec, 0.8 * crop_pix),
                              width=bmin, height=bmaj, angle=-bpa,
                              fc='k', ec='k', fill=False, hatch='////////')
                 ax_d.add_artist(el)
+
+                ticks = [i/0.045 for i in range(5)]
+                ax_d.xaxis.set_ticks(ticks), ax_d.xaxis.set_ticks(ticks)
+                ax_m.xaxis.set_ticks(ticks), ax_m.xaxis.set_ticks(ticks)
+                ax_r.xaxis.set_ticks(ticks), ax_r.xaxis.set_ticks(ticks)
+
+                ax_d.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_d.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                ax_m.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_m.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                ax_r.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
+
+                # ax_d.set_xticklabels([-1, 0, 1]), ax_d.set_yticklabels([-1, 0, 1])
+                # ax_m.set_xticklabels([-1, 0, 1]), ax_m.set_yticklabels([-1, 0, 1])
+                # ax_r.set_xticklabels([-1, 0, 1]), ax_r.set_yticklabels([-1, 0, 1])
+
+                # ax_d.set_xlabel(r"$\Delta \alpha$"), ax_d.set_ylabel(r"$\Delta \delta$", weight='bold')
+                # ax_m.set_xlabel(r"$\Delta \alpha$"), ax_m.set_ylabel(r"$\Delta \delta$", weight='bold')
+                ax_r.set_xlabel(r"$\Delta \alpha$", weight='bold'), ax_r.set_ylabel(r"$\Delta \delta$", weight='bold')
+
+
 
             fig.add_subplot(ax_m)
             fig.add_subplot(ax_d)
@@ -904,15 +948,16 @@ class MCMCrun:
 
 
         fig.tight_layout()
-        fig.subplots_adjust(wspace=0., hspace=0.1, top=0.95, right=0.9)
+        fig.subplots_adjust(wspace=0., hspace=0.1, top=0.95, right=0.95)
 
         cmaps = plt.imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                            extent=(crop_arcsec, -crop_arcsec, crop_arcsec, -crop_arcsec),
                            cmap=cmap, vmin=vmin, vmax=vmax)
 
-        cax = plt.axes([0.91, 0.01, 0.03, 0.94]) # [l, b, w, h]
+        cax = plt.axes([0.95, 0.01, 0.02, 0.94]) # [l, b, w, h]
         cbar = plt.colorbar(cmaps, cax=cax, orientation='vertical')
         cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold')
+        # REWORK: Better ticks
         cbar.set_ticks(np.linspace(vmin, vmax, 6))
 
 
@@ -1231,11 +1276,6 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
 
 
 
-
-
-
-
-# The End
 
 
 # The End

@@ -450,9 +450,9 @@ class Figure:
             print("rA = {}\nrB_out = {}\nrB_in = {}\nand some PAs/incls\n\n\n\n".format(r_A, r_B1, r_B2))
             # ax.set_xlim(-1, 2)
             # ax.set_ylim(-1, 2)
-            r_A = 334/389
-            r_B1 = 324/389
-            r_B2 = 145/389
+            r_A = 340/389
+            r_B1 = 380/389
+            r_B2 = 150/389
             PA_A, PA_B = 90 - 69, 136
             incl_A, incl_B = 65, 45
             ellipse_A = Ellipse(xy=(posx_A, posy_A),
