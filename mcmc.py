@@ -312,13 +312,15 @@ class MCMCrun:
             xlab = ax.xaxis.get_label().get_text()
             ax.set_xlabel(self.plot_labels_dict[xlab]) #, weight='bold')
 
-            # Plot best-fit and +/- 1 sigma lines
+            # Plot best-fit, 50th and +/- 1 sigma lines
             x = self.bf_param_dict[param]
             x_bf = self.fit_stats['best fit'][param]
-            x_minus = self.fit_stats['best fit'][param] + self.fit_stats['16%'][param]
-            x_plus = self.fit_stats['best fit'][param] + self.fit_stats['84%'][param]
+            x_fiftieth = self.fit_stats['50%'][param]
+            x_minus = self.fit_stats['50%'][param] + self.fit_stats['16%'][param] # this is negative, so don't worry
+            x_plus = self.fit_stats['50%'][param] + self.fit_stats['84%'][param]
             ymin, ymax = ax.get_ylim()
-            ax.plot((x_bf, x_bf), (ymin, ymax), '--r', lw=3)
+            ax.plot((x_bf, x_bf), (ymin, ymax), '--r', lw=4)
+            ax.plot((x_fiftieth, x_fiftieth), (ymin, ymax), linestyle=':', color='dimgray', lw=3)
             ax.plot((x_minus, x_minus), (ymin, ymax), linestyle=':', color='gray', lw=2)
             ax.plot((x_plus, x_plus), (ymin, ymax), linestyle=':', color='gray', lw=2)
 
@@ -329,13 +331,15 @@ class MCMCrun:
             xlab = ax.xaxis.get_label().get_text()
             ax.set_xlabel(self.plot_labels_dict[xlab]) #, weight='bold')
 
-            # Plot best-fit and +/- 1 sigma lines
+            # Plot best-fit, 50th and +/- 1 sigma lines
             x = self.bf_param_dict[param]
             x_bf = self.fit_stats['best fit'][param]
-            x_minus = self.fit_stats['best fit'][param] + self.fit_stats['16%'][param] # this is negative, so don't worry
-            x_plus = self.fit_stats['best fit'][param] + self.fit_stats['84%'][param]
+            x_fiftieth = self.fit_stats['50%'][param]
+            x_minus = self.fit_stats['50%'][param] + self.fit_stats['16%'][param] # this is negative, so don't worry
+            x_plus = self.fit_stats['50%'][param] + self.fit_stats['84%'][param]
             ymin, ymax = ax.get_ylim()
-            ax.plot((x_bf, x_bf), (ymin, ymax), '--r', lw=3)
+            ax.plot((x_bf, x_bf), (ymin, ymax), '--r', lw=4)
+            ax.plot((x_fiftieth, x_fiftieth), (ymin, ymax), linestyle=':', color='dimgray', lw=3)
             ax.plot((x_minus, x_minus), (ymin, ymax), linestyle=':', color='gray', lw=2)
             ax.plot((x_plus, x_plus), (ymin, ymax), linestyle=':', color='gray', lw=2)
 
@@ -369,7 +373,7 @@ class MCMCrun:
 
 
     def corner(self, variables=None, save=True, save_to_thesis=False):
-        """Plot 'corner plot' of fit."""
+        """Plot corner plot of fit."""
         plt.close()
 
         # get best_fit and posterior statistics
@@ -394,19 +398,17 @@ class MCMCrun:
             print("Entering if")
             corner_plt.map_lower(plt.scatter, s=1, color='#708090', alpha=0.1)
         else:
-            print("Entering else")
-            corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
-                                 n_levels=18, shade=True)
+            print("Entering else. This is the part that takes forever.")
+            # corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
+            #                      n_levels=18, shade=True)
             corner_plt.map_lower(sns.kdeplot, cut=0, cmap='Blues',
                                  n_levels=5)
 
-        print("finished conditional")
         # This is where the error is coming from:
         # ValueError: zero-size array to reduction operation minimum which has no identity
         # corner.map_lower(sns.kdeplot, cut=0, cmap='Blues', n_levels=3, shade=False)
         corner_plt.map_diag(sns.kdeplot, cut=0)
 
-        print("Made it this far")
         if save and save_to_thesis:
             # get best_fit and posterior statistics
             stats = self.groomed.describe(percentiles=[0.16, 0.84]).drop([
@@ -420,16 +422,16 @@ class MCMCrun:
             # print(stats.round(2).to_latex())
 
             # add stats to corner plot as table
-            table_ax = corner_plt.fig.add_axes([0, 0, 1, 1], frameon=False)
-            table_ax.axis('off')
-            left, bottom = 0.15, 0.83
-            pd.plotting.table(table_ax, stats.round(2), bbox=[
-                              left, bottom, 1-left, .12], edges='open', colLoc='right')
-
-            corner_plt.fig.suptitle(r'{} Parameters, {} Walkers, {} Steps $\to$ {} Samples'
-                                .format(self.groomed.shape[1], self.nwalkers,
-                                        self.groomed.shape[0]//self.nwalkers, self.groomed.shape[0],
-                                        fontsize=25))
+            # table_ax = corner_plt.fig.add_axes([0, 0, 1, 1], frameon=False)
+            # table_ax.axis('off')
+            # left, bottom = 0.15, 0.83
+            # pd.plotting.table(table_ax, stats.round(2), bbox=[
+            #                   left, bottom, 1-left, .12], edges='open', colLoc='right')
+            #
+            # corner_plt.fig.suptitle(r'{} Parameters, {} Walkers, {} Steps $\to$ {} Samples'
+            #                     .format(self.groomed.shape[1], self.nwalkers,
+            #                             self.groomed.shape[0]//self.nwalkers, self.groomed.shape[0],
+            #                             fontsize=25))
 
 
         # hide upper triangle, so that it's a conventional corner plot
@@ -790,7 +792,8 @@ class MCMCrun:
         # Set up some physical params
         # vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
         vmax = np.nanmax((np.nanmax(real_data), -np.nanmin(real_data)))
-        vmin = -vmax
+        vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
+        # vmin = -vmax
 
         offsets = self.param_dict['offsets']
         offsets_dA, offsets_dB = offsets[0], offsets[1]
@@ -833,7 +836,8 @@ class MCMCrun:
         big_fig = gridspec.GridSpec(3, 1)
 
         # Define some plotting params
-        hspace, wspace = 0.1, 0.1
+        hspace, wspace = -0.1, -0.1
+        hspace, wspace = 0, 0
         data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                     wspace=wspace, hspace=hspace,
                                                     subplot_spec=big_fig[0])
@@ -874,13 +878,13 @@ class MCMCrun:
             # Add n-sigma contours
             im_d = ax_d.contour(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                                  # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
-                                 levels=contours)
+                                 levels=contours, colors='k', alpha=0.7, linewidths=0.3)
             im_m = ax_m.contour(model_data[i + chan_offset][xmin:xmax, xmin:xmax],
                                  # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
-                                 levels=contours)
+                                 levels=contours, colors='k', alpha=0.7, linewidths=0.3)
             im_r = ax_r.contour(resid_data[i + chan_offset][xmin:xmax, xmin:xmax],
                                  # extent=(crop_pix, -crop_pix, crop_pix, -crop_pix),
-                                 levels=contours)
+                                 levels=contours, colors='k', alpha=0.7, linewidths=0.3)
 
 
 
@@ -900,7 +904,9 @@ class MCMCrun:
             ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             ax_r.grid(False)
-            ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
+            # ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
+            # ax_r.tick_params(axis='both', direction='in', which='both')
+            # ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
             ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
             ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
@@ -926,13 +932,13 @@ class MCMCrun:
                 ax_m.xaxis.set_ticks(ticks), ax_m.xaxis.set_ticks(ticks)
                 ax_r.xaxis.set_ticks(ticks), ax_r.xaxis.set_ticks(ticks)
 
-                ax_d.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_d.set_yticklabels(['', -1, '', 0, '', 1, ''])
-                ax_m.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_m.set_yticklabels(['', -1, '', 0, '', 1, ''])
-                ax_r.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                # ax_d.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_d.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                # ax_m.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_m.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                # ax_r.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
 
                 # ax_d.set_xticklabels([-1, 0, 1]), ax_d.set_yticklabels([-1, 0, 1])
                 # ax_m.set_xticklabels([-1, 0, 1]), ax_m.set_yticklabels([-1, 0, 1])
-                # ax_r.set_xticklabels([-1, 0, 1]), ax_r.set_yticklabels([-1, 0, 1])
+                ax_r.set_xticklabels([-1, 0, 1]), ax_r.set_yticklabels([-1, 0, 1])
 
                 # ax_d.set_xlabel(r"$\Delta \alpha$"), ax_d.set_ylabel(r"$\Delta \delta$", weight='bold')
                 # ax_m.set_xlabel(r"$\Delta \alpha$"), ax_m.set_ylabel(r"$\Delta \delta$", weight='bold')

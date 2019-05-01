@@ -74,7 +74,7 @@ def chap3_pvd():
 # Plot out the HCN moment maps with ellipses overlaid
 def chap4_hcn_ellipses():
     Figure('data/hcn/hcn-short80.fits', moment=1, remove_bg=True, save=True,
-            image_outpath='../Thesis/Figures/moment1_co-baselinecuts', title='Visualizing HCN Model Radius Fits',
+            image_outpath='../Thesis/Figures/moment1_hcn-ellipses', title='Visualizing HCN Model Radius Fits',
             plot_bf_ellipses=True)
 
 
@@ -84,6 +84,9 @@ def chap4_co_results():
     run.posteriors(save=True, save_to_thesis=True)
     run.DMR_images(save=True, save_to_thesis=True)
     run.plot_structure(save=True, save_to_thesis=True)
+    dmr_maps = Figure(['data/co/co-short60.fits',
+                       'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits',
+                       'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'])
 
 
 def chap4_hco_results():

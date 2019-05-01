@@ -135,6 +135,14 @@ class Figure:
             if type(texts.flatten()[0]) is not float:
                 texts = texts.flatten()
 
+            # Get global vmin and vmax
+            vmin, vmax = 1e10, -1e10
+            for p in self.paths:
+                d = fits.getdata(p)
+                vmin = np.nanmin(d) if vmin > np.nanmin(d) else vmin
+                vmax = np.nanmax(d) if vmax < np.nanmax(d) else vmax
+            self.vmin, self.vmax = vmin, vmax
+
             # Populate the stuff
             print((self.paths, self.mols))
             for ax, path, mol in zip(self.axes.flatten(), self.paths, self.mols):
@@ -344,6 +352,7 @@ class Figure:
             vmax = max((-np.nanmin(im), np.nanmax(im)))
             vmin = -vmax
             vmin, vmax = np.nanmin(im), np.nanmax(im)
+            vmin, vmax = self.vmin, self.vmax
 
         cmap = ax.imshow(im, extent=self.extent,
                          vmin=vmin, vmax=vmax,
@@ -351,7 +360,7 @@ class Figure:
 
 
         if self.rms:
-            cont_levs = np.arange(3, 70, 3) * self.rms
+            cont_levs = np.arange(3, 30, 3) * self.rms
             # add residual contours if resdiual exists; otherwise, add image contours
             try:
                 ax.contour(self.resid,
@@ -365,12 +374,12 @@ class Figure:
                            linewidths=0.75,
                            linestyles='dashed')
             except AttributeError:
-                ax.contour(self.ra_offset, self.dec_offset, im,
+                ax.contour(self.ra_offset, self.dec_offset, self.im,
                            colors='k',
                            levels=cont_levs,
                            linewidths=0.75,
                            linestyles='solid')
-                ax.contour(self.ra_offset, self.dec_offset, im,
+                ax.contour(self.ra_offset, self.dec_offset, self.im,
                            levels=-1 * np.flip(cont_levs, axis=0),
                            colors='k',
                            linewidths=0.75,
@@ -448,9 +457,9 @@ class Figure:
             print("\n\n\nAdding ellipses")
             # ax.set_xlim(-1, 2)
             # ax.set_ylim(-1, 2)
-            r_A = 340/389
-            r_B1 = 380/389
-            r_B2 = 150/389
+            r_A = (340/389)
+            r_B1 = (380/389)
+            r_B2 = (120/389)
             PA_A, PA_B = 90 - 69, 136
             incl_A, incl_B = 65, 45
             print("Note that this is manually HCN specific rn, with:")
@@ -464,9 +473,9 @@ class Figure:
             ellipse_B2 = Ellipse(xy=(posx_B, posy_B),
                                  width=r_B2, height=r_B2*np.sin(incl_B), angle=PA_B,
                                  fill=False, edgecolor='r', ls='-', lw=5, label='R = 145 AU')
-            # ax.add_artist(ellipse_A)
-            # ax.add_artist(ellipse_B1)
-            # ax.add_artist(ellipse_B2)
+            ax.add_artist(ellipse_A)
+            ax.add_artist(ellipse_B1)
+            ax.add_artist(ellipse_B2)
 
         # Annotate with some text:
         freq = str(round(lines[mol]['restfreq'], 2)) + ' GHz'

@@ -859,7 +859,7 @@ def show_mom_map(image_path):
     """
     Just a nice countoured plotter for a fits moment map.
     """
-    data = fits.getdata(image_path)
+    data = fits.getdata(image_path).squeeze()
     plt.contourf(data, cmap='Reds')
     plt.contour(data, cmap='Greys')
     plt.show()
