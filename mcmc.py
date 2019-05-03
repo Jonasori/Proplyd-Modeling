@@ -827,12 +827,12 @@ class MCMCrun:
             return 'Aborting; not enough channels to satisfy chan_offset and nchans requested'
 
         # Add an extra row for the colorbar
-        n_rows = 3
-        n_cols = int(np.ceil(nchans/3))
+        n_rows = 4
+        n_cols = int(np.ceil(nchans/nrows))
 
         # Get the plots going
         # fig = plt.figure(figsize=(n_rows * 3, 7))
-        fig = plt.figure(figsize=(18, 18))
+        fig = plt.figure(figsize=(8.5, 11))
         big_fig = gridspec.GridSpec(3, 1)
 
         # Define some plotting params
@@ -949,7 +949,7 @@ class MCMCrun:
             fig.add_subplot(ax_m)
             fig.add_subplot(ax_d)
             fig.add_subplot(ax_r)
-            fig.tight_layout()
+            # fig.tight_layout()
 
 
 
