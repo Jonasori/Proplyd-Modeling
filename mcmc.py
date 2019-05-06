@@ -793,7 +793,7 @@ class MCMCrun:
         # vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
         vmax = np.nanmax((np.nanmax(real_data), -np.nanmin(real_data)))
         vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
-        # vmin = -vmax
+        vmin = -vmax
 
         offsets = self.param_dict['offsets']
         offsets_dA, offsets_dB = offsets[0], offsets[1]
@@ -809,7 +809,7 @@ class MCMCrun:
 
         ch_offsets = {'co':2, 'hco':17, 'hcn': 20, 'cs': 10}
         chan_offset = ch_offsets[self.mol]
-        nchans = 30
+        nchans = 24
 
         rms = imstat(data_path[:-5])[1]
         contours = [rms * i for i in range(3, 30, 3)]
@@ -828,7 +828,7 @@ class MCMCrun:
 
         # Add an extra row for the colorbar
         n_rows = 4
-        n_cols = int(np.ceil(nchans/nrows))
+        n_cols = int(np.ceil(nchans/n_rows))
 
         # Get the plots going
         # fig = plt.figure(figsize=(n_rows * 3, 7))
@@ -836,8 +836,8 @@ class MCMCrun:
         big_fig = gridspec.GridSpec(3, 1)
 
         # Define some plotting params
-        hspace, wspace = -0.1, -0.1
-        hspace, wspace = 0, 0
+        hspace, wspace = 0.05, 0.05
+        # hspace, wspace = 0, 0
         data_ims = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols,
                                                     wspace=wspace, hspace=hspace,
                                                     subplot_spec=big_fig[0])
@@ -894,20 +894,21 @@ class MCMCrun:
             # crop_arcsec of 2 translates to 88 pixels across
             # 0, 0 in upper left
             ax_d.grid(False)
+            ax_d.xaxis.set_ticks([]), ax_d.yaxis.set_ticks([])
             ax_d.set_xticklabels([]), ax_d.set_yticklabels([])
             ax_d.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_d.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             ax_m.grid(False)
+            ax_m.xaxis.set_ticks([]), ax_m.yaxis.set_ticks([])
             ax_m.set_xticklabels([]), ax_m.set_yticklabels([])
             ax_m.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_m.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
             ax_r.grid(False)
             # ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
-            # ax_r.tick_params(axis='both', direction='in', which='both')
             # ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
-            ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
+            # ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
             ax_r.plot(offsets_dA_pix[0], offsets_dA_pix[1], '+g')
             ax_r.plot(offsets_dB_pix[0], offsets_dB_pix[1], '+g')
 
@@ -927,22 +928,27 @@ class MCMCrun:
                              fc='k', ec='k', fill=False, hatch='////////')
                 ax_d.add_artist(el)
 
-                ticks = [i/0.045 for i in range(5)]
-                ax_d.xaxis.set_ticks(ticks), ax_d.xaxis.set_ticks(ticks)
-                ax_m.xaxis.set_ticks(ticks), ax_m.xaxis.set_ticks(ticks)
+
+                ticks = [i/0.045 for i in range(7)]
+                # ax_d.xaxis.set_ticks(ticks), ax_d.xaxis.set_ticks(ticks)
+                # ax_m.xaxis.set_ticks(ticks), ax_m.xaxis.set_ticks(ticks)
                 ax_r.xaxis.set_ticks(ticks), ax_r.xaxis.set_ticks(ticks)
+                ax_r.tick_params(axis='both', direction='inout') #, which='both')
 
                 # ax_d.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_d.set_yticklabels(['', -1, '', 0, '', 1, ''])
                 # ax_m.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_m.set_yticklabels(['', -1, '', 0, '', 1, ''])
-                # ax_r.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                ax_r.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
 
                 # ax_d.set_xticklabels([-1, 0, 1]), ax_d.set_yticklabels([-1, 0, 1])
                 # ax_m.set_xticklabels([-1, 0, 1]), ax_m.set_yticklabels([-1, 0, 1])
-                ax_r.set_xticklabels([-1, 0, 1]), ax_r.set_yticklabels([-1, 0, 1])
+                # ax_r.set_xticklabels([-1, 0, 1]), ax_r.set_yticklabels([-1, 0, 1])
 
                 # ax_d.set_xlabel(r"$\Delta \alpha$"), ax_d.set_ylabel(r"$\Delta \delta$", weight='bold')
                 # ax_m.set_xlabel(r"$\Delta \alpha$"), ax_m.set_ylabel(r"$\Delta \delta$", weight='bold')
                 ax_r.set_xlabel(r"$\Delta \alpha$", weight='bold'), ax_r.set_ylabel(r"$\Delta \delta$", weight='bold')
+            else:
+                ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
+                ax_r.set_xticklabels([]), ax_r.set_yticklabels([])
 
 
 
@@ -953,8 +959,8 @@ class MCMCrun:
 
 
 
-        fig.tight_layout()
-        fig.subplots_adjust(wspace=0., hspace=0.1, top=0.95, right=0.95)
+        # fig.tight_layout()
+        fig.subplots_adjust(wspace=0., hspace=0.1, top=0.95, right=0.92)
 
         cmaps = plt.imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                            extent=(crop_arcsec, -crop_arcsec, crop_arcsec, -crop_arcsec),
