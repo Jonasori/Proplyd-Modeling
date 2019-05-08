@@ -6,7 +6,7 @@ Would be nice to have these labeled some other way, but heck.
 
 import subprocess as sp
 from analysis import Figure
-from tools import plot_pv_diagram_casa
+from tools import plot_pv_diagram_casa, moment_maps
 from mcmc import MCMCrun
 from baseline_cutoff import fourmol_analysis
 
@@ -74,7 +74,7 @@ def chap3_pvd():
 # Plot out the HCN moment maps with ellipses overlaid
 def chap4_hcn_ellipses():
     Figure('data/hcn/hcn-short80.fits', moment=1, remove_bg=True, save=True,
-            image_outpath='../Thesis/Figures/moment1_hcn-ellipses', title='Visualizing HCN Model Radius Fits',
+            image_outpath='../Thesis/Figures/moment1_hcn-ellipses', # title='Visualizing HCN Model Radius Fits',
             plot_bf_ellipses=True)
 
 
@@ -82,19 +82,27 @@ def chap4_hcn_ellipses():
 def chap4_co_results():
     run = MCMCrun('mcmc_runs/april9-co/', 'april9-co', burn_in=50)
     run.posteriors(save=True, save_to_thesis=True)
-    run.DMR_images(save=True, save_to_thesis=True)
     run.plot_structure(save=True, save_to_thesis=True)
+    # moment_maps(im_path='mcmc_runs/april9-co/model_files/april9-co_bestFit', moment=0)
+    moment_maps(im_path='mcmc_runs/april9-co/model_files/april9-co_bestFit_resid', moment=0)
+    run.DMR_images(save=True, save_to_thesis=True)
     dmr_maps = Figure(['data/co/co-short60.fits',
-                       'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits',
-                       'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'])
+                       'mcmc_runs/april9-co/model_files/april9-co_bestFit.fits',
+                       'mcmc_runs/april9-co/model_files/april9-co_bestFit_resid.fits'],
+                      image_outpath='../Thesis/Figures/DMRmoments_co.png', save=True)
 
 
 def chap4_hco_results():
     run = MCMCrun('mcmc_runs/april9-hco/', 'april9-hco', burn_in=50)
     run.posteriors(save=True, save_to_thesis=True)
-    run.DMR_images(save=True, save_to_thesis=True)
     run.plot_structure(save=True, save_to_thesis=True)
-
+    # moment_maps(im_path='mcmc_runs/april9-hco/model_files/april9-hco_bestFit', moment=0)
+    moment_maps(im_path='mcmc_runs/april9-hco/model_files/april9-hco_bestFit_resid', moment=0)
+    run.DMR_images(save=True, save_to_thesis=True)
+    dmr_maps = Figure(['data/hco/hco-short110.fits',
+                       'mcmc_runs/april9-hco/model_files/april9-hco_bestFit.fits',
+                       'mcmc_runs/april9-hco/model_files/april9-hco_bestFit_resid.fits'],
+                      image_outpath='../Thesis/Figures/DMRmoments_hco.png', save=True)
 
 def chap4_hcn_results(remove_large_r=False):
     if remove_large_r:
@@ -104,9 +112,14 @@ def chap4_hcn_results(remove_large_r=False):
 
     run = MCMCrun('mcmc_runs/april9-hcn/', 'april9-hcn', burn_in=50)
     run.posteriors(save=True, save_to_thesis=True)
-    run.DMR_images(save=True, save_to_thesis=True)
     run.plot_structure(save=True, save_to_thesis=True)
-
+    # moment_maps(im_path='mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit', moment=0)
+    moment_maps(im_path='mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid', moment=0)
+    run.DMR_images(save=True, save_to_thesis=True)
+    dmr_maps = Figure(['data/hcn/hcn-short80.fits',
+                       'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits',
+                       'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'],
+                      image_outpath='../Thesis/Figures/DMRmoments_hcn.png', save=True)
 
 
 

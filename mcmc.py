@@ -133,9 +133,12 @@ class MCMCrun:
         return None
 
 
-    def get_disk_objects(self):
+    def get_disk_objects(self, set_face_on=False):
         self.get_bestfit_dict()
         param_dict = self.bf_param_dict
+        if set_face_on:
+            param_dict['incl_A'] = 0
+            param_dict['incl_B'] = 0
         print(param_dict)
         # Generate a Disk object
         DI = 0
@@ -629,7 +632,7 @@ class MCMCrun:
         # Generate the Disk objects (from Kevin's code)
         # Can be nice (in testing) to manually insert these and not regen them every time.
         if not hasattr(self, 'diskA'):
-            self.get_disk_objects()
+            self.get_disk_objects(set_face_on=True)
         d1, d2 = self.diskA, self.diskB
 
 
@@ -682,7 +685,7 @@ class MCMCrun:
                                                colors='grey', linestyles='--',
                                                label='Temperature')
 
-            im_axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
+            # im_axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
 
             # This is kinda janky, but whatever. Need colorbar set to the wider ranged one.
             # cb = plt.colorbar(dens_contours, label=r"$\log{ N(H_2)}$") #, cax=cbaxes) #, orientation='horizontal')
@@ -697,9 +700,9 @@ class MCMCrun:
         # cb.ax.yaxis.set_ticks_position('left')
 
         #plt.colorbar(cs2,label='log $\Sigma_{FUV}$')
-        im_axes[0].set_ylabel('Scale Height (au)', fontsize=16) #, weight='bold')
-        im_axes[0].set_xlabel('d253-1536a Outer Radius (au)', fontsize=15) #, weight='bold')
-        im_axes[1].set_xlabel('d253-1536b Outer Radius (au)', fontsize=15) #, weight='bold')
+        im_axes[0].set_ylabel('Scale Height (au)', fontsize=18) #, weight='bold')
+        im_axes[0].set_xlabel('d253-1536a Radius (au)', fontsize=18) #, weight='bold')
+        im_axes[1].set_xlabel('d253-1536b Radius (au)', fontsize=18) #, weight='bold')
 
 
         zmin = -zmax
@@ -756,7 +759,7 @@ class MCMCrun:
         return None
 
 
-    def DMR_images(self, cmap='RdBu', save=False, save_to_thesis=False):
+    def DMR_images(self, cmap='Reds', save=False, save_to_thesis=False):
         """
         Plot a triptych of data, model, and residuals.
 
@@ -793,7 +796,7 @@ class MCMCrun:
         # vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
         vmax = np.nanmax((np.nanmax(real_data), -np.nanmin(real_data)))
         vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
-        vmin = -vmax
+        # vmin = -vmax
 
         offsets = self.param_dict['offsets']
         offsets_dA, offsets_dB = offsets[0], offsets[1]
@@ -833,6 +836,9 @@ class MCMCrun:
         # Get the plots going
         # fig = plt.figure(figsize=(n_rows * 3, 7))
         fig = plt.figure(figsize=(8.5, 11))
+        fig.subplots_adjust(wspace=0., hspace=0.13, top=0.95, left=0.07, right=0.88)
+        cax = plt.axes([0.9, 0.1, 0.02, 0.85]) # [l, b, w, h]
+
         big_fig = gridspec.GridSpec(3, 1)
 
         # Define some plotting params
@@ -924,27 +930,22 @@ class MCMCrun:
             if i == n_cols * (n_rows - 1) and add_beam_d is True:
                 el = Ellipse(xy=(20, 20),
                              # xy=(0.8 * crop_arcsec, 0.8 * crop_pix),
-                             width=bmin, height=bmaj, angle=-bpa,
+                             width=bmin/0.045, height=bmaj/0.045, angle=-bpa,
                              fc='k', ec='k', fill=False, hatch='////////')
-                ax_d.add_artist(el)
+                ax_r.add_artist(el)
+                print("Beam properties: {}, {}, {}".format(bmin, bmaj, bpa))
 
+                # return ax_r
+                tickmin, tickmax = ax_r.get_xlim()
+                tickmed = (tickmin + tickmax) * 0.045/2
+                # ticks = [i * 0.045 - tickmed for i in np.linspace(tickmin, tickmax, 7)]
+                ticks = np.linspace(tickmin, tickmax, 7)
 
-                ticks = [i/0.045 for i in range(7)]
-                # ax_d.xaxis.set_ticks(ticks), ax_d.xaxis.set_ticks(ticks)
-                # ax_m.xaxis.set_ticks(ticks), ax_m.xaxis.set_ticks(ticks)
-                ax_r.xaxis.set_ticks(ticks), ax_r.xaxis.set_ticks(ticks)
+                ax_r.xaxis.set_ticks(ticks), ax_r.yaxis.set_ticks(ticks)
                 ax_r.tick_params(axis='both', direction='inout') #, which='both')
 
-                # ax_d.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_d.set_yticklabels(['', -1, '', 0, '', 1, ''])
-                # ax_m.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_m.set_yticklabels(['', -1, '', 0, '', 1, ''])
-                ax_r.set_xticklabels(['', -1, '', 0, '', 1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
+                ax_r.set_xticklabels(['', 1, '', 0, '', -1, '']), ax_r.set_yticklabels(['', -1, '', 0, '', 1, ''])
 
-                # ax_d.set_xticklabels([-1, 0, 1]), ax_d.set_yticklabels([-1, 0, 1])
-                # ax_m.set_xticklabels([-1, 0, 1]), ax_m.set_yticklabels([-1, 0, 1])
-                # ax_r.set_xticklabels([-1, 0, 1]), ax_r.set_yticklabels([-1, 0, 1])
-
-                # ax_d.set_xlabel(r"$\Delta \alpha$"), ax_d.set_ylabel(r"$\Delta \delta$", weight='bold')
-                # ax_m.set_xlabel(r"$\Delta \alpha$"), ax_m.set_ylabel(r"$\Delta \delta$", weight='bold')
                 ax_r.set_xlabel(r"$\Delta \alpha$", weight='bold'), ax_r.set_ylabel(r"$\Delta \delta$", weight='bold')
             else:
                 ax_r.xaxis.set_ticks([]), ax_r.yaxis.set_ticks([])
@@ -955,27 +956,26 @@ class MCMCrun:
             fig.add_subplot(ax_m)
             fig.add_subplot(ax_d)
             fig.add_subplot(ax_r)
-            # fig.tight_layout()
 
 
 
         # fig.tight_layout()
-        fig.subplots_adjust(wspace=0., hspace=0.1, top=0.95, right=0.92)
 
         cmaps = plt.imshow(real_data[i + chan_offset][xmin:xmax, xmin:xmax],
                            extent=(crop_arcsec, -crop_arcsec, crop_arcsec, -crop_arcsec),
                            cmap=cmap, vmin=vmin, vmax=vmax)
 
-        cax = plt.axes([0.95, 0.01, 0.02, 0.94]) # [l, b, w, h]
         cbar = plt.colorbar(cmaps, cax=cax, orientation='vertical')
-        cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold')
+        cbar.set_label('Jy/beam', labelpad=-0, fontsize=20, weight='bold', rotation=270)
         # REWORK: Better ticks
-        cbar.set_ticks(np.linspace(vmin, vmax, 6))
+        cbar_ticks_raw = [round(i, 2) for i in np.linspace(vmin, vmax, 6)]
+        # cbar_ticks = cbar_ticks_raw[:2] + cbar_ticks_raw[3:]
+        cbar.set_ticks(cbar_ticks_raw)
 
 
 
         out_path = self.image_outpath + '_DMR-images.png'
-        thesis_fig_path = '../Thesis/Figures/chanmaps-{}.pdf'.format(self.mol)
+        thesis_fig_path = '../Thesis/Figures/DMRchanmaps_{}.pdf'.format(self.mol)
         if save:
             if save_to_thesis:
                 plt.savefig(thesis_fig_path)
@@ -1065,17 +1065,21 @@ class MCMCrun:
         pv_ts = np.array(ax_pv.get_xticks().tolist()) * pixel_to_AU
         # pv_ticks = np.linspace(min(pv_ts), max(pv_ts), 5) - np.mean(pv_ts)
 
-        start, end = ax_pv.get_xlim()
-        pv_tick_labels = (np.linspace(start, end, 5) - np.mean([start, end])) * pixel_to_AU
+        xmin, xmax = ax_pv.get_xlim()
+        pv_tick_labels = (np.linspace(xmin, xmax, 5) - np.mean([xmin, xmax])) * pixel_to_AU
         pv_tick_labels = [int(tick) for tick in pv_tick_labels]
+
+        ax_pv.xaxis.set_xticks(np.linspace(xmin, xmax, 5))
+        ax_pv.set_xticklabels(pv_tick_labels)
+
+
 
         vmin, vmax = ax_pv.get_ylim()
         vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
         vel_tick_labels = [int(tick) for tick in vel_tick_labels]
 
-
-        # ax_pv.set_xticklabels(pv_tick_labels)
-        # ax_pv.set_yticklabels(vel_tick_labels)
+        ax_pv.yaxis.set_ticks(np.linspace(vmin, vmax, 5))
+        ax_pv.set_yticklabels(vel_tick_labels)
         # ax_pv.set_ylabel("Velocity (km/s)", weight='bold', rotation=270)
         # ax_pv.set_xlabel("Position Offset (AU)", weight='bold')
         # ax_pv.yaxis.tick_right()

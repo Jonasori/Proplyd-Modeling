@@ -159,6 +159,7 @@ def imstat(modelName, ext='.cm', verbose=False):
 
 
 def imstat_single(modelName, ext='.cm', verbose=False):
+    """Imstat a moment map."""
     print(('\nIMSTATING ', modelName, '\n'))
 
     r_offsource = '(-5,-5,5,-1)'
@@ -421,7 +422,7 @@ def tclean(mol='hco', output_path='./test'):
           "niter         = 5000)"])
 
 
-def moment_maps(im_path, out_path, clip_val, moment=0):
+def moment_maps(im_path, clip_val=0, moment=0):
     """Make a moment map from an image.
 
     Args:
@@ -432,19 +433,33 @@ def moment_maps(im_path, out_path, clip_val, moment=0):
     """
 
     # Clear out old ones.
-    remove([out_path + '.cm', out_path + '.fits'])
-    sp.call(['moment',
-             'mom={}'.format(moment),
-             # 'clip={},{}'.format(5*rms, 1e10),
-             'clip={}'.format(clip_val),
-             'in={}.cm'.format(im_path),
-             'out={}.cm'.format(out_path)
-             ])
-    sp.call(['fits',
-              'op=xyout',
-              'in={}.cm'.format(out_path),
-              'out={}.fits'.format(out_path)])
+    # THIS NEEDS WORKING
+    # Separate im_path/out_path from filepath
 
+    # Since these paths are often longer than 64 chars, need to split them up.
+    file_path, im_name = im_path.split('/')[:-1], im_path.split('/')[-1]
+    file_path = '/'.join(file_path) + '/'
+
+    out_name = '{}.moment{}'.format(im_name, moment)
+    print()
+    print('Filepath: ', file_path)
+    print('Im name: ', im_name)
+    print('Out name: ', out_name)
+    print()
+
+    remove([file_path + out_name + '.cm', file_path + out_name + '.fits'])
+    sp.Popen(['moment',
+              'mom={}'.format(moment),
+              # 'clip={},{}'.format(5*rms, 1e10),
+              'clip={}'.format(clip_val),
+              'in={}.cm'.format(im_name),
+              'out={}.cm'.format(out_name)
+             ], cwd=file_path).wait()
+    sp.Popen(['fits',
+              'op=xyout',
+              'in={}.cm'.format(out_name),
+              'out={}.fits'.format(out_name)], cwd=file_path).wait()
+    print ("Saved {}.[cm, fits]".format(file_path + out_name))
     # remove('moment_map')
 
 
@@ -650,7 +665,8 @@ def plot_pv_diagram_casa(diskID='a', save=False):
 
 
 
-def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 130], length=25, pa=70):
+def plot_pv_diagram_fits(image_path='pv_diagrams/pvd_casa_byhand_hcoA.fits',
+                         diskID='A', save=False): #, center=[129, 130], length=25, pa=70):
     """
     Make a position-velocity diagram with Casa
     https://casa.nrao.edu/casadocs/casa-5.1.0/global-task-list/task_impv/about
@@ -665,42 +681,34 @@ def plot_pv_diagram_fits(image_path, diskID='A', save=False): #, center=[129, 13
 
     rms = imstat('data/hco/hco-short110')[1]
     print (rms)
-    levs = [rms * i for i in np.linspace(2, 30, 3)]
+    levs = [rms * i for i in np.linspace(3, 30, 3)]
     fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[12, 1]})
-    im = im_ax.contourf(d, levels=25, cmap='Spectral_r', vmin=-vmax, vmax=vmax)
-
-    # Can we scale the axes of d to put things in good units?
-    im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
-    im_ax.set_xlabel('Offset (pix)', weight='bold')
-    im_ax.set_ylabel('Velocity (km/s)', weight='bold')
-
-    raw_labs = im_ax.yaxis.get_ticklabels()
-    # return raw_labs
-    vs = [int(raw_labs[i].get_text())*0.41 for i in range(len(raw_labs))]
-    im_ax.yaxis.set_label(vs)
-
-    cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
-    cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold')
-    cbar.set_ticks(np.linspace(np.nanmin(d), np.nanmax(d), 4))
+    im = im_ax.contourf(d, levels=24, cmap='Spectral_r', vmin=-vmax, vmax=vmax)
+    im_ax.contour(d, levels=16, colors='black', linewidths=0.3) #, vmin=-vmax, vmax=vmax)
 
 
 
-    # Get the axes set in good values
+    xmin, xmax = im_ax.get_xlim()
+    im_ax.xaxis.set_ticks(np.linspace(xmin, xmax, 7))
+    im_ax.set_xticklabels(['', 1, '', 0, '', -1, ''])
 
-    # rms = imstat('data/hco/hco-short110')[1]
-    # levs = [rms * i for i in np.linspace(2, 30, 3)]
-    # fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[10, 1]})
-    # im = im_ax.contourf(d, levels=25, cmap='RdBu') #, vmin=-vmax, vmax=vmax)
-    # im_ax.contour(d, levels=levs, colors='k', linewidths=0.5)
-    # im_ax.set_ylim(12, 50)
-    # im_ax.set_xlabel('Offset (pix)', weight='bold')
-    # im_ax.set_ylabel('Velocity (km/s)', weight='bold')
+
+
+    vmin, vmax = im_ax.get_ylim()
+    vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
+    vel_tick_labels = [int(tick) for tick in vel_tick_labels]
+
+    im_ax.yaxis.set_ticks(np.linspace(vmin, vmax, 5))
+    im_ax.set_yticklabels(vel_tick_labels)
+
 
     cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
     cbar.set_ticks(np.linspace(np.nanmin(d), np.nanmax(d), 4))
-    cbar.set_label('Jy/beam', labelpad=-30, fontsize=20, weight='bold', rotation=270)
+    raw_cbar_ticklabs = np.linspace(np.nanmin(d), np.nanmax(d), 4) * 1000
+    cbar.set_ticklabels([round(i, 0) for i in raw_cbar_ticklabs])
+    cbar.set_label('mJy/beam', labelpad=-10, fontsize=20, weight='bold', rotation=270)
     im_ax.set_ylabel("Velocity (km/s)", weight='bold') #, rotation=270)
-    im_ax.set_xlabel("Position Offset (pix)", weight='bold')
+    im_ax.set_xlabel("Position Offset (arcsec)", weight='bold')
 
 
     fig.tight_layout(w_pad=0.05)

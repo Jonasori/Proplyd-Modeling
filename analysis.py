@@ -118,6 +118,8 @@ class Figure:
         self.outpath = '../Thesis/Figures/m{}-map_{}.png'.format(moment,
                                                                 '-'.join(self.mols),
                                                                 dpi=300)
+        self.outpath = self.outpath if image_outpath is None else image_outpath
+
         # Clear any pre existing figures, then create figure
         plt.close()
         if make_plot:
@@ -151,12 +153,13 @@ class Figure:
                 self.fill_axis(ax, mol)
 
             if save:
-                if image_outpath:
-                    plt.savefig(image_outpath, dpi=200)
-                    print("Saved image to {}.png".format(image_outpath))
-                else:
-                    plt.savefig(self.outpath, dpi=200)
-                    print("Saved image to {}".format(self.outpath))
+                # if image_outpath:
+                #     plt.savefig(image_outpath, dpi=200)
+                #     print("Saved image to {}.png".format(image_outpath))
+                # else:
+
+                plt.savefig(self.outpath, dpi=200)
+                print("Saved image to {}".format(self.outpath))
             else:
                 plt.show(block=False)
 
@@ -248,18 +251,14 @@ class Figure:
         if len(self.data.shape) == 3:
             # Make some moment maps. Make both maps and just choose which data to use.
             momentmap_basepath = path.split('.')[-2]
-            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
-                        clip_val=0, moment=0)
-            self.rms = imstat_single(momentmap_basepath + '_moment0')[1]
+            moment_maps(momentmap_basepath, clip_val=0, moment=0)
+            self.rms = imstat_single(momentmap_basepath + '.moment0')[1]
 
-            moment_maps(momentmap_basepath, momentmap_basepath + '_moment0',
-                        clip_val=self.rms, moment=0)
+            moment_maps(momentmap_basepath, clip_val=self.rms, moment=0)
+            self.im = fits.getdata(momentmap_basepath + '.moment0.fits').squeeze()
 
-            self.im = fits.getdata(momentmap_basepath + '_moment0.fits').squeeze()
             if self.moment == 1:
-                moment_maps(momentmap_basepath,
-                            momentmap_basepath + '_moment1',
-                            clip_val=self.rms, moment=1)
+                moment_maps(momentmap_basepath, clip_val=self.rms, moment=1)
                 self.im_mom1 = fits.getdata(momentmap_basepath + '_moment1.fits').squeeze()
 
         else:
@@ -459,7 +458,7 @@ class Figure:
             # ax.set_ylim(-1, 2)
             r_A = (340/389)
             r_B1 = (380/389)
-            r_B2 = (120/389)
+            r_B2 = (150/389)
             PA_A, PA_B = 90 - 69, 136
             incl_A, incl_B = 65, 45
             print("Note that this is manually HCN specific rn, with:")
