@@ -621,11 +621,6 @@ def plot_spectrum(image_path, save=False):
 
 
 def plot_pv_diagram_casa(diskID='a', save=False):
-    # impv(imagename='iras16293_CH3OH.image’,
-    #     outfile='iras16293A-ch3oh_pv.image’,
-    #     chans='20~90', mode='length’,
-    #     center=['16h32m22.9s','-24d28m36.6s'],
-    #     length='3.6arcsec', pa='54deg’)
 
     # Center ra, dec = '05h35m25.30s', '-05d15m35.40s'
     # offsets = [[0.0002, 0.082], [-1.006, -0.3]]

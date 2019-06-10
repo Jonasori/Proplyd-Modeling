@@ -11,7 +11,7 @@ To-Do: In GridSearch_Run.param_degeneracies(), choose which slice of the
 """
 
 import os
-import pickle
+import pickle # use cPickle instead
 import argparse
 import numpy as np
 import pandas as pd
@@ -33,9 +33,6 @@ from astropy.visualization import astropy_mpl_style
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MultipleLocator, LinearLocator, AutoMinorLocator
 
-import sys
-sys.version
-
 from mcmc import MCMCrun
 from tools import imstat, imstat_single, pipe, moment_maps
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
@@ -45,6 +42,9 @@ import astropy.units as u
 from astropy.utils import data
 # https://media.readthedocs.org/pdf/spectral-cube/latest/spectral-cube.pdf
 # from spectral_cube import SpectralCube
+
+import sys
+sys.version
 
 os.chdir('/Volumes/disks/jonas/modeling')
 Path.cwd()

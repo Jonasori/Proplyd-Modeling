@@ -59,8 +59,13 @@ def get_baseline_rmss(mol, niters=1e4, baselines=baselines, remake_all=False):
     return data_pd
 
 
-def analysis(df, mol, niters, save_to_thesis=False):
-    """Read the df from find_baseline_cutoff and do cool shit with it."""
+def analysis_diagnostic(df, mol, niters, save=True, save_to_thesis=False):
+    """
+    Read the df from find_baseline_cutoff and do cool shit with it.
+
+    This and the next function are the same, just this one plots mean noise as
+    well as RMS.
+    """
     f, axarr = plt.subplots(2, sharex=True)
     axarr[0].grid(axis='x')
     axarr[0].set_title('RMS Noise')
@@ -71,18 +76,61 @@ def analysis(df, mol, niters, save_to_thesis=False):
     axarr[1].grid(axis='x')
     axarr[1].set_title('Mean Noise')
     axarr[1].set_xlabel('Baseline length (k-lambda)')
+
+    ax_au = axarr[1].twiny()
+    ax_au.set_ylabel('Length Scale Recorded (au)')
+
     # axarr[1].set_ylabel('Mean Off-Source Flux (Jy/Beam)')
     # axarr[1].plot(df['Baseline'], df['Mean'], 'or')
     axarr[1].plot(df['Baseline'], df['Mean'], '-b')
 
-    if save_to_thesis:
-        image_outpath = '../Thesis/Figures/imnoise-{}.pdf'.format(mol)
+    if save:
+        if save_to_thesis:
+            image_outpath = '../Thesis/Figures/imnoise-{}.pdf'.format(mol)
+        else:
+            image_outpath = './data/{}/images/{}-imnoise.pdf'.format(mol, mol)
+        plt.savefig(image_outpath)
+        print('Saved to ' + image_outpath)
     else:
-        image_outpath = './data/{}/images/{}-imnoise.pdf'.format(mol, mol)
-    plt.savefig(image_outpath)
-    print('Saved to ' + image_outpath)
-    # plt.show(block=False)
+        plt.show(block=False)
+
     return [df['Baseline'], df['Mean'], df['RMS']]
+
+
+
+def analysis_production(df, mol, niters=1e4, save=True, save_to_thesis=False):
+    """Read the df from find_baseline_cutoff and do cool shit with it."""
+    f, ax = plt.subplots(figsize=(8.5, 4))
+    ax.grid(axis='x')
+    # axarr[0].set_ylabel('RMS Off-Source Flux (Jy/Beam)')
+    # axarr[0].plot(df['Baseline'], df['RMS'], 'or')
+    ax.plot(df['Baseline'], df['RMS'], '-b')
+    ax.set_xlabel(r"Baseline length (k$\lambda$)") #, weight='bold')
+    ax.set_ylabel('RMS (mJy/Beam)') #, weight='bold')
+
+    ax_au = ax.twiny()
+    ax_au.grid(False)
+    ax_au.set_xlabel('Length Scale Recorded (au)')
+    ax_au.xaxis.set_ticks(np.linspace(0, len(ax.get_xticks())))
+    au_ticks = 206265 / (ax.get_xticks() * 1000)
+    ax_au.set_xticklabels(au_ticks)
+
+    if save:
+        if save_to_thesis:
+            image_outpath = '../Thesis/Figures/imnoise-{}.pdf'.format(mol)
+        else:
+            image_outpath = './data/{}/images/{}-imnoise.pdf'.format(mol, mol)
+        plt.savefig(image_outpath)
+        print('Saved to ' + image_outpath)
+    else:
+        plt.show(block=False)
+
+    return [df['Baseline'], df['Mean'], df['RMS']]
+
+
+
+
+
 
 
 def run_noise_analysis(mol, baselines=baselines, niters=1e4, save_to_thesis=False):
@@ -91,7 +139,7 @@ def run_noise_analysis(mol, baselines=baselines, niters=1e4, save_to_thesis=Fals
     # print("Don't forget that plots will be saved to /modeling, not here.\n\n")
     # mol = input('Which mol?\n').lower()
     ds = get_baseline_rmss(mol, niters, baselines)
-    analysis(ds, mol, niters, save_to_thesis=save_to_thesis)
+    analysis_production(ds, mol, niters, save_to_thesis=save_to_thesis)
 
 
 

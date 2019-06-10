@@ -8,18 +8,14 @@
 import numpy as np
 import subprocess as sp
 from astropy.io import fits
-from disk_model.disk import Disk
-import disk_model.raytrace as rt
+from disk_model2.disk import Disk
+import disk_model3.raytrace as rt
 
 from constants import obs_stuff, get_data_path, lines, mol
 
 ######################
 # CONSTANTS & PARAMS #
 ######################
-
-
-# Some other constants
-# col_dens, Tfo, m_star, r_in, rotHand, offsets, distance = other_params
 
 
 
@@ -96,8 +92,10 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
                      t_atms,
                      col_dens,
                      [1., r_out],
-                     rotHand[DI]])
-
+                     rotHand[DI]],
+             rtg=False)
+    a.Tco = param_dict['T_freezeout']
+    a.set_rt_grid()
     # The data have 51 channels (from the casa split()), so n_chans must be 51
     rt.total_model(a,
                    imres=0.045,
@@ -115,7 +113,8 @@ def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
                    flipme=False,
                    freq0=restfreq,
                    Jnum=jnum,
-                   obsv=obsv)
+                   obsv=obsv,
+                   hanning=True)
 
     print("MakeModel() completed")
 

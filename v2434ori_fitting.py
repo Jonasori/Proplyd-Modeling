@@ -1,4 +1,8 @@
-"""Organize the different line observations."""
+"""
+Organize the different line observations.
+
+Very much outdated.
+"""
 
 from fitting import Observation
 import numpy as np

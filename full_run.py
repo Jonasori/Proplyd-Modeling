@@ -13,19 +13,28 @@ import grid_search
 from run_params import make_diskA_params, make_diskB_params
 from constants import today
 from tools import already_exists, remove
-from sys import version_info; print("Python version: " + str(version_info[:3]))
+# from sys import version_info; print("Python version: " + str(version_info[:3]))
 
 
 
-# If running MCMC, how many processors?
-# np = 6
+print('\n\n')
 
 # Which fitting method?
-method = 'gs'
-m = input("Which type of run?\n['grid', 'mc']: ")
-method = 'mc' if 'm' in m else 'gs'
+method = 'mc'
+# Single or multi-line fit?
+single_multi = input("Which type of run?\n['single', 'multi']: ")
 
-if method == 'gs':
+if method == 'mc':
+    n = input('How many processors shall we use?\n[2-n]: ')
+    np = '2' if int(n) < 2 else n
+
+    # sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
+    runner = '-rs' if single_multi is 'single' else '-rml'
+    sp.call(['mpirun', '-np', np, 'nice', 'python', 'run_driver.py', runner])
+
+
+
+elif method == 'gs':
     mol = input('Which spectral line?\n[HCO, HCN, CO, CS]: ').lower()
     if mol in ['hco', 'hcn', 'co', 'cs']:
         diskAParams = make_diskA_params(mol=mol, run_length='long')
@@ -33,21 +42,6 @@ if method == 'gs':
 
         grid_search.fullRun(diskAParams, diskBParams,
                             mol=mol, cut_central_chans=False)
-
-
-elif method == 'mc':
-    n = input('How many processors shall we use?\n[2-n]: ')
-    np = '2' if int(n) < 2 else n
-
-    # sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
-    sp.call(['mpirun', '-np', np, 'nice', 'python', 'run_driver.py', '-r'])
-
-
-elif method == 'fl':
-    n = input('How many processors shall we use?\n[2-n]: ')
-    np = '2' if int(n) < 2 else n
-    print("Using {} processors".format(np))
-    sp.call(['mpirun', '-np', np, 'python', 'four_line_run_driver.py', '-r'])
 
 
 else:

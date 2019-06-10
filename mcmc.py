@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.patches import Ellipse
 from matplotlib.ticker import FormatStrFormatter
-from disk_model.disk import Disk
+from disk_model3.disk import Disk
 from astropy.io import fits
 
 from constants import today, lines #, mol
@@ -25,6 +25,7 @@ from tools import already_exists, remove, imstat
 import fitting
 # import plotting
 import run_driver
+from run_driver import vars
 # import analysis
 import tools
 
@@ -46,7 +47,7 @@ class MCMCrun:
     self.mol should be a thing for the one-line fits.
     """
     # Set up a path for the images to go to:
-    def __init__(self, run_path, name, mol='hco', nwalkers=nwalkers, burn_in=0):
+    def __init__(self, mol='hco', burn_in=0):
         """Set up.
 
         Args:
@@ -55,10 +56,13 @@ class MCMCrun:
             nwalkers (int): how many walkers to have.
             burn_in (int): how many of the first steps to ignore.
         """
-        self.name            = name
-        self.runpath         = run_path + name
-        self.image_outpath   = './mcmc_results/' + name
-        self.modelfiles_path = run_path + 'model_files/' + name
+
+        v = vars(mol)
+
+        self.name            = v.run_name
+        self.runpath         = v.run_path + v.run_name
+        self.image_outpath   = './mcmc_results/' + v.run_name
+        self.modelfiles_path = v.run_path + 'model_files/' + name
         self.main            = pd.read_csv(self.runpath + '_chain.csv')
         self.mol             = self.get_line()
         # The 'encoding' arg is to rectify confusion that comes up when Pickle
@@ -93,6 +97,13 @@ class MCMCrun:
                                  'pos_angle_A': 'Position Angle\n(Disk A)', 'pos_angle_B': 'Position Angle\n(Disk B)',
                                  'incl_A': 'Inclination\n(Disk A)', 'incl_B': 'Inclination\n(Disk B)',
                                  'temp_struct_A': 'q\n(Disk A)', 'temp_struct_B': 'q\n(Disk B)'}
+
+
+
+
+        print("Starting run:" + self.run_path + self.run_name +\
+              "\nwith {} steps and {} walkers.".format(str(self.nsteps), str(self.nwalkers)))
+        print('\n\n\n')
 
 
         # Get a dictionary of the best-fit param values (for use in structure plotting)
@@ -1130,7 +1141,7 @@ class MCMCrun:
 
 
 
-def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
+def run_emcee(mol, lnprob, pool, multi_fit=False):
     """
     Make an actual MCMC run.
 
@@ -1151,6 +1162,9 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
                             for each parameter.
                             The second two values set the position & size
                             for a random Gaussian ball of initial positions
+        multi_fit (bool): If we want to do a multi-line fit (right now just
+                          set up for HCO and HCN since CO is garb), declare it
+                          here. Doing so makes the mol argument irrelevant.
     """
     # Name the chain we're looking for
     chain_filename = run_path + run_name + '_chain.csv'
@@ -1243,8 +1257,11 @@ def run_emcee(run_path, run_name, mol, nsteps, nwalkers, lnprob, pool):
 
     print("Initializing sampler.")
     ndim = len(param_info)
+
+    # As noted in lnprob(), multi_fit lets us simultaneously fit HCO and HCN.
+    # This makes the arg mol irrelevant.
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
-                                    args=(run_name, param_info, mol),
+                                    args=(run_name, param_info, mol, multi_fit),
                                     pool=pool)
 
     # Initiate a generator to provide the data. They changed the arg

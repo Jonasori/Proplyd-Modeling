@@ -10,7 +10,8 @@ from constants import lines
 
 
 class Observation:
-    """Make the whole observation/data processing shindig a Class.
+    """
+    Make the whole observation/data processing shindig a Class.
 
     This incorporates everything from the path to the original data file to
     the final model. Running it will grab the appropriate data files and
