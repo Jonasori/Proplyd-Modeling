@@ -5,14 +5,11 @@ This is only run if we're on the VVO machines. If we're clustered,
 run run_driver directly.
 """
 
-import argparse
 import subprocess as sp
 
 # Local package files
 import grid_search
 from run_params import make_diskA_params, make_diskB_params
-from constants import today
-from tools import already_exists, remove
 # from sys import version_info; print("Python version: " + str(version_info[:3]))
 
 
@@ -21,16 +18,16 @@ print('\n\n')
 
 # Which fitting method?
 method = 'mc'
-# Single or multi-line fit?
-single_multi = input("Which type of run?\n['single', 'multi']: ")
 
 if method == 'mc':
     n = input('How many processors shall we use?\n[2-n]: ')
     np = '2' if int(n) < 2 else n
 
-    # sp.call(['mpirun', '-np', np, 'python', 'run_driver.py', '-r'])
-    runner = '-rs' if single_multi is 'single' else '-rml'
-    sp.call(['mpirun', '-np', np, 'nice', 'python', 'run_driver.py', runner])
+    mol = input('Which spectral line?\n[HCO, HCN, CO, CS, multi]: ').lower()
+    if mol not in ['hco', 'co', 'cs', 'hcn', 'multi']:
+        print("Choose spectral line better.")
+    else:
+        sp.call(['mpirun', '-np', np, 'nice', 'python', 'run_driver.py', '-' + mol])
 
 
 

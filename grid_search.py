@@ -13,7 +13,7 @@ import subprocess as sp
 # Local package files
 from utils import makeModel, sumDisks, chiSq
 from tools import icr, sample_model_in_uvplane, remove, already_exists
-from analysis import GridSearch_Run
+from analysis import GridSearch_Analysis
 from constants import today, dataPath
 # from run_params import diskAParams, diskBParams
 from run_params import make_diskA_params, make_diskB_params

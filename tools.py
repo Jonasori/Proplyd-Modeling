@@ -10,6 +10,15 @@ Script some commands for easier calling, more specialized usage.
 
 As of March 15: Since we apparently can't download os on the cluster, I'm
 rerouting all the output to junk files rather than none.
+
+As of June 11 2019: Only some of these are still useful:
+Useful:
+    - moment_maps, already_exists, imstat, pipe, get_int_line_flux
+
+Kinda useful, but no longer used:
+    - cgdisp, imspec, icr, sample_model_in_uvplane, tclean
+Poorly executed good ideas:
+    - plot_*
 """
 
 # Packages
@@ -659,67 +668,6 @@ def plot_pv_diagram_casa(diskID='a', save=False):
 
 
 
-
-def plot_pv_diagram_fits(image_path='pv_diagrams/pvd_casa_byhand_hcoA.fits',
-                         diskID='A', save=False): #, center=[129, 130], length=25, pa=70):
-    """
-    Make a position-velocity diagram with Casa
-    https://casa.nrao.edu/casadocs/casa-5.1.0/global-task-list/task_impv/about
-
-    Use imview to imview a .cm image. Click the tiny "P/V" icon under the toolbar,
-    manually give a line that is approximately the disk's axis of rotation,
-    and save out as a fits. This script just makes it a pretty picture.
-    """
-    #image_path = './pv_diagrams/pvd_casa_byhand_hco{}.fits'.format(diskID.upper())
-    d = fits.getdata(image_path).squeeze()
-    vmax = max(np.nanmax(d), -np.nanmin(d))
-
-    rms = imstat('data/hco/hco-short110')[1]
-    print (rms)
-    levs = [rms * i for i in np.linspace(3, 30, 3)]
-    fig, (im_ax, cbar_ax) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[12, 1]})
-    im = im_ax.contourf(d, levels=24, cmap='Spectral_r', vmin=-vmax, vmax=vmax)
-    im_ax.contour(d, levels=16, colors='black', linewidths=0.3) #, vmin=-vmax, vmax=vmax)
-
-
-
-    xmin, xmax = im_ax.get_xlim()
-    im_ax.xaxis.set_ticks(np.linspace(xmin, xmax, 7))
-    im_ax.set_xticklabels(['', 1, '', 0, '', -1, ''])
-
-
-
-    vmin, vmax = im_ax.get_ylim()
-    vel_tick_labels = np.linspace(vmin, vmax, 5) - np.mean([vmin, vmax])
-    vel_tick_labels = [int(tick) for tick in vel_tick_labels]
-
-    im_ax.yaxis.set_ticks(np.linspace(vmin, vmax, 5))
-    im_ax.set_yticklabels(vel_tick_labels)
-
-
-    cbar = plt.colorbar(im, cax=cbar_ax, orientation='vertical')
-    cbar.set_ticks(np.linspace(np.nanmin(d), np.nanmax(d), 4))
-    raw_cbar_ticklabs = np.linspace(np.nanmin(d), np.nanmax(d), 4) * 1000
-    cbar.set_ticklabels([round(i, 0) for i in raw_cbar_ticklabs])
-    cbar.set_label('mJy/beam', labelpad=-10, fontsize=20, weight='bold', rotation=270)
-    im_ax.set_ylabel("Velocity (km/s)", weight='bold') #, rotation=270)
-    im_ax.set_xlabel("Position Offset (arcsec)", weight='bold')
-
-
-    fig.tight_layout(w_pad=0.05)
-
-    if save:
-        out_path='../Thesis/Figures/pvd_{}.pdf'.format(diskID)
-        fig.savefig(out_path)
-        print("Saving figure to " + out_path)
-    else:
-        fig.show()
-
-    return im_ax
-
-
-
-
 def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     """
     Fuck Miriad and CASA, let's just use a package.
@@ -906,12 +854,11 @@ def get_int_line_flux(data_path='./data/hco/hco-short110_moment0.cm'):
 
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Do the tools.')
-    parser.add_argument('-t', '--tclean', action='store_true',
-                        help='Run a tcleaning.')
-    args = parser.parse_args()
-    if args.tclean:
-        tclean('hco')
+
+
+
+
+
+
 
 # The End

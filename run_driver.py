@@ -1,246 +1,24 @@
-"""Run the whole MCMC shindig!"""
+"""Run the whole MCMC shindig."""
 
 # Import some python packages
-import os
+import sys
+import yaml
+import emcee
 import argparse
 import numpy as np
 import subprocess as sp
-import matplotlib.pyplot as plt
-from astropy.constants import M_sun
-from astropy.io import fits
+from yaml import CLoader, CDumper
 # from pathlib2 import Path
 # plt.switch_backend('agg')
-M_sun = M_sun.value
 
-# Import some files from Kevin's modeling code
-from disk_model3 import raytrace as rt
-from disk_model3.disk import Disk
 
 # Import some local files
-import mcmc
-import fitting
-# import plotting
+import utils
+from constants import today
 from tools import remove, already_exists
-from constants import obs_stuff, lines, today, offsets, mol
-
-nwalkers, nsteps = 50, 500
 
 
-
-class vars:
-    def __init__(self, mol):
-
-        # Give the run a name. Exactly equivalent to grid_search.py(250:258)
-        self.nwalkers, self.nsteps = 50, 500
-
-        self.run_name = today + '-' + mol
-        run_name_basename = run_name
-        self.run_path = './mcmc_runs/' + run_name_basename + '/'
-        counter = 2
-        while already_exists(self.run_path) is True:
-            self.run_name = run_name_basename + '-' + str(counter)
-            self.run_path = './mcmc_runs/' + self.run_name + '/'
-            counter += 1
-
-        self.run_w_pool = True
-
-        pos_A, pos_B = [offsets[0][0], offsets[0][1]], [offsets[1][0], offsets[1][1]]
-
-
-        # An initial list of parameters needed to make a model.
-        # These get dynamically updated in lnprob (line 348).
-        # Nothing that is being fit for can be in a tuple
-        vsys, restfreq, freqs, obsv, chanstep, n_chans, chanmins, jnum = obs_stuff(mol)
-
-        param_dict = {
-            'r_out_A':              500,             # AU
-            'r_out_B':              400,             # AU
-            'atms_temp_A':          300,
-            'atms_temp_B':          200,
-            'mol_abundance_A':      -4,              # Set these to their CO values because they're
-            'mol_abundance_B':      -4,              # fixed for CO but get updated for the others.
-            'temp_struct_A':        -0.2,            # Tqq in Kevin's code
-            'temp_struct_B':        -0.5,            # Tqq in Kevin's code
-            'incl_A':               65.,
-            'incl_B':               45,
-            'pos_angle_A':          69.7,
-            'pos_angle_B':          136.,
-            'T_mids':              [15, 15],          # Kelvin
-            'r_ins':               1,                 # AU
-            'r_ins':               [1, 1],            # AU
-            'm_disk_A':            -1.10791,          # Disk Gas Masses (log10 solar masses)
-            'm_disk_B':            -1.552842,         # Disk Gas Masses (log10 solar masses)
-            'm_stars':             [3.5, 0.4],        # Solar masses (Disk A, B)
-            'surf_dens_str_A':     1.,                # Surface density power law index
-            'surf_dens_str_B':     1.,                # Surface density power law index
-            'v_turb':              0.081,             # Turbulence velocity
-            'vert_temp_str':       70.,               # Zq in Kevin's docs
-            'r_crit':              100.,              # Critical radius (AU)
-            'rot_hands':           [-1, -1],          # disk rotation direction
-            'distance':            389.143,           # parsec, errors of 3ish
-            'imres':               0.045,             # arcsec/pixel
-            'imwidth':             256,               # width of image (pixels)
-            'mol':                 mol,
-            'vsys':                vsys,              # km/s
-            'obsv':                obsv,              # km/s
-            'nchans':              n_chans,
-            'chanmins':            chanmins,
-            'restfreq':            restfreq,	   	  # GHz
-            'offsets':             [pos_A, pos_B],    # from center (")
-            'chanstep':            chanstep,
-            'jnum':                lines[mol]['jnum'],
-            'column_densities':    lines[mol]['col_dens'],
-            'T_freezeout':         lines[mol]['t_fo']
-            }
-
-
-
-def make_fits(model, param_dict, mol, testing=False):
-    """Take in two list of disk params and return a two-disk model.
-
-    Args:
-        model (Model instance): the model that this should go into.
-        param_dict (dict): the dynamically updated, global parameter dictionary
-                            of parameters. Each parameter that is different for
-                            the two disks is a tuple of [diskA_val, diskB_val]
-        testing: if you're setting up this model as a diagnostic, you'll run into
-                 problems since the necessary directories are set up in run_emcee.
-
-    Output:
-        (model.path).fits
-
-    This is, I think, pretty much redundant with utils.py/make_model(). Would be
-    good to consolidate at some point.
-    """
-
-    if testing is True:
-        dir_list = model.modelfiles_path.split('/')[:-1]
-        dir_to_make = '/'.join(dir_list) + '/'
-        sp.call(['mkdir {}'.format(dir_to_make)])
-
-
-    # Make Disk 1
-    print("Entering make fits; exporting to" + model.modelfiles_path)
-    #print "Fitting disk 1"
-    DI = 0
-    d1 = Disk(params=[param_dict['temp_struct_A'],
-                      10**param_dict['m_disk_A'],
-                      param_dict['surf_dens_str_A'],
-                      param_dict['r_ins'][DI],
-                      param_dict['r_out_A'],
-                      param_dict['r_crit'],
-                      param_dict['incl_A'],
-                      param_dict['m_stars'][DI],
-                      10**param_dict['mol_abundance_A'],
-                      param_dict['v_turb'],
-                      param_dict['vert_temp_str'],
-                      param_dict['T_mids'][DI],
-                      param_dict['atms_temp_A'],
-                      param_dict['column_densities'],
-                      [param_dict['r_ins'][DI], param_dict['r_out_A']],
-                      param_dict['rot_hands'][DI]],
-              rtg=False)
-    d1.Tco = param_dict['T_freezeout']
-    d1.set_rt_grid()
-    rt.total_model(d1,
-                   imres=param_dict['imres'],
-                   distance=param_dict['distance'],
-                   chanmin=param_dict['chanmins'][DI],
-                   nchans=param_dict['nchans'][DI],
-                   chanstep=param_dict['chanstep'],
-                   flipme=False,
-                   Jnum=param_dict['jnum'],
-                   freq0=param_dict['restfreq'],
-                   xnpix=param_dict['imwidth'],
-                   vsys=param_dict['vsys'][DI],
-                   PA=param_dict['pos_angle_A'],
-                   offs=param_dict['offsets'][DI],
-                   modfile=model.modelfiles_path + '-d1',
-                   obsv=param_dict['obsv'],
-                   isgas=True,
-                   hanning=True
-                   )
-
-
-    # Now do Disk 2
-    DI = 1
-    d2 = Disk(params=[param_dict['temp_struct_B'],
-                      10**param_dict['m_disk_B'],
-                      param_dict['surf_dens_str_B'],
-                      param_dict['r_ins'][DI],
-                      param_dict['r_out_B'],
-                      param_dict['r_crit'],
-                      param_dict['incl_B'],
-                      param_dict['m_stars'][DI],
-                      10**param_dict['mol_abundance_B'],
-                      param_dict['v_turb'],
-                      param_dict['vert_temp_str'],
-                      param_dict['T_mids'][DI],
-                      param_dict['atms_temp_B'],
-                      param_dict['column_densities'],
-                      [param_dict['r_ins'][DI], param_dict['r_out_B']],
-                      param_dict['rot_hands'][DI]],
-              rtg=False)
-    d2.Tco = param_dict['T_freezeout']
-    d2.set_rt_grid()
-    rt.total_model(d2,
-                   imres=param_dict['imres'],
-                   distance=param_dict['distance'],
-                   chanmin=param_dict['chanmins'][DI],
-                   nchans=param_dict['nchans'][DI],
-                   chanstep=param_dict['chanstep'],
-                   flipme=False,
-                   Jnum=param_dict['jnum'],
-                   freq0=param_dict['restfreq'],
-                   xnpix=param_dict['imwidth'],
-                   vsys=param_dict['vsys'][DI],
-                   PA=param_dict['pos_angle_B'],
-                   offs=param_dict['offsets'][DI],
-                   modfile=model.modelfiles_path + '-d2',
-                   obsv=param_dict['obsv'],
-                   isgas=True,
-                   hanning=True
-                   )
-
-    #print "Both disks have been made; going to summing them now."
-    # Now sum those two models, make a header, and crank out some other files.
-    a = fits.getdata(model.modelfiles_path + '-d1.fits')
-    b = fits.getdata(model.modelfiles_path + '-d2.fits')
-
-    # The actual disk summing
-    sum_data = a + b
-
-    # Create the empty structure for the final fits file and insert the data.
-    im = fits.PrimaryHDU()
-    # The actual disk summing
-    im.data = a + b
-
-    # Add the header by modifying a model header.
-    with fits.open(model.modelfiles_path + '-d1.fits') as model_fits:
-        model_header = model_fits[0].header
-    im.header = model_header
-
-    # Swap out some of the vals using values from the data file used by model:
-    # header_info_from_data = fits.open('../data/{}/{}.fits'.format(mol, mol))
-    header_info_from_data = model.observation.fits
-    data_header = header_info_from_data[0].header
-    header_info_from_data.close()
-
-    # Put in RA, Dec and restfreq
-    im.header['CRVAL1'] = data_header['CRVAL1']
-    im.header['CRVAL2'] = data_header['CRVAL2']
-    im.header['RESTFRQ'] = data_header['RESTFREQ']
-    # im.header['EPOCH'] = data_header['EPOCH']
-
-    # Write it out to a file, overwriting the existing one if need be
-    im.writeto(model.modelfiles_path + '.fits', overwrite=True)
-
-    remove([model.modelfiles_path + '-d1.fits',
-            model.modelfiles_path + '-d2.fits'])
-
-
-
-def lnprob(theta, run_name, param_info, mol, multi_fit, posang_prior_A=True, posang_prior_B=True):
+def lnprob(theta, run_path, param_info, mol):
     """
     Evaluate a set of parameters by making a model and getting its chi2.
 
@@ -255,72 +33,106 @@ def lnprob(theta, run_name, param_info, mol, multi_fit, posang_prior_A=True, pos
                             Organized as (d1_p0,...,d1_pN, d2_p0,...,d2_pN)
                             and with length = total number of free params
         mol (str):
-        posang_prior_X (bool):
-        multi_fit (bool): If we want to do a multi-line fit (right now just
-                          set up for HCO and HCN since CO is garb), declare it
-                          here. Doing so makes the mol argument irrelevant.
+        PA_prior_X (bool):
+
+    Big, anticipated problems:
+        - run_name/run_path stuff, including in fitting.Model().
+        -
     """
 
-    # Let's put priors on both position angles, using Williams et al values.
-    # posang_prior_A, posang_prior_B = True, True
-
-
+    # print('\nTheta:\n{}\n'.format(theta))
     # Check that the proposed value, theta, is within priors for each var.
+    # This should work with multi-line.
     for i, free_param in enumerate(param_info):
-        # print '\n', i, free_param
         lower_bound, upper_bound = free_param[-1]
         # If it is, put it into the dict that make_fits calls from
-        if lower_bound < theta[i] < upper_bound:
-            # print "Taking if"
-            name = free_param[0]
-            param_dict[name] = theta[i]
-            #if name == 'mol_abundance_A' or name == 'mol_abundance_B':
-                #print name, theta[i], param_dict[name]
-        else:
-            # print "Taking else, returning -inf"
+        if not lower_bound < theta[i] < upper_bound:
             return -np.inf
 
+    print("Theta: {}".format(theta))
 
 
-    # Do the whole observation/model/chi2 process thing.
-    # Making this a function to make the single/multi-line fit thing cleaner.
-    def get_model_chi(mol):
-        obs = fitting.Observation(mol=mol)
-
-        # Make model and the resulting fits image
-        model_name = run_name + '_' + str(np.random.randint(1e10))
-        model = fitting.Model(observation=obs,
-                              run_name=run_name,
-                              model_name=model_name)
-
-
-        # Make the actual model fits files.
-        make_fits(model, param_dict, mol)
+    # Simplify the chi-getting process
+    def get_model_chi(mol, param_path, run_path, model_name):
+        """Consolidate the actual chi-getting process."""
+        print('Param path: {}\nModel Name: {}'.format(param_path, model_name))
+        model = utils.Model(mol, param_path, run_path, model_name)
+        model.make_fits()
         model.obs_sample()
         model.chiSq(mol)
         model.delete()
-        lnlikelihood = -0.5 * sum(model.raw_chis)
-        return lnlikelihood
+        return model.raw_chi
+    # Update the param files appropriately and get the chi-squared values.
+    if mol == 'multi':
+        param_dicts = {'hco': yaml.load(open(
+                            '{}params-hco.yaml'.format(run_path), 'r'),
+                                        Loader=CLoader),
+                       'hcn': yaml.load(open(
+                            '{}params-hcn.yaml'.format(run_path), 'r'),
+                                         Loader=CLoader)
+                       }
+        # Check if it's a mol-specific param, and add in appropriately.
+        # There's probably a more elegant way to do this
+        for i, free_param in enumerate(param_info):
+            name = free_param[0]
+            print(name, theta[i])
+            if 'hco' in name:
+                param_dicts['hco'][name] = theta[i]
+            elif 'hcn' in name:
+                param_dicts['hcn'][name] = theta[i]
+            else:
+                param_dicts['hco'][name] = theta[i]
+                param_dicts['hcn'][name] = theta[i]
 
-    # If we want to do a multi-line fit, do it here.
-    if multi_fit is true:
-        lnlikelihood = -0.5 * sum([get_model_chi(m) for m in ['hco', 'hcn']])
-    else:
-        lnlikelihood = -0.5 * sum(get_model_chi(mol))
+        # Avoid crashing between param files in parallel w/ unique identifier.
+        # Also used as a unique id for the resulting model files.
+        unique_id = str(np.random.randint(1e10))
+        model_name = 'model_' + unique_id
+        param_path_hco = '{}params-hco_{}.yaml'.format(run_path, unique_id)
+        param_path_hcn = '{}params-hcn_{}.yaml'.format(run_path, unique_id)
+        yaml.dump(param_dicts['hco'], open(param_path_hco, 'w+'), Dumper=CDumper)
+        yaml.dump(param_dicts['hcn'], open(param_path_hcn, 'w+'), Dumper=CDumper)
+
+        # Get the actual values
+        lnlikelihood = -0.5 * sum([get_model_chi('hco', param_path_hco, run_path, model_name),
+                                   get_model_chi('hcn', param_path_hcn, run_path, model_name)])
+
+        # This is pretty janky, but if at least one of the lines wants
+        # Gaussian priors on PA, then just do it.
+        PA_prior_A = True if True in (param_dicts['hco']['PA_prior_A'], param_dicts['hcn']['PA_prior_A']) else False
+        PA_prior_B = True if True in (param_dicts['hco']['PA_prior_B'], param_dicts['hcn']['PA_prior_B']) else False
 
 
-    # Gaussian prior on position angle
-    if posang_prior_A:
-        mu_posangA = param_dict['pos_angle_A'] - 69.7
-        sig_posangA = 1.4 # standard deviation on prior
+    else:  # Single line
+        param_dict = yaml.load(open('{}params-{}.yaml'.format(run_path, mol),
+                                    'r'), Loader=CLoader)
+        for i, free_param in enumerate(param_info):
+            name = free_param[0]
+            param_dict[name] = theta[i]
+
+        unique_id = str(np.random.randint(1e10))
+        model_name = 'model_' + unique_id
+        param_path = '{}params-{}_{}.yaml'.format(run_path, mol, unique_id)
+        yaml.dump(param_dict, open(param_path, 'w+'), Dumper=CDumper)
+
+        lnlikelihood = -0.5 * get_model_chi(mol, param_path, run_path, model_name)
+
+        PA_prior_A, PA_prior_B = param_dict['PA_prior_A'], param_dict['PA_prior_B']
+
+
+    # Since PA is not fit individually, just grab one of them for ML fits.
+    p_dict = param_dicts['hco'] if mol == 'multi' else param_dict
+    if PA_prior_A:
+        mu_posangA = p_dict['pos_angle_A'] - 69.7
+        sig_posangA = 1.4  # standard deviation on prior
         # Wikipedia Normal Dist. PDF for where this comes from
         lnprior_posangA = -np.log(np.sqrt(2 * np.pi * sig_posangA**2)) \
                           - mu_posangA**2 / (2 * sig_posangA**2)
     else:
         lnprior_posangA = 0.0
 
-    if posang_prior_B:
-        mu_posangB = param_dict['pos_angle_B'] - 135.
+    if PA_prior_B:
+        mu_posangB = p_dict['pos_angle_B'] - 135.
         sig_posangB = 15.    # standard deviation on prior
         lnprior_posangB = -np.log(np.sqrt(2 * np.pi * sig_posangB**2)) \
                           - mu_posangB**2 / (2 * sig_posangB**2)
@@ -329,12 +141,299 @@ def lnprob(theta, run_name, param_info, mol, multi_fit, posang_prior_A=True, pos
 
 
 
-    # Subtracting (not *ing) because ln(prior*likelihood) -> ln(prior) + ln(likelihood)
+    # Subtracting (not *ing) because
+    # ln(prior*likelihood) -> ln(prior) + ln(likelihood)
     lnprob = lnlikelihood + lnprior_posangA + lnprior_posangB
 
     print("Lnprob val: ", lnprob)
     print('\n')
     return lnprob
+
+
+
+# Could be cool to rewrite this as a class with _call_ taking the place of -r
+def run_emcee(mol, lnprob, pool):
+    """
+    Make an actual MCMC run.
+
+    Other than in setting up param_info, this is actually line-agnostic.
+    The line-specificity is created in the lnprob function.
+
+    Args:
+        run_path (str): the name to output I guess
+        run_name (str): the name to feed the actual emcee routine (line 360)
+        mol (str): which line we're running.
+        nsteps (int): How many steps we're taking.
+        nwalkers (int): How many walkers we're using
+        lnprob (func): The lnprob function to feed emcee
+        param_info (list): list of [param name,
+                                    initial_position_center,
+                                    initial_position_sigma,
+                                    (prior low bound, prior high bound)]
+                            for each parameter.
+                            The second two values set the position & size
+                            for a random Gaussian ball of initial positions
+    """
+
+
+    # Set up a run naming convension:
+    run_name = today + '-' + mol
+    run_name_basename = run_name
+    run_path = './mcmc_runs/' + run_name_basename + '/'
+    counter = 2
+    while already_exists(run_path) is True:
+        run_name = run_name_basename + '-' + str(counter)
+        run_path = './mcmc_runs/' + run_name + '/'
+        counter += 1
+
+    print('Run path is {}'.format(run_path))
+
+
+    print("Setting up directories for new run")
+    remove(run_path)
+    sp.call(['mkdir', run_path])
+    sp.call(['mkdir', run_path + '/model_files'])
+
+    # Make a copy of the initial parameter dict so we can modify it
+    if mol is 'multi':
+        sp.call(['cp', 'hco.yaml', '{}params-hco.yaml'.format(run_path)])
+        sp.call(['cp', 'hcn.yaml', '{}params-hcn.yaml'.format(run_path)])
+    else:
+        sp.call(['cp', mol + '.yaml', '{}params-{}.yaml'.format(run_path,
+                                                                mol)])
+
+
+
+    # Note that this is what is fed to MCMC to dictate how the walkers move, not
+    # the actual set of vars that make_fits pulls from.
+    # ORDER MATTERS here (for comparing in lnprob)
+    # Values that are commented out default to the starting positions in run_driver/param_dict
+    # Note that param_info is of form:
+    # [param name, init_pos_center, init_pos_sigma, (prior lower, prior upper)]
+
+    if mol is 'multi':
+        # There are more params to fit here.
+        param_info = [('r_out_A_hco',           500,     300,      (10, 700)),
+                      ('r_out_A_hcn',           500,     300,      (10, 700)),
+                      ('atms_temp_A',           200,     150,      (0, 1000)),
+                      ('mol_abundance_A_hco',   -8,      3,        (-13, -3)),
+                      ('mol_abundance_A_hcn',   -8,      3,        (-13, -3)),
+                      ('temp_struct_A',         -0.,      1.,      (-3., 3.)),
+                      # ('incl_A',            65.,     30.,      (0, 90.)),
+                      ('pos_angle_A',           70,      45,       (0, 360)),
+                      ('r_out_B_hco',           500,     300,      (10, 400)),
+                      ('r_out_B_hcn',           500,     300,      (10, 400)),
+                      ('atms_temp_B',           200,     150,      (0, 1000)),
+                      ('mol_abundance_B_hco',   -8,      3,        (-13, -3)),
+                      ('mol_abundance_B_hcn',   -8,      3,        (-13, -3)),
+                      # ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                      # ('incl_B',            45.,     30,       (0, 90.)),
+                      ('pos_angle_B',           136.0,   45,       (0, 180))
+                      ]
+
+
+    # HCO+, HCN, or CS
+    elif mol != 'co':
+        param_info = [('r_out_A',           500,     300,      (10, 700)),
+                      ('atms_temp_A',       300,     150,      (0, 1000)),
+                      ('mol_abundance_A',   -8,      3,        (-13, -3)),
+                      ('temp_struct_A',     -0.,      1.,      (-3., 3.)),
+                      # ('incl_A',            65.,     30.,      (0, 90.)),
+                      ('pos_angle_A',       70,      45,       (0, 360)),
+                      ('r_out_B',           500,     300,      (10, 400)),
+                      ('atms_temp_B',       200,     150,      (0, 1000)),
+                      ('mol_abundance_B',   -8,      3,        (-13, -3)),
+                      # ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                      # ('incl_B',            45.,     30,       (0, 90.)),
+                      ('pos_angle_B',       136.0,   45,       (0, 180))
+                      ]
+    else:
+        param_info = [('r_out_A',           500,     300,      (10, 700)),
+                      ('atms_temp_A',       300,     150,      (0, 1000)),
+                      ('m_disk_A',          -1.,      1.,      (-4.5, 0)),
+                      ('temp_struct_A',     -0.,      1.,      (-3., 3.)),
+                      # ('incl_A',            65.,     30.,      (0, 90.)),
+                      ('pos_angle_A',        70,      45,      (0, 180)),
+                      ('r_out_B',           500,     300,      (10, 400)),
+                      ('atms_temp_B',       200,     150,      (0, 1000)),
+                      ('m_disk_B',          -4.,      1.,      (-6., 0)),
+                      # ('temp_struct_B',     0.,      1,        (-3., 3.)),
+                      # ('incl_B',            45.,     30,       (0, 90.)),
+                      # ('pos_angle_B',       136.0,   45,       (0, 180))
+                      ]
+
+
+    # Start a new file for the chain; set up a header line
+    chain_filename = run_path + run_name + '_chain.csv'
+    with open(chain_filename, 'w') as f:
+        param_names = [param[0] for param in param_info]
+        np.savetxt(f, (np.append(param_names, 'lnprob'), ),
+                   delimiter=',', fmt='%s')
+
+
+
+    m = 'hco' if mol is 'multi' else mol
+    f = yaml.load(open('{}params-{}.yaml'.format(run_path, m), 'r'), Loader=CLoader)
+    nwalkers, nsteps = f['nwalkers'], f['nsteps']
+
+    # Set up initial positions
+    # randn makes an n-dimensional array of rands in [0,1]
+    pos = []
+    for i in range(nwalkers):
+        pos_walker = []
+        for param in param_info:
+            pos_i = param[1] + param[2]*np.random.randn()
+            # Make sure we're starting within priors
+            lower_bound, upper_bound = param[-1]
+            while not lower_bound < pos_i < upper_bound:
+                pos_i = param[1] + param[2]*np.random.randn()
+
+            pos_walker.append(pos_i)
+        pos.append(pos_walker)
+
+    # Initialize sampler chain
+    # Recall that param_info is a list of length len(d1_params)+len(d2_params)
+    print("Initializing sampler.")
+    ndim = len(param_info)
+
+
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+                                    args=(run_path, param_info, mol),
+                                    pool=pool)
+
+    # Initialize a generator to provide the data. They changed the arg
+    # storechain -> store sometime between v2.2.1 (iorek) and v3.0rc2 (cluster)
+    from emcee import __version__ as emcee_version
+    # print("About to run sampler")
+    if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
+        run = sampler.sample(pos, iterations=nsteps, storechain=False)  # for iorek
+    else:
+        run = sampler.sample(pos, iterations=nsteps, store=False)   # for cluster
+    """Note that sampler.sample returns:
+            pos: list of the walkers' current positions in an object of shape
+                    [nwalkers, ndim]
+            lnprob: The list of log posterior probabilities for the walkers at
+                    positions given by pos.
+                    The shape of this object is (nwalkers, dim)
+            rstate: The current state of the random number generator.
+            blobs (optional): The metadata "blobs" associated with the current
+                              position. The value is only returned if
+                              lnpostfn returns blobs too.
+            """
+    lnprobs = []
+    # import pdb; pdb.set_trace()
+
+
+    # print("THIS CURRENT WORKING DIRECTORY IS" + os.getcwd() + '\n\n')
+    # print("About to loop over run")
+    for i, result in enumerate(run):
+        print("Got a result")
+        pos, lnprobs, blob = result
+
+        # Log out the new positions
+        with open(chain_filename, 'a') as f:
+            new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
+            print("Adding a new step to the chain: ", new_step)
+            np.savetxt(f, new_step, delimiter=',')
+
+    print("Ended run")
+
+
+
+
+def main():
+    """Establish and evaluate some custom argument options.
+
+    This is called when we run the whole thing: run_driver.py -r does a run.
+    """
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Blah''')
+
+    parser.add_argument('-hco', '--run_hco', action='store_true',
+                        help='Begin an HCO+ run.')
+    parser.add_argument('-hcn', '--run_hcn', action='store_true',
+                        help='Begin an HCN run.')
+    parser.add_argument('-co', '--run_co', action='store_true',
+                        help='Begin an CO run.')
+    parser.add_argument('-cs', '--run_cs', action='store_true',
+                        help='Begin an CS run.')
+    parser.add_argument('-multi', '--run_multi', action='store_true',
+                        help='Begin a multi-line (HCO+/HCN) run.')
+
+    args = parser.parse_args()
+
+
+
+    if args.run_hco or args.run_hcn or args.run_co or args.run_cs or args.run_multi:
+        print("Running now")
+        # Set up the parallelization
+        # This is maybe bad. These are two fundamentally different ways of doing
+        # this, but is a temp solution.
+        from emcee import __version__ as emcee_version
+        if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
+            print("Emcee v2; we're on a Linux box.")
+            from emcee.utils import MPIPool
+            pool = MPIPool()
+
+            # Tell the difference between master and worker processes
+            if not pool.is_master():
+                pool.wait()
+                sys.exit(0)
+        else:
+            print("Emcee v3; we're on the cluster.")
+            from schwimmbad import MultiPool
+            pool = MultiPool(args.n_cores)
+
+
+        # Do the thing
+        if args.run_hco:
+            run_emcee(mol='hco', lnprob=lnprob, pool=pool)
+
+        if args.run_hcn:
+            run_emcee(mol='hcn', lnprob=lnprob, pool=pool)
+
+        if args.run_co:
+            run_emcee(mol='co', lnprob=lnprob, pool=pool)
+
+        if args.run_cs:
+            run_emcee(mol='cs', lnprob=lnprob, pool=pool)
+
+        if args.run_multi:
+            run_emcee(mol='multi', lnprob=lnprob, pool=pool)
+
+
+        pool.close()
+
+
+
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+
+
+# The End
+# Everything below is leftovers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def label_fix(run):
@@ -370,86 +469,6 @@ def label_fix(run):
             'jun_starflux': r'June $F_{*}$ ($\mu$Jy)'})
             """
     return 'Not a functional function.'
-
-
-
-
-
-def main():
-    """Establish and evaluate some custom argument options.
-
-    This is called when we run the whole thing: run_driver.py -r does a run.
-    """
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description='''Blah''')
-
-    parser.add_argument('-rml', '--run_multiline', action='store_true',
-                        help='begin or resume eemcee run.')
-
-    parser.add_argument('-rs', '--run_singleline', action='store_true',
-                        help='begin or resume eemcee run.')
-
-    args = parser.parse_args()
-
-    if args.run_multiline or args.run_singleline:
-        print("Running now")
-        # Set up the parallelization
-        # This is maybe bad. These are two fundamentally different ways of doing
-        # this, but is a temp solution.
-        from emcee import __version__ as emcee_version
-        if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
-            print("Emcee v2; we're on a Linux box.")
-            from emcee.utils import MPIPool
-            pool = MPIPool()
-
-            # Tell the difference between master and worker processes
-            if not pool.is_master():
-                pool.wait()
-                sys.exit(0)
-        else:
-            print("Emcee v3; we're on the cluster.")
-            from schwimmbad import MultiPool
-            pool = MultiPool(args.n_cores)
-
-
-
-        # Do the thing
-        multi_fit = True if args.run_multiline else False
-        mcmc.run_emcee(mol=mol, lnprob=lnprob, pool=pool, multi_fit=multi_fit)
-        pool.close()
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    main()
-
-
-
-
-
-
-
-# The End
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

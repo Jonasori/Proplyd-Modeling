@@ -7,7 +7,7 @@ Would be nice to have these labeled some other way, but heck.
 import subprocess as sp
 from analysis import Figure
 from tools import plot_pv_diagram_casa, moment_maps
-from mcmc import MCMCrun
+from analysis import MCMC_Analysis
 from baseline_cutoff import fourmol_analysis
 
 
