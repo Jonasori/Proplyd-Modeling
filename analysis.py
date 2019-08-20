@@ -82,6 +82,7 @@ class MCMC_Analysis:
 
         self.name            = run_name
         self.runpath         = './mcmc_runs/{}/'.format(self.name)
+        self.resultspath     = './mcmc_figures/{}'.format(self.name)
         self.mol             = self.get_line()
         self.main            = pd.read_csv(self.runpath + self.name + '_chain.csv')
 
@@ -144,7 +145,7 @@ class MCMC_Analysis:
                                  'temp_struct_B': 'q\n(Disk B)'}
 
 
-        print("\n\n" + self.name + "currently has {} steps over {} walkers.\n\n".format(str(self.nsteps), str(self.nwalkers)))
+        print("\n\n" + self.name + " currently has {} steps over {} walkers.\n\n".format(str(self.nsteps), str(self.nwalkers)))
 
         self.get_bestfit_dict()  # yields self.bf_param_dict
         self.get_fit_stats(print_stats=print_stats)
@@ -295,8 +296,8 @@ class MCMC_Analysis:
         plt.tight_layout(rect=[0, 0.03, 1, 0.97])
         plt.suptitle(self.name + ' walker evolution', weight='bold')
         if save:
-            plt.savefig(self.image_outpath + '_evolution.pdf')
-            print('Image saved image to ' + self.image_outpath + '_evolution.pdf')
+            plt.savefig(self.resultspath + '_evolution.pdf')
+            print('Image saved image to ' + self.resultspath + '_evolution.pdf')
         else:
             plt.show()
 
@@ -340,8 +341,8 @@ class MCMC_Analysis:
 
         # adjust spacing and save
         plt.tight_layout()
-        plt.savefig(self.image_outpath + '_kde.png', dpi=200)
-        print('Image saved image to ' + self.image_outpath + '_kde.png')
+        plt.savefig(self.resultspath + '_kde.pdf')
+        print('Image saved image to ' + self.resultspath + '_kde.pdf')
         plt.show()
 
     # This needs multi-line updating
@@ -483,7 +484,7 @@ class MCMC_Analysis:
             if save_to_thesis:
                 image_path = '../Thesis/Figures/cornerplots-{}.pdf'.format(self.mol)
             else:
-                image_path = self.image_outpath + '_corner.pdf'
+                image_path = self.resultspath + '_corner.pdf'
 
             plt.savefig(image_path)
             print('Image saved image to ' + image_path)
@@ -531,22 +532,22 @@ class MCMC_Analysis:
             outpath = '/Volumes/disks/jonas/Thesis/Figures/'
 
         else:
-            outpath = self.image_outpath + '_'
+            outpath = self.resultspath + '_'
         for df, disk_ID in zip([groomed_diskA, groomed_diskB], ['A', 'B']):
             print("Making corner plot")
             corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False,
                           #, labels=labels,title_args={'fontsize': 12})
                           show_titles=True, truths=bestfit)
 
-            plt.savefig('{}cornerplot-{}-disk{}.png'.format(outpath, self.mol, disk_ID), dpi=200)
-            print("Saved plot for disk{} to {}cornerplot-{}-disk{}.png".format(outpath, self.mol, disk_ID))
+            plt.savefig('{}cornerplot-{}-disk{}.pdf'.format(outpath, self.mol, disk_ID))
+            print("Saved plot for disk{} to {}cornerplot-{}-disk{}.pdf".format(outpath, self.mol, disk_ID))
 
         # corner.corner(groomed_diskA, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
         # corner.corner(groomed_diskB, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
 
 
-        # plt.savefig(self.image_outpath + '_corner.pdf')
+        # plt.savefig(self.resultspath + '_corner.pdf')
         # print "Saved plot."
 
 
@@ -733,7 +734,7 @@ class MCMC_Analysis:
             if save_to_thesis:
                 outname = '../Thesis/Figures/diskstructures-{}.pdf'.format(self.mol)
             else:
-                outname = self.image_outpath + '_disk-strs.pdf'
+                outname = self.resultspath + '_disk-strs.pdf'
 
             plt.savefig(outname)
             print("Saved to {}".format(outname))
@@ -963,7 +964,7 @@ class MCMC_Analysis:
 
 
 
-        out_path = self.image_outpath + '_DMR-images.png'
+        out_path = self.resultspath + '_DMR-images.pdf'
         thesis_fig_path = '../Thesis/Figures/DMRchanmaps_{}.pdf'.format(self.mol)
         if save:
             if save_to_thesis:
@@ -1074,7 +1075,7 @@ class MCMC_Analysis:
         plt.suptitle('Moment Map and PV Diagram for {}'.format(mol), weight='bold')
         # plt.tight_layout()
 
-        outpath = self.image_outpath + '_pv-diagram'
+        outpath = self.resultspath + '_pv-diagram'
         if save:
             plt.savefig(outpath + '.pdf')
             print("Saved PV diagram to {}.pdf".format(outpath))
@@ -1142,9 +1143,8 @@ class Figure:
                     break
 
 
-        self.outpath = '../Thesis/Figures/m{}-map_{}.png'.format(moment,
-                                                                '-'.join(self.mols),
-                                                                dpi=300)
+        self.outpath = '../Thesis/Figures/m{}-map_{}.pdf'.format(moment,
+                                                                '-'.join(self.mols))
         self.outpath = self.outpath if image_outpath is None else image_outpath
 
         # Clear any pre existing figures, then create figure
@@ -1185,7 +1185,7 @@ class Figure:
                 #     print("Saved image to {}.png".format(image_outpath))
                 # else:
 
-                plt.savefig(self.outpath, dpi=200)
+                plt.savefig(self.outpath)
                 print("Saved image to {}".format(self.outpath))
             else:
                 plt.show(block=False)

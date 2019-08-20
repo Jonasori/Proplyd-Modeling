@@ -1,5 +1,5 @@
 """
-The final scripts to make thesis plots.
+The final scripts to make thesis (/paper) plots.
 
 Would be nice to have these labeled some other way, but heck.
 """
@@ -11,18 +11,26 @@ from analysis import MCMC_Analysis
 from baseline_cutoff import fourmol_analysis
 
 
+save_for_paper = True
+if save_for_paper:
+	p = '/Volumes/disks/jonas/v2434ori_paper/Figures/'
+else:
+	p = '/Volumes/disks/jonas/Thesis/Figures/'
+
+
 ###~~~~~~~~~~~~~~~~~~~~~~###
 # Section 1
 ###~~~~~~~~~~~~~~~~~~~~~~###
 
 def chap1_data_presentation(cmap='RdBu'):
-    Figure('data/hco/hco-short110.fits', moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_hco-data', title=None, cmap=cmap)
+    # TODO: Broken bc constants no longer defined (analysis.py/line 1473)
+    Figure('data/hco/hco-short110.fits', moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_hco-data', title=None, cmap=cmap)
 
-    Figure('data/hcn/hcn-short80.fits', moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_hcn-data', title=None, cmap=cmap)
+    Figure('data/hcn/hcn-short80.fits', moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_hcn-data', title=None, cmap=cmap)
 
-    Figure('data/co/co-short60.fits', moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_co-data', title=None, cmap=cmap)
+    Figure('data/co/co-short60.fits', moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_co-data', title=None, cmap=cmap)
 
-    Figure('data/cs/cs.fits', moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_cs-data', title=None, cmap=cmap)
+    Figure('data/cs/cs.fits', moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_cs-data', title=None, cmap=cmap)
 
 
 
@@ -38,18 +46,18 @@ def chap3_baseline_cuts():
 
 def chap3_baseline_momentmaps(cmap='RdBu'):
     # Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=0, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment0_hco-baselines', title=None, cmap=cmap)
-    Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_hco-baselines', title=None, cmap=cmap)
+    Figure(['data/hco/hco.fits', 'data/hco/hco-short110.fits'], moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_hco-baselines', title=None, cmap=cmap)
 
 
     # Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=0, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment0_hcn-baselines', title=None, cmap=cmap)
-    Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_hcn-baselines', title=None, cmap=cmap)
+    Figure(['data/hcn/hcn.fits', 'data/hcn/hcn-short80.fits'], moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_hcn-baselines', title=None, cmap=cmap)
 
 
     # Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=0, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment0_co-baselines', title=None, cmap=cmap)
-    Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_co-baselines', title=None, cmap=cmap)
+    Figure(['data/co/co.fits', 'data/co/co-short60.fits'], moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_co-baselines', title=None, cmap=cmap)
 
 
-    Figure('data/cs/cs.fits', moment=1, remove_bg=True, save=True, image_outpath='../Thesis/Figures/moment1_cs-baselines', title=None, cmap=cmap)
+    Figure('data/cs/cs.fits', moment=1, remove_bg=True, save=True, image_outpath=p + 'moment1_cs-baselines', title=None, cmap=cmap)
 
 
 def chap3_pvd():
@@ -74,7 +82,7 @@ def chap3_pvd():
 # Plot out the HCN moment maps with ellipses overlaid
 def chap4_hcn_ellipses():
     Figure('data/hcn/hcn-short80.fits', moment=1, remove_bg=True, save=True,
-            image_outpath='../Thesis/Figures/moment1_hcn-ellipses', # title='Visualizing HCN Model Radius Fits',
+            image_outpath=p + 'moment1_hcn-ellipses', # title='Visualizing HCN Model Radius Fits',
             plot_bf_ellipses=True)
 
 
@@ -89,7 +97,7 @@ def chap4_co_results():
     dmr_maps = Figure(['data/co/co-short60.fits',
                        'mcmc_runs/april9-co/model_files/april9-co_bestFit.fits',
                        'mcmc_runs/april9-co/model_files/april9-co_bestFit_resid.fits'],
-                      image_outpath='../Thesis/Figures/DMRmoments_co.png', save=True)
+                      image_outpath=p + 'DMRmoments_co.png', save=True)
 
 
 def chap4_hco_results():
@@ -102,7 +110,7 @@ def chap4_hco_results():
     dmr_maps = Figure(['data/hco/hco-short110.fits',
                        'mcmc_runs/april9-hco/model_files/april9-hco_bestFit.fits',
                        'mcmc_runs/april9-hco/model_files/april9-hco_bestFit_resid.fits'],
-                      image_outpath='../Thesis/Figures/DMRmoments_hco.png', save=True)
+                      image_outpath=p + 'DMRmoments_hco.png', save=True)
 
 def chap4_hcn_results(remove_large_r=False):
     if remove_large_r:
@@ -119,7 +127,7 @@ def chap4_hcn_results(remove_large_r=False):
     dmr_maps = Figure(['data/hcn/hcn-short80.fits',
                        'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit.fits',
                        'mcmc_runs/april9-hcn/model_files/april9-hcn_bestFit_resid.fits'],
-                      image_outpath='../Thesis/Figures/DMRmoments_hcn.png', save=True)
+                      image_outpath=p + 'DMRmoments_hcn.png', save=True)
 
 
 

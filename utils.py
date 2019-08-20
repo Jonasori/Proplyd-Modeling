@@ -307,7 +307,7 @@ class Model:
 
         self.raw_chi = raw_chi
         self.reduced_chi = reduced_chi
-        print("Raw Chi2: ", self.raw_chi)
+        print("Raw Chi2: {}".format(self.raw_chi))
         return self.raw_chi
 
 
@@ -321,6 +321,7 @@ class Model:
 # mol = 'hco'
 short_vis_only = True
 
+# Outdated
 def makeModel(diskParams, outputPath, DI, mol, short_vis_only=True):
     """Make a single model disk.
 

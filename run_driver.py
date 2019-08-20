@@ -49,13 +49,13 @@ def lnprob(theta, run_path, param_info, mol):
         if not lower_bound < theta[i] < upper_bound:
             return -np.inf
 
-    print("Theta: {}".format(theta))
+    # print("Theta: {}".format(theta))
 
 
     # Simplify the chi-getting process
     def get_model_chi(mol, param_path, run_path, model_name):
         """Consolidate the actual chi-getting process."""
-        print('Param path: {}\nModel Name: {}'.format(param_path, model_name))
+        # print('Param path: {}\nModel Name: {}'.format(param_path, model_name))
         model = utils.Model(mol, param_path, run_path, model_name)
         model.make_fits()
         model.obs_sample()
@@ -75,7 +75,7 @@ def lnprob(theta, run_path, param_info, mol):
         # There's probably a more elegant way to do this
         for i, free_param in enumerate(param_info):
             name = free_param[0]
-            print(name, theta[i])
+            # print(name, theta[i])
             if 'hco' in name:
                 param_dicts['hco'][name] = theta[i]
             elif 'hcn' in name:
@@ -88,14 +88,20 @@ def lnprob(theta, run_path, param_info, mol):
         # Also used as a unique id for the resulting model files.
         unique_id = str(np.random.randint(1e10))
         model_name = 'model_' + unique_id
-        param_path_hco = '{}params-hco_{}.yaml'.format(run_path, unique_id)
-        param_path_hcn = '{}params-hcn_{}.yaml'.format(run_path, unique_id)
+        param_path_hco = '{}model_files/params-hco_{}.yaml'.format(run_path, unique_id)
+        param_path_hcn = '{}model_files/params-hcn_{}.yaml'.format(run_path, unique_id)
         yaml.dump(param_dicts['hco'], open(param_path_hco, 'w+'), Dumper=CDumper)
         yaml.dump(param_dicts['hcn'], open(param_path_hcn, 'w+'), Dumper=CDumper)
 
         # Get the actual values
         lnlikelihood = -0.5 * sum([get_model_chi('hco', param_path_hco, run_path, model_name),
                                    get_model_chi('hcn', param_path_hcn, run_path, model_name)])
+
+        # This is really inefficient (open the file, write out the modifications,
+        # close it, open it for the modeling, then delete it), but I like
+        # having get_model_chi() just pull in a param file instead of a dict.
+        # Could be changed.
+        remove([param_path_hco, param_path_hcn])
 
         # This is pretty janky, but if at least one of the lines wants
         # Gaussian priors on PA, then just do it.
@@ -112,10 +118,11 @@ def lnprob(theta, run_path, param_info, mol):
 
         unique_id = str(np.random.randint(1e10))
         model_name = 'model_' + unique_id
-        param_path = '{}params-{}_{}.yaml'.format(run_path, mol, unique_id)
+        param_path = '{}/model_files/params-{}_{}.yaml'.format(run_path, mol, unique_id)
         yaml.dump(param_dict, open(param_path, 'w+'), Dumper=CDumper)
-
         lnlikelihood = -0.5 * get_model_chi(mol, param_path, run_path, model_name)
+        remove(param_path)
+
 
         PA_prior_A, PA_prior_B = param_dict['PA_prior_A'], param_dict['PA_prior_B']
 
@@ -145,8 +152,8 @@ def lnprob(theta, run_path, param_info, mol):
     # ln(prior*likelihood) -> ln(prior) + ln(likelihood)
     lnprob = lnlikelihood + lnprior_posangA + lnprior_posangB
 
-    print("Lnprob val: ", lnprob)
-    print('\n')
+    # print("Lnprob val: ", lnprob)
+    # print('\n')
     return lnprob
 
 
@@ -203,7 +210,7 @@ def run_emcee(mol, lnprob, pool):
                                                                 mol)])
 
 
-
+ 
     # Note that this is what is fed to MCMC to dictate how the walkers move, not
     # the actual set of vars that make_fits pulls from.
     # ORDER MATTERS here (for comparing in lnprob)
@@ -218,6 +225,7 @@ def run_emcee(mol, lnprob, pool):
                       ('atms_temp_A',           200,     150,      (0, 1000)),
                       ('mol_abundance_A_hco',   -8,      3,        (-13, -3)),
                       ('mol_abundance_A_hcn',   -8,      3,        (-13, -3)),
+                      # ('mol_abundance_A_cs',    -8,      3,        (-13, -3)),
                       ('temp_struct_A',         -0.,      1.,      (-3., 3.)),
                       # ('incl_A',            65.,     30.,      (0, 90.)),
                       ('pos_angle_A',           70,      45,       (0, 360)),
@@ -226,6 +234,7 @@ def run_emcee(mol, lnprob, pool):
                       ('atms_temp_B',           200,     150,      (0, 1000)),
                       ('mol_abundance_B_hco',   -8,      3,        (-13, -3)),
                       ('mol_abundance_B_hcn',   -8,      3,        (-13, -3)),
+                      # ('mol_abundance_B_cs',    -8,      3,        (-13, -3)),
                       # ('temp_struct_B',     0.,      1,        (-3., 3.)),
                       # ('incl_B',            45.,     30,       (0, 90.)),
                       ('pos_angle_B',           136.0,   45,       (0, 180))
