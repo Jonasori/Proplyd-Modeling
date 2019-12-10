@@ -9,6 +9,7 @@ def push():
     for i in sp.check_output(["git", "status"]).decode().split("\n"):
         nf = "#\tnew file:"
         mf = "#\tmodified:"
+	# Should have a deleted-files option here too.
         if i[: len(nf)] == nf or i[: len(mf)] == mf:
             f = i.split(" ")[-1]
             files.append(f)
@@ -17,9 +18,9 @@ def push():
     print("Committing these files: {}".format(files))
 
     # Run all py scripts through black for formatting.
-    for f in files:
-        if f[-3:] == ".py":
-            sp.call(["black", f])
+#     for f in files:
+#         if f[-3:] == ".py":
+#             sp.call(["black", f])
 
     [sp.call(["git", "add", "{}".format(i)]) for i in files]
 

@@ -8,6 +8,9 @@ import os, yaml
 import numpy as np, subprocess as sp, matplotlib.pyplot as plt
 from yaml import CLoader, CDumper
 from astropy.io import fits
+import warnings
+warnings.filterwarnings("ignore")
+
 
 from disk_model3.disk import Disk
 import disk_model3.raytrace as rt
@@ -307,7 +310,10 @@ class Model:
 
         self.raw_chi = raw_chi
         self.reduced_chi = reduced_chi
-        print("Raw Chi2: {}".format(self.raw_chi))
+        
+        from datetime import datetime
+        now = datetime.now().strftime('%H:%M, %m/%d')
+        print("[{}] Raw Chi2: {}".format(now, self.raw_chi))
         return self.raw_chi
 
 

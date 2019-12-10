@@ -41,8 +41,8 @@ import run_driver
 # Consolidate these two
 import tools
 from tools import imstat, imstat_single, pipe, moment_maps
-# from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
-
+from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
+import constants
 
 # https://media.readthedocs.org/pdf/spectral-cube/latest/spectral-cube.pdf
 # from spectral_cube import SpectralCube
@@ -190,7 +190,7 @@ class MCMC_Analysis:
             print(stats.T.round(6).to_string())
 
 
-    # THIS IS VERY INCOMPLETE
+    # Needs to be updated for multi
     def get_disk_objects(self, set_face_on=False):
         self.get_bestfit_dict()
         param_dict = self.bf_param_dict
@@ -198,11 +198,9 @@ class MCMC_Analysis:
             param_dict['incl_A'] = 0
             param_dict['incl_B'] = 0
 
-        mols = ['hco', 'hcn'] if self.mol is 'multi' else self.mol
+        mols = ['hco', 'hcn'] if self.mol is 'multi' else [self.mol]
         self.diskA, self.diskB = [], []
         for m in mols:
-
-
             # Generate a Disk object
             DI = 0
             d1 = Disk(params=[param_dict['temp_struct_A'],
@@ -317,7 +315,7 @@ class MCMC_Analysis:
             for tick in ax.get_xticklabels():
                 tick.set_rotation(30)
             ax.set_title(param)
-            ax.tick_params(axis='y', left='off', labelleft='off')
+            ax.tick_params(axis='y', left=False, labelleft=False)
 
             samples = self.groomed.loc[:, param]
             plotting.my_kde(samples, ax=ax)
@@ -337,7 +335,7 @@ class MCMC_Analysis:
         # ax = axes.flatten()[-1]
         # for tick in ax.get_xticklabels(): tick.set_rotation(30)
         # sns.kdeplot(self.groomed[r'$i$ ($\degree$)'], self.groomed[r'Scale Factor'], shade=True, cmap='Blues', n_levels=6, ax=ax);
-        # ax.tick_params(axis='y', left='off', labelleft='off', right='on', labelright='on')
+        # ax.tick_params(axis='y', left=False, labelleft=False, right=True, labelright=True)
 
         # adjust spacing and save
         plt.tight_layout()
@@ -492,64 +490,7 @@ class MCMC_Analysis:
             plt.show()
 
 
-    def corner_dfm(self, save_to_thesis=False):
-        """Make a corner plot using Dan Foreman-Mackey's Corner package."""
-
-        # Not all the machines have this installed, so only load it if necessary.
-        import corner
-
-        plt.close()
-
-        # Get best_fit and posterior statistics
-        stats = self.groomed.describe(percentiles=[0.16, 0.84]).drop([
-            'count', 'min', 'max', 'mean'])
-        stats.loc['best fit'] = self.main.loc[self.main['lnprob'].idxmax()]
-        stats = stats.iloc[[-1]].append(stats.iloc[:-1])
-        stats.loc[['16%', '84%'], :] -= stats.loc['50%', :]
-        stats = stats.reindex(
-            ['50%', '16%', '84%', 'best fit', 'std'], copy=False)
-        print((stats.T.round(6).to_string()))
-
-        groomed = self.groomed.reset_index()
-
-        p = groomed[groomed['lnprob'] == max(groomed['lnprob'])]
-        bf_idx = p.index.values[0]
-        bestfit = groomed.iloc[bf_idx].tolist()
-
-        # groomed = groomed.drop(['index', 'lnprob'], axis=1)
-
-
-        not_diskA_params = [p for p in groomed.columns if '_A' not in p]
-        not_diskB_params = [p for p in groomed.columns if '_B' not in p]
-
-        groomed_diskA = groomed.drop(not_diskA_params, axis=1)
-        groomed_diskB = groomed.drop(not_diskB_params, axis=1)
-
-
-        # fig, (ax1, ax2) = plt.subplots(1, 2)
-        # for ax, df, disk_ID in zip(axes, [groomed_diskA, groomed_diskB], ('A', 'B')):
-        if save_to_thesis:
-            outpath = '/Volumes/disks/jonas/Thesis/Figures/'
-
-        else:
-            outpath = self.resultspath + '_'
-        for df, disk_ID in zip([groomed_diskA, groomed_diskB], ['A', 'B']):
-            print("Making corner plot")
-            corner.corner(df, quantiles=[0.16,0.5,0.84], verbose=False,
-                          #, labels=labels,title_args={'fontsize': 12})
-                          show_titles=True, truths=bestfit)
-
-            plt.savefig('{}cornerplot-{}-disk{}.pdf'.format(outpath, self.mol, disk_ID))
-            print("Saved plot for disk{} to {}cornerplot-{}-disk{}.pdf".format(outpath, self.mol, disk_ID))
-
-        # corner.corner(groomed_diskA, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
-
-        # corner.corner(groomed_diskB, quantiles=[0.16,0.5,0.84], verbose=False, show_titles=True, truths=bestfit)#, labels=labels,title_args={'fontsize': 12})
-
-
-        # plt.savefig(self.resultspath + '_corner.pdf')
-        # print "Saved plot."
-
+ 
 
     # This needs multi-line updating
     def make_best_fits(self, plot_bf=True):
@@ -606,13 +547,11 @@ class MCMC_Analysis:
 
                 models.append(make_model(bf_param_dict, m))
 
-
-
         return (models, self.bf_param_dict)
 
 
     # This needs multi-line updating
-    def plot_structure(self, zmax=150, cmap='inferno', save=False, save_to_thesis=False):
+    def plot_structure(self, zmax=150, cmap='inferno', ext='.pdf', save=False, save_to_thesis=False):
         """
         Plot temperature and density structure of the disk.
         Drawn from Kevin's code.
@@ -623,7 +562,6 @@ class MCMC_Analysis:
         if not hasattr(self, 'diskA'):
             self.get_disk_objects(set_face_on=True)
         d1, d2 = self.diskA, self.diskB
-
 
         param_dict = self.bf_param_dict
         rmax_a, rmax_b = self.bf_param_dict['r_out_A'], self.bf_param_dict['r_out_B']
@@ -637,51 +575,38 @@ class MCMC_Analysis:
                                                                   'width_ratios':[1, 1]})
         plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.05, hspace=0.05)
 
-        # full_fig = gridspec.GridSpec(2, 2, width_ratios=[1, 1], height_ratios=[1, 9]) #, figsize=(12, 6))
-        # # full_fig.set_figheight(6)
-        # # full_fig.set_figwidth(15)
-        # cbar_axes = (plt.subplot(full_fig[0], figsize=(6, 0.5)), plt.subplot(full_fig[1]), figsize=(6, 0.5))
-        # im_axes = (plt.subplot(full_fig[2], figsize=(6, 4)), plt.subplot(full_fig[3]), figsize=(6, 4))
-        # im_axes = plt.subplots((full_fig[2], full_fig[3]))
-        # ax1 = plt.subplot(gs[0])
-
-
-
-        # fig = plt.figure(figsize=(10, 5), sharey=True)
-        # fig.subplots_adjust(wspace=0.0, hspace=0.2)
-        # plt.rc('axes',lw=2)
-
         lab_locs = [[(275, 25), (325, 50), (375, 80)],
                     [(154, -14.4), (200, -35.4), (261, -83)]]
         for i in range(2):
-            d = [d1, d2][i]
-            manual_locations=[(300,30),(250,60),(180,50),
-                              (180,70),(110,60),(45,30)]
+            if self.mol is not 'multi':
+                # self.diskX objects are len1 lists unless we're looking at multi, in which case objects are built for each mol.
+                d = [d1, d2][i][0]
+                manual_locations=[(300,30),(250,60),(180,50),
+                                  (180,70),(110,60),(45,30)]
 
-            manual_locations=[(300,30),(250,60),(180,50)]
-            dens_contours = im_axes[i].contourf(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/d.AU,
-                                                np.log10((d.rhoG/d.Xmol)[0,:,:]),
-                                                np.arange(2, 15, 0.25),
-                                                cmap=cmap) #, levels=50)
+                manual_locations=[(300,30),(250,60),(180,50)]
 
-            col_dens_contours = im_axes[i].contour(d.r[0,:,:]/d.AU, d.Z[0,:,:]/d.AU,
-                                                   np.log10(d.sig_col[0,:,:]), (-3, -2,-1),
-                                                   linestyles=':', #linewidths=3,
-                                                   colors='k', label='Column Density')
+                dens_contours = im_axes[i].contourf(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/d.AU,
+                                                    np.log10((d.rhoG/d.Xmol)[0,:,:]),
+                                                    np.arange(2, 15, 0.25),
+                                                    cmap=cmap) #, levels=50)
+                col_dens_contours = im_axes[i].contour(d.r[0,:,:]/d.AU, d.Z[0,:,:]/d.AU,
+                                                       np.log10(d.sig_col[0,:,:]), (-3, -2,-1),
+                                                       linestyles=':', #linewidths=3,
+                                                       colors='k', label='Column Density')
+                temp_contours = im_axes[i].contour(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/Disk.AU,
+                                                   d.T[0,:,:], (50, 100, 150), #(20, 40, 60, 80, 100, 120),
+                                                   colors='grey', linestyles='--',
+                                                   label='Temperature')
 
-            temp_contours = im_axes[i].contour(d.r[0,:,:]/Disk.AU, d.Z[0,:,:]/Disk.AU,
-                                               d.T[0,:,:], (50, 100, 150), #(20, 40, 60, 80, 100, 120),
-                                               colors='grey', linestyles='--',
-                                               label='Temperature')
+                # im_axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
 
-            # im_axes[i].clabel(col_dens_contours, fmt='%1i', manual=lab_locs[i])
-
-            # This is kinda janky, but whatever. Need colorbar set to the wider ranged one.
-            # cb = plt.colorbar(dens_contours, label=r"$\log{ N(H_2)}$") #, cax=cbaxes) #, orientation='horizontal')
-            # dens_contours.set_clim(0, 20)
-            cbar = plt.colorbar(dens_contours, cax=cbar_axes[i],
-                                orientation='horizontal', label=r"$\log{ N(H_2)}$")
-            # plt.clim(-1, 1)
+                # This is kinda janky, but whatever. Need colorbar set to the wider ranged one.
+                # cb = plt.colorbar(dens_contours, label=r"$\log{ N(H_2)}$") #, cax=cbaxes) #, orientation='horizontal')
+                # dens_contours.set_clim(0, 20)
+                cbar = plt.colorbar(dens_contours, cax=cbar_axes[i],
+                                    orientation='horizontal', label=r"$\log{ N(H_2)}$")
+                # plt.clim(-1, 1)
 
         font_cb = matplotlib.font_manager.FontProperties(family='times new roman',
                                                          style='italic', size=16) #, rotation=180)
@@ -718,12 +643,8 @@ class MCMC_Analysis:
         im_axes[0].set_facecolor(dark_cm)
         im_axes[1].set_facecolor(dark_cm)
 
-
-        # cbar_axes[0].set_title('Disk A', weight='bold')
-        # cbar_axes[1].set_title('Disk B', weight='bold')
         cbar_axes[0].xaxis.set_ticks_position('top')
         cbar_axes[1].xaxis.set_ticks_position('top')
-
         cbar_axes[0].xaxis.set_label_position('top')
         cbar_axes[1].xaxis.set_label_position('top')
 
@@ -732,9 +653,9 @@ class MCMC_Analysis:
 
         if save:
             if save_to_thesis:
-                outname = '../Thesis/Figures/diskstructures-{}.pdf'.format(self.mol)
+                outname = '../Thesis/Figures/diskstructures-{}{}'.format(self.mol, ext)
             else:
-                outname = self.resultspath + '_disk-strs.pdf'
+                outname = self.resultspath + '_disk-strs' + ext
 
             plt.savefig(outname)
             print("Saved to {}".format(outname))
@@ -964,8 +885,8 @@ class MCMC_Analysis:
 
 
 
-        out_path = self.resultspath + '_DMR-images.pdf'
-        thesis_fig_path = '../Thesis/Figures/DMRchanmaps_{}.pdf'.format(self.mol)
+        out_path = self.resultspath + '_DMR-images' + ext
+        thesis_fig_path = '../Thesis/Figures/DMRchanmaps_{}'.format(self.mol, ext)
         if save:
             if save_to_thesis:
                 plt.savefig(thesis_fig_path)
@@ -1075,10 +996,10 @@ class MCMC_Analysis:
         plt.suptitle('Moment Map and PV Diagram for {}'.format(mol), weight='bold')
         # plt.tight_layout()
 
-        outpath = self.resultspath + '_pv-diagram'
+        outpath = self.resultspath + '_pv-diagram' + ext
         if save:
-            plt.savefig(outpath + '.pdf')
-            print("Saved PV diagram to {}.pdf".format(outpath))
+            plt.savefig(outpath)
+            print("Saved PV diagram to ", outpath)
         else:
             print("Showing:")
             plt.show(block=False)
@@ -1111,7 +1032,7 @@ class Figure:
 
     def __init__(self, paths, make_plot=True, save=False, moment=0, remove_bg=True,
                  texts=None, title=None, image_outpath=None, export_fits_mom=False,
-                 plot_bf_ellipses=False, cmap='RdBu'):
+                 plot_bf_ellipses=False, cmap='RdBu', ext='.png'):
         """
         Make a nice image from a fits file.
 
@@ -1143,9 +1064,10 @@ class Figure:
                     break
 
 
-        self.outpath = '../Thesis/Figures/m{}-map_{}.pdf'.format(moment,
-                                                                '-'.join(self.mols))
+        self.outpath = '../Thesis/Figures/m{}-map_{}'.format(moment,
+                                                               '-'.join(self.mols))
         self.outpath = self.outpath if image_outpath is None else image_outpath
+        self.outpath += ext
 
         # Clear any pre existing figures, then create figure
         plt.close()
@@ -1343,17 +1265,17 @@ class Figure:
         tick_labs = ['', '', '-1', '', '1', '', '']
         ax.xaxis.set_ticklabels(tick_labs, fontsize=18)
         ax.yaxis.set_ticklabels(tick_labs, fontsize=18)
-        ax.tick_params(which='both', right='on', labelsize=18, direction='in')
+        ax.tick_params(which='both', right=True, labelsize=18, direction='in')
 
         # Set labels depending on position in figure
         if np.where(self.axes == ax)[1] % self.columns == 0:  # left
-            ax.tick_params(axis='y', labelright='off', right='on')
+            ax.tick_params(axis='y', labelright=False, right=True)
         elif np.where(self.axes == ax)[1] % self.columns == self.columns - 1:  # right
             ax.set_xlabel('')
             ax.set_ylabel('')
-            ax.tick_params(axis='y', labelleft='off', labelright='on')
+            ax.tick_params(axis='y', labelleft=False, labelright=True)
         else:  # middle
-            ax.tick_params(axis='y', labelleft='off')
+            ax.tick_params(axis='y', labelleft=False)
             ax.set_xlabel('')
             ax.set_ylabel('')
 
@@ -1416,11 +1338,11 @@ class Figure:
         cax = divider.append_axes("top", size="8%", pad=0.0)
         cbar = self.fig.colorbar(cmap, ax=ax, cax=cax, orientation='horizontal')
         cbar.ax.xaxis.set_tick_params(direction='out', length=3, which='major',
-                                      bottom='off', top='on', labelsize=12, pad=-2,
-                                      labeltop='on', labelbottom='off')
+                                      bottom=False, top=True, labelsize=12, pad=-2,
+                                      labeltop=True, labelbottom=False)
 
         cbar.ax.xaxis.set_tick_params(direction='out', length=2, which='minor',
-                                      bottom='off', top='on')
+                                      bottom=False, top=True)
 
         if np.nanmax(self.im) > 500:
             tickmaj, tickmin = 200, 50
@@ -1470,7 +1392,8 @@ class Figure:
                 path_effects=[PathEffects.withStroke(linewidth=2, foreground="w")])
 
         # Plot crosses at the source positions
-        (posx_A, posy_A), (posx_B, posy_B) = constants.offsets
+        (posx_A, posy_A), (posx_B, posy_B) = offsets
+#         (posx_A, posy_A), (posx_B, posy_B) = constants.offsets
         ax.plot([posx_A], [posy_A], '+', markersize=6,
                 markeredgewidth=2, color='darkorange')
         ax.plot([posx_B], [posy_B], '+', markersize=6,
@@ -2025,7 +1948,6 @@ class GridSearch_Analysis:
         sns.despine()
 
         if save:
-
             fig(self.out_path + '_DMR-spectra.pdf')
             print(("Saved to " + self.out_path + '_DMR-spectra.pdf'))
         else:

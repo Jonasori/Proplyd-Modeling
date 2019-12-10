@@ -6,11 +6,14 @@ run run_driver directly.
 """
 
 import subprocess as sp
+import warnings
+warnings.filterwarnings("ignore")
 
 # Local package files
 import grid_search
 from run_params import make_diskA_params, make_diskB_params
-# from sys import version_info; print("Python version: " + str(version_info[:3]))
+from sys import version_info; print("Python version: " + str(version_info[:3]))
+
 
 
 
@@ -21,13 +24,13 @@ method = 'mc'
 
 if method == 'mc':
     n = input('How many processors shall we use?\n[2-n]: ')
-    np = '2' if int(n) < 2 else n
+    n_p = '2' if int(n) < 2 else n
 
     mol = input('Which spectral line?\n[HCO, HCN, CO, CS, multi]: ').lower()
     if mol not in ['hco', 'co', 'cs', 'hcn', 'multi']:
         print("Choose spectral line better.")
     else:
-        sp.call(['mpirun', '-np', np, 'nice', 'python', 'run_driver.py', '-' + mol])
+        sp.call(['mpirun', '-np', n_p, 'nice', 'python', 'run_driver.py', '-' + mol])
 
 
 

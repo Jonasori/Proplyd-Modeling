@@ -668,7 +668,7 @@ def plot_pv_diagram_casa(diskID='a', save=False):
 
 
 
-def plot_pv_diagram(image_path, outpath, coords=None, save=False):
+def plot_pv_diagram(image_path, outpath, coords=None, ext='.png', save=False):
     """
     Fuck Miriad and CASA, let's just use a package.
 
@@ -788,8 +788,8 @@ def plot_pv_diagram(image_path, outpath, coords=None, save=False):
     # plt.tight_layout()
 
     if save:
-        plt.savefig(outpath + '.pdf')
-        print("Saved PV diagram to {}.pdf".format(outpath))
+        plt.savefig(outpath + ext)
+        print("Saved PV diagram to {}{}".format(outpath, ext))
     else:
         print("Showing:")
         plt.show(block=False)
