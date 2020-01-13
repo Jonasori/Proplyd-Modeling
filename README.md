@@ -1,5 +1,5 @@
 ## PREAMBLE and CONTEXT
-I have been working to characterize two disks around stars in a young binary in the Orion Nebula cluster. Thanks to ALMA, we are now able to get meaningful molecular line emission data on protoplanetary disks in Orion (our nearest high-mass star forming region), allowing us to now explore the role that environment plays in evolution of circumstellar disks. This work became my master's thesis at Wesleyan (see Thesis_Final.pdf; it will also presumably be uploaded to [WesScholar](https://wesscholar.wesleyan.edu/etd_mas_theses/) at some point). Alternatively, see Factor et al. (2017) for a similar project.
+I have been working to characterize two disks around stars in a young binary in the Orion Nebula cluster. Thanks to ALMA, we are now able to get meaningful molecular line emission data on protoplanetary disks in Orion (our nearest high-mass star forming region), allowing us to now explore the role that environment plays in evolution of circumstellar disks. This work became my master's thesis at Wesleyan (see Thesis_Final.pdf or its [WesScholar](https://wesscholar.wesleyan.edu/etd_mas_theses/241/) entry). Alternatively, see Factor et al. (2017) for a similar project.
 
 
 
@@ -25,8 +25,7 @@ The other method, MCMC, is way more fun. It is built around Dan Foreman-Mackey's
 
 ## EXPLANATION OF SCRIPTS
 
-Below are some descriptions of the scripts and files, ranked in approximate order of importance.
-
+Below are some descriptions of the scripts and files, ranked in approximate order of importance. They are, I think, pretty outdated now, but are still pretty close to right and hopefully can provide some sort of understanding of the package's heirarchy.
 
 ### run_driver.py
 The MCMC wrapper. Holds parameter information for the MCMC run, as well as starting the actual run. Also holds 'lnprob()', the function that 'emcee' uses to evaluate each mode's fit.
@@ -121,6 +120,5 @@ One thing that has kinda plagued this whole process is global variables. constan
 
 ## THOUGHTS and COMMENTS
 
-The fitting assumes that the two disks are not interacting, which may be a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within their realm of interaction if the line connecting them is perpendicular to our line of sight, although we don't know their relative z-axis distances from us. However, right now the grid search is refusing to settle well, and it's looking like the MCMC runs are as well. Hopefully the four line fit will shed some light on things.
+The fitting assumes that the two disks are not interacting, which may be (well, is) a bad assumption. Their angular separation corresponds to a distance between the two stars of just ~400 AU, which would be well within their realm of interaction if the line connecting them is perpendicular to our line of sight, although we don't know their relative z-axis distances from us. However, we can still model them assuming no interaction and see where that takes us.
 
-Grid search is mostly done, MCMC is not but is at least vaguely functional right now.
