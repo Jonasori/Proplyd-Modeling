@@ -2,7 +2,7 @@
 
 # Import some python packages
 import sys
-import yaml
+import yaml, json
 import emcee
 import argparse
 import numpy as np
@@ -18,6 +18,9 @@ warnings.filterwarnings("ignore")
 import utils
 from constants import today
 from tools import remove, already_exists
+
+# See here for info: https://emcee.readthedocs.io/en/stable/tutorials/parallel/#parallel
+os.environ["OMP_NUM_THREADS"] = "1"
 
 
 def lnprob(theta, run_path, param_info, mol):
@@ -68,10 +71,13 @@ def lnprob(theta, run_path, param_info, mol):
     
     # Update the param files appropriately and get the chi-squared values.
     if mol == 'multi':
-        with open('{}params-hco.yaml'.format(run_path), 'r') as f_hco:
-            with open('{}params-hcn.yaml'.format(run_path), 'r') as f_hcn:
-                param_dicts = {'hco': yaml.load(f_hco, Loader=CLoader),
-                               'hcn': yaml.load(f_hcn, Loader=CLoader)
+        with open('{}params-hco.json'.format(run_path), 'r') as f_hco:
+            with open('{}params-hcn.json'.format(run_path), 'r') as f_hcn:
+#                 param_dicts = {'hco': yaml.load(f_hco, Loader=CLoader),
+#                                'hcn': yaml.load(f_hcn, Loader=CLoader)
+#                                }
+                param_dicts = {'hco': json.load(f_hco),
+                               'hcn': json.load(f_hcn)
                                }
         # Check if it's a mol-specific param, and add in appropriately.
         # There's probably a more elegant way to do this
@@ -96,13 +102,15 @@ def lnprob(theta, run_path, param_info, mol):
         # close it, open it for the modeling, then delete it), but I like
         # having get_model_chi() just pull in a param file instead of a dict.
         # Could be changed.
-        param_path_hco = '{}model_files/params-hco_{}.yaml'.format(run_path, unique_id)
-        param_path_hcn = '{}model_files/params-hcn_{}.yaml'.format(run_path, unique_id)
+        param_path_hco = '{}model_files/params-hco_{}.json'.format(run_path, unique_id)
+        param_path_hcn = '{}model_files/params-hcn_{}.json'.format(run_path, unique_id)
         
         with open(param_path_hco, 'w+') as f_hco:
-            yaml.dump(param_dicts['hco'], f_hco, Dumper=CDumper)
+#             yaml.dump(param_dicts['hco'], f_hco, Dumper=CDumper)
+            json.dump(param_dicts['hco'], f_hco)
         with open(param_path_hcn, 'w+') as f_hcn:
-            yaml.dump(param_dicts['hcn'], f_hcn, Dumper=CDumper)
+#             yaml.dump(param_dicts['hcn'], f_hcn, Dumper=CDumper)
+            json.dump(param_dicts['hcn'], f_hcn)
 
         # Get the actual values
         lnlikelihood = -0.5 * sum([get_model_chi('hco', param_path_hco, run_path, model_name),
@@ -116,17 +124,19 @@ def lnprob(theta, run_path, param_info, mol):
 
 
     else:  # Single line
-        with open('{}params-{}.yaml'.format(run_path, mol)) as f:
-            param_dict = yaml.load(f, Loader=CLoader)
+        with open('{}params-{}.json'.format(run_path, mol)) as f:
+#             param_dict = yaml.load(f, Loader=CLoader)
+            param_dict = json.load(f)
         for i, free_param in enumerate(param_info):
             name = free_param[0]
             param_dict[name] = theta[i]
 
         unique_id = str(np.random.randint(1e10))
         model_name = 'model_' + unique_id
-        param_path = '{}/model_files/params-{}_{}.yaml'.format(run_path, mol, unique_id)
+        param_path = '{}/model_files/params-{}_{}.json'.format(run_path, mol, unique_id)
         with open(param_path, 'w+') as f:
-            yaml.dump(param_dict, f, Dumper=CDumper)
+#             yaml.dump(param_dict, f, Dumper=CDumper)
+            json.dump(param_dict, f)
         lnlikelihood = -0.5 * get_model_chi(mol, param_path, run_path, model_name)
         remove(param_path)
 
@@ -218,10 +228,10 @@ def run_emcee(mol, lnprob, pool, resume_run=None):
 
         # Make a copy of the initial parameter dict so we can modify it
         if mol is 'multi':
-            sp.call(['cp', 'hco.yaml', '{}params-hco.yaml'.format(run_path)])
-            sp.call(['cp', 'hcn.yaml', '{}params-hcn.yaml'.format(run_path)])
+            sp.call(['cp', 'params-hco.json', '{}params-hco.json'.format(run_path)])
+            sp.call(['cp', 'params-hcn.json', '{}params-hcn.json'.format(run_path)])
         else:
-            sp.call(['cp', mol + '.yaml', '{}params-{}.yaml'.format(run_path,
+            sp.call(['cp', "params-" + mol + '.json', '{}params-{}.json'.format(run_path,
                                                                     mol)])
 
 
@@ -287,8 +297,9 @@ def run_emcee(mol, lnprob, pool, resume_run=None):
                       ]
 
     m = 'hco' if mol is 'multi' else mol
-    with open('{}params-{}.yaml'.format(run_path, m), 'r') as f_base:
-        f = yaml.load(f_base, Loader=CLoader)
+    with open('{}params-{}.json'.format(run_path, m), 'r') as f_base:
+#         f = yaml.load(f_base, Loader=CLoader)
+        f = json.load(f_base)
         nwalkers, nsteps = f['nwalkers'], f['nsteps']
 
     # Set up initial positions
@@ -331,27 +342,79 @@ def run_emcee(mol, lnprob, pool, resume_run=None):
     # Most notable upgrade is backends: https://emcee.readthedocs.io/en/stable/tutorials/monitor/
     # Have some useful implementation in old_run_driver.py, incl for schwimmbad.
     
-    # Initialize the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
-                                    args=(run_path, param_info, mol),
-                                    pool=pool)
 
     # Initialize a generator to provide the data. They changed the arg
-    run = sampler.sample(pos, iterations=nsteps, storechain=False)
-    lnprobs = []
-    
-    for i, result in enumerate(run):
-        pos, lnprobs, blob = result
-
-        # Log out the new positions
-        with open(chain_filename, 'a') as f:
-            new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
-            
-            from datetime import datetime
-            now = datetime.now().strftime('%H:%M, %m/%d')
+    # storechain -> store sometime between v2.2.1 (iorek) and v3.0rc2 (cluster)
+    from emcee import __version__ as emcee_version
+    # iorek is on v2, cluster and kazul are v3
+    if emcee_version[0] == '2':     
+        # Initialize the sampler
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+                                        args=(run_path, param_info, mol),
+                                        pool=pool)
+        run = sampler.sample(pos, iterations=nsteps, storechain=False)
         
-            print("[{}] Adding a new step to the chain".format(now))
-            np.savetxt(f, new_step, delimiter=',')
+        # No backend here, so gotta do it manually.
+        lnprobs = []    
+        for i, result in enumerate(run):
+            pos, lnprobs, blob = result
+
+            # Log out the new positions
+            with open(chain_filename, 'a') as f:
+                new_step = [np.append(pos[k], lnprobs[k]) for k in range(nwalkers)]
+
+                from datetime import datetime
+                now = datetime.now().strftime('%H:%M, %m/%d')
+
+                print("[{}] Adding a new step to the chain".format(now))
+                np.savetxt(f, new_step, delimiter=',')
+                
+    else:  # for cluster and kazul
+        
+        # Can now tell walkers to move in different (not just stretch) ways
+        # https://emcee.readthedocs.io/en/stable/user/moves/#moves-user
+        # TODO: Look intio using other moves.
+        move = emcee.moves.StretchMove
+        
+        # There is also now a default backend builtin
+        filename = "tutorial.h5"  #TODO: Update this
+        backend = emcee.backends.HDFBackend(filename)
+        backend.reset(nwalkers, ndim)
+        
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+                                        args=(run_path, param_info, mol),
+                                        pool=pool, moves=move,
+                                        backend=backend)
+        # Note that nsteps should be huge, since ideally we converge before hitting it.
+        run = sampler.sample(pos, iterations=nsteps, progress=True)
+        
+        
+        # Pulled from https://emcee.readthedocs.io/en/stable/tutorials/monitor/
+        # index = 0
+        # autocorr = np.empty(nsteps)
+        autocorr = []
+        old_tau = np.inf
+
+        for sample in run:
+            # Only check convergence every 100 steps
+            if sampler.iteration % 100:
+                continue
+
+            # Compute the autocorrelation time so far
+            # Using tol=0 means that we'll always get an estimate even
+            # if it isn't trustworthy
+            tau = sampler.get_autocorr_time(tol=0)
+            # autocorr[index] = np.mean(tau)
+            autocorr.append(np.mean(tau))
+            # index += 1
+
+            # Check convergence
+            converged = np.all(tau * 100 < sampler.iteration)
+            converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
+            if converged:
+                break
+            old_tau = tau
+
 
     print("Ended run")
 
@@ -371,15 +434,14 @@ def main():
 
     # TODO: Allow user to provide run name to resume here. Not action=store_true
     parser.add_argument('-r', '--resume', help='Want to resume a run?')
-    
     parser.add_argument('-hco', '--run_hco', action='store_true',
                         help='Begin an HCO+ run.')
     parser.add_argument('-hcn', '--run_hcn', action='store_true',
                         help='Begin an HCN run.')
     parser.add_argument('-co', '--run_co', action='store_true',
-                        help='Begin an CO run.')
+                        help='Begin a CO run.')
     parser.add_argument('-cs', '--run_cs', action='store_true',
-                        help='Begin an CS run.')
+                        help='Begin a CS run.')
     parser.add_argument('-multi', '--run_multi', action='store_true',
                         help='Begin a multi-line (HCO+/HCN) run.')
 
@@ -388,13 +450,10 @@ def main():
 
 
     if args.run_hco or args.run_hcn or args.run_co or args.run_cs or args.run_multi:
-#         print("Running now")
         # Set up the parallelization
-        # This is maybe bad. These are two fundamentally different ways of doing
-        # this, but is a temp solution.
+         # Iorek boxes is on v2, cluster and kazul are v3
         from emcee import __version__ as emcee_version
-        if emcee_version[0] == '2':     # Linux boxes are on v2, cluster is v3
-#             print("Emcee v2; we're on a Linux box.")
+        if emcee_version[0] == '2':
             from emcee.utils import MPIPool
             pool = MPIPool()
 
@@ -403,8 +462,8 @@ def main():
                 pool.wait()
                 sys.exit(0)
         else:
-            print("Emcee v3; we're on the cluster.")
-            from schwimmbad import MultiPool
+            # from schwimmbad import MultiPool
+            from schwimmbad import MPIPool
             pool = MultiPool(args.n_cores)
 
 

@@ -10,7 +10,7 @@ To-Do: In GridSearch_Run.param_degeneracies(), choose which slice of the
        so it's not showing the best-fit point in p-space.
 """
 
-import os, yaml, emcee, pickle, argparse, matplotlib
+import os, yaml, json, emcee, pickle, argparse, matplotlib
 import numpy as np, numpy.ma as ma, pandas as pd, seaborn as sns
 import subprocess as sp, astropy.units as u
 
@@ -37,10 +37,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # Local Package Imports
 import utils
 import run_driver
+import fitting
 
 # Consolidate these two
 import tools
-from tools import imstat, imstat_single, pipe, moment_maps
+# from tools import imstat, imstat_single, pipe, moment_maps
 from constants import lines, get_data_path, obs_stuff, offsets, get_data_path, mol
 import constants
 
@@ -87,11 +88,18 @@ class MCMC_Analysis:
         self.main            = pd.read_csv(self.runpath + self.name + '_chain.csv')
 
         if self.mol is 'multi':
-            self.param_dicts = {'hco': yaml.load(open('{}params-hco.yaml'.format(self.runpath, self.mol),
-                                                  'r'), Loader=CLoader),
-                                'hcn': yaml.load(open('{}params-hcn.yaml'.format(self.runpath, self.mol),
-                                                                      'r'), Loader=CLoader)
-                                }
+
+            try:
+                print("Reading YAML param file....")
+                self.param_dicts = {'hco': yaml.load(open('{}params-hco.yaml'.format(self.runpath), 'r'), 
+                                                     Loader=CLoader),
+                                    'hcn': yaml.load(open('{}params-hcn.yaml'.format(self.runpath), 'r'),
+                                                     Loader=CLoader)}
+            except FileNotFoundError:
+                print("Reading JSON param file....")
+                self.param_dicts = {'hco': json.load(open('{}params-hco.json'.format(self.runpath), 'r')),
+                                    'hcn': json.load(open('{}params-hcn.json'.format(self.runpath), 'r'))}
+
 
             # Build a combined param_dict.
             self.param_dict = {}
@@ -112,8 +120,14 @@ class MCMC_Analysis:
 
 
         else:
-            self.param_dict  = yaml.load(open('{}params-{}.yaml'.format(self.runpath, self.mol),
+            try:
+                print("Reading YAML param file....")
+                self.param_dict  = yaml.load(open('{}params-{}.yaml'.format(self.runpath, self.mol),
                                                   'r'), Loader=CLoader)
+            except FileNotFoundError:
+                print("Reading JSON param file....")
+                self.param_dict  = json.load(open('{}params-{}.json'.format(self.runpath,
+                                                                            self.mol), 'r'))
             self.nwalkers = self.param_dict['nwalkers']
             self.uv_cut = self.param_dict['baseline_cutoff']
             self.data_path  = './data/{}/{}-short{}'.format(self.mol, self.mol,
@@ -142,12 +156,24 @@ class MCMC_Analysis:
                                  'm_disk_A': 'Log Mass\n(Disk A)',
                                  'm_disk_B': 'Log Mass\n(Disk B)',
                                  'temp_struct_A': 'q\n(Disk A)',
-                                 'temp_struct_B': 'q\n(Disk B)'}
+                                 'temp_struct_B': 'q\n(Disk B)',
+                                 
+                                 'r_out_A_hcn': 'Outer Radius\n(HCN; Disk A)',
+                                 'r_out_B_hcn': 'Outer Radius\n(HCN; Disk B)',
+                                 'r_out_A_hco': 'Outer Radius\n(HCO+; Disk A)',
+                                 'r_out_B_hco': 'Outer Radius\n(HCO+; Disk B)',
+                                 
+                                 'mol_abundance_A_hcn': 'Log Abundance\n(HCN; Disk A)',
+                                 'mol_abundance_B_hcn': 'Log Abundance\n(HCN; Disk B)',
+                                 'mol_abundance_A_hco': 'Log Abundance\n(HCO+; Disk A)',
+                                 'mol_abundance_B_hco': 'Log Abundance\n(HCO+; Disk B)',
+                                 
+                                }
 
 
         print("\n\n" + self.name + " currently has {} steps over {} walkers.\n\n".format(str(self.nsteps), str(self.nwalkers)))
 
-        self.get_bestfit_dict()  # yields self.bf_param_dict
+        self.get_bestfit_dict()  # yields self.bf_param_dict, self.bf_param_dict_path
         self.get_fit_stats(print_stats=print_stats)
 
 
@@ -172,7 +198,9 @@ class MCMC_Analysis:
         yaml.dump(self.bf_param_dict,
                   open('{}params-{}_bestFit.yaml'.format(self.runpath, self.mol), 'w+'),
                   Dumper=CDumper)
+        self.bf_param_dict_path = '{}params-{}_bestFit.yaml'.format(self.runpath, self.mol)
         print("Dumped best-fit param dict to {}params-{}_bestFit.yaml".format(self.runpath, self.mol))
+        print("CAREFUL: right now we're dumping BF dicts as yamls, even if param files are jsons.")
         return None
 
 
@@ -358,7 +386,7 @@ class MCMC_Analysis:
                                  figsize=(3*n_cols, 5))
 
         for i in range(2):
-            for ax, param in zip(axes[i], df_a_params):
+            for ax, param in zip(axes[i], [df_a_params, df_b_params][i]):
                 print("Adding posterior for {} to plot.".format(param))
                 sns.distplot(df[param], kde=True, ax=ax)
                 xlab = ax.xaxis.get_label().get_text()
@@ -385,6 +413,8 @@ class MCMC_Analysis:
 
         if self.mol is 'hco':
             mol_name = r"HCO$^+$(4-3)"
+        elif self.mol is 'multi':
+            mol_name = r"Multi-line (HCO$^+$ & HCN)"
         else:
             j = lines[self.mol]['jnum']
             mol_name = self.mol.upper() + "({}-{})".format(j, j-1)
@@ -508,46 +538,34 @@ class MCMC_Analysis:
             #     if type(param_dict_mol[p]) == dict:
             #         param_dict_mol[p] = param_dict_mol[p][mol]
 
-            obs = fitting.Observation(mol, cut_baselines=True)
-            model = fitting.Model(observation=obs,
-                                  run_name=self.name,
-                                  model_name=self.name + '_bestFit')
-            run_driver.make_fits(model, self.bf_param_dict, mol)
+#             obs = fitting.Observation(mol, cut_baselines=True)
+#             model = utils.Model(observation=obs, run_name=self.name, model_name=self.name + '_bestFit')
+#             self.get_bestfit_dict()
+            print("Initiating model")
+            model = utils.Model(self.mol, self.bf_param_dict_path, self.runpath, self.name)
+#             run_driver.make_fits(model, self.bf_param_dict, mol)
+            print("Making fits files...")
+            model.make_fits()
+            print("Finished making fits; now sampling in UV plane")
             # Make the normal map, then make a residual map.
             tools.sample_model_in_uvplane(model.modelfiles_path, mol=mol, option='replace')
             tools.sample_model_in_uvplane(model.modelfiles_path, mol=mol, option='subtract')
-
+            print("ICR in process")
             # Maybe get rid of stuff in the way.
             tools.icr(model.modelfiles_path, mol=mol)
             tools.icr(model.modelfiles_path + '_resid', mol=mol)
 
             if plot_bf:
+                print("Plotting...")
                 tools.plot_fits(model.modelfiles_path + '.fits', mol=mol,
                                    best_fit=True, save=True)
                 tools.plot_fits(model.modelfiles_path + '_resid.fits', mol=mol,
                                    best_fit=True, save=True)
             return model
 
-        models = []
-        # If it's a one line fit, it's easy.
-        fourlinefit_tf = False
-        if not fourlinefit_tf:
-            models.append(make_model(self.bf_param_dict, self.bf_param_dict['mol']))
+        model = make_model(self.bf_param_dict, self.bf_param_dict['mol'])
 
-        else:
-            bf_param_dict = self.bf_param_dicts
-            # This assumes that outer radius and abundance are the only things
-            # being individually varied. Maybe coordinate better.
-            for m in ['cs', 'co', 'hco', 'hcn']:
-                # Doesn't matter that we've still got the other lines' info here
-                bf_param_dict['r_out_A'] = float(bf_param_dict['r_out_A-{}'.format(m)])
-                bf_param_dict['r_out_B'] = float(bf_param_dict['r_out_B-{}'.format(m)])
-                bf_param_dict['mol_abundance_A'] = float(bf_param_dict['mol_abundance_A-{}'.format(m)])
-                bf_param_dict['mol_abundance_B'] = float(bf_param_dict['mol_abundance_B-{}'.format(m)])
-
-                models.append(make_model(bf_param_dict, m))
-
-        return (models, self.bf_param_dict)
+        return (model, self.bf_param_dict)
 
 
     # This needs multi-line updating
@@ -684,24 +702,42 @@ class MCMC_Analysis:
         # plt.close()
         print("\nPlotting DMR images...")
 
+        if self.mol == 'multi':
+            # Bad
+            data_path  = self.data_path + '.fits'
+            resid_path = self.modelfiles_path + '_bestFit_resid.fits'
+            model_path = self.modelfiles_path + '_bestFit.fits'
 
-        data_path  = self.data_path + '.fits'
-        resid_path = self.modelfiles_path + '_bestFit_resid.fits'
-        model_path = self.modelfiles_path + '_bestFit.fits'
+            # if not Path(model_path).exists():
+            #     print("No best-fit model made yet; making now...")
 
-        # if not Path(model_path).exists():
-        #     print("No best-fit model made yet; making now...")
+            # tools.remove(self.modelfiles_path + '_bestFit*')
+            # self.make_best_fits(plot_bf=False)
 
-        # tools.remove(self.modelfiles_path + '_bestFit*')
-        # self.make_best_fits(plot_bf=False)
+            real_data    = fits.getdata(data_path, ext=0).squeeze()
+            model_data   = fits.getdata(model_path, ext=0).squeeze()
+            resid_data   = fits.getdata(resid_path, ext=0).squeeze()
+            image_header = fits.getheader(data_path, ext=0)
+            model_header = fits.getheader(model_path, ext=0)
+            resid_header = fits.getheader(resid_path, ext=0)
+        
+        else:
+            data_path  = self.data_path + '.fits'
+            resid_path = self.modelfiles_path + '_bestFit_resid.fits'
+            model_path = self.modelfiles_path + '_bestFit.fits'
 
-        real_data    = fits.getdata(data_path, ext=0).squeeze()
-        model_data   = fits.getdata(model_path, ext=0).squeeze()
-        resid_data   = fits.getdata(resid_path, ext=0).squeeze()
-        image_header = fits.getheader(data_path, ext=0)
-        model_header = fits.getheader(model_path, ext=0)
-        resid_header = fits.getheader(resid_path, ext=0)
+            # if not Path(model_path).exists():
+            #     print("No best-fit model made yet; making now...")
 
+            # tools.remove(self.modelfiles_path + '_bestFit*')
+            # self.make_best_fits(plot_bf=False)
+
+            real_data    = fits.getdata(data_path, ext=0).squeeze()
+            model_data   = fits.getdata(model_path, ext=0).squeeze()
+            resid_data   = fits.getdata(resid_path, ext=0).squeeze()
+            image_header = fits.getheader(data_path, ext=0)
+            model_header = fits.getheader(model_path, ext=0)
+            resid_header = fits.getheader(resid_path, ext=0)
 
         # Set up some physical params
         # vmin, vmax = np.nanmin(real_data), np.nanmax(real_data)
@@ -725,7 +761,7 @@ class MCMC_Analysis:
         chan_offset = ch_offsets[self.mol]
         nchans = 24
 
-        rms = imstat(data_path[:-5])[1]
+        rms = tools.imstat(data_path[:-5])[1]
         contours = [rms * i for i in range(3, 30, 3)]
 
 
@@ -1133,7 +1169,7 @@ class Figure:
 
         # Assumes we have channels (i.e. nv > 1)
         try:
-            self.rms = imstat(path.split('.')[-2])[1] * nv
+            self.rms = tools.imstat(path.split('.')[-2])[1] * nv
         except sp.CalledProcessError:
             self.rms = 0
         # Decide which moment map to make.
@@ -1200,19 +1236,19 @@ class Figure:
         if len(self.data.shape) == 3:
             # Make some moment maps. Make both maps and just choose which data to use.
             momentmap_basepath = path.split('.')[-2]
-            moment_maps(momentmap_basepath, clip_val=0, moment=0)
-            self.rms = imstat_single(momentmap_basepath + '.moment0')[1]
+            tools.moment_maps(momentmap_basepath, clip_val=0, moment=0)
+            self.rms = tools.imstat_single(momentmap_basepath + '.moment0')[1]
 
-            moment_maps(momentmap_basepath, clip_val=self.rms, moment=0)
+            tools.moment_maps(momentmap_basepath, clip_val=self.rms, moment=0)
             self.im = fits.getdata(momentmap_basepath + '.moment0.fits').squeeze()
 
             if self.moment == 1:
-                moment_maps(momentmap_basepath, clip_val=self.rms, moment=1)
+                tools.moment_maps(momentmap_basepath, clip_val=self.rms, moment=1)
                 self.im_mom1 = fits.getdata(momentmap_basepath + '_moment1.fits').squeeze()
 
         else:
             self.im = self.data
-            self.rms = imstat_single(path.split('.')[-2])[1]
+            self.rms = tools.imstat_single(path.split('.')[-2])[1]
 
 
         if self.export_fits_mom:

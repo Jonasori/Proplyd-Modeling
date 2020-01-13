@@ -4,6 +4,7 @@
 *.cm
 *.mp
 *.dat
+old*
 mcmc_runs
 # mcmc_results
 gridsearch_runs
@@ -12,6 +13,7 @@ disk_model
 data
 *.pyc
 __init__.py
+.ipynb_checkpoints/
 .nfs*
 .DS_Store
 ._*

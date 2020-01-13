@@ -319,6 +319,147 @@ class Model:
 
 
 
+    
+    
+    
+    
+    
+    
+class Observation:
+    """
+    Make the whole observation/data processing shindig a Class.
+
+    This incorporates everything from the path to the original data file to
+    the final model. Running it will grab the appropriate data files and
+    spit out a cleaned image and some other stuff.
+    
+    Only used in analysis.py/MCMC_Analysis I think? Probably doesn't do too
+    much important stuff.
+    """
+
+    def __init__(self, mol, cut_baselines=True):
+        """Give some init values.
+
+        Args:
+            root (str): the name of the directory to source the data files from
+            name (str): the name of the data files to grab from root
+            rms (float): the rms noise of that particular observation
+        """
+        if cut_baselines:
+            fname_end = '-short' + str(lines[mol]['baseline_cutoff'])
+        else:
+            fname_end = ''
+
+        self.mol = mol
+        self.path = './data/' + mol + '/' + mol + fname_end
+        self.uvf  = fits.open(self.path + '.uvf')
+        self.fits = fits.open(self.path + '.fits')
+        self.baseline_cutoff = 110
+
+        # We manually get rms later on so maybe don't need this?
+        self.rms = lines[mol]['rms']
+        self.restfreq = lines[mol]['restfreq']
+
+        """
+        Not convinced about this stuff. It's not working for my files.
+        try:
+            self.dec = self.uvf[0].data['OBSDEC'][0]
+            self.ra = self.uvf[0].data['OBSRA'][0]
+        except:
+            self.dec = self.uvf[3].data['DECEPO'][0]
+            self.ra = self.uvf[3].data['RAEPO'][0]
+
+        # Keep digging for these guys. They're probably somewhere.
+        """
+
+    def clean(self, show=True):
+        """
+        Clean and image (if desired) some data.
+
+        Note that this is pulled directly from iorek/jonas/.../tools.py/icr()
+        """
+        # Set observation-specific clean filepath; clear filepaths
+        sp.call('rm -rf {}.{{mp,bm,cl,cm}}'.format(self.path), shell=True)
+
+        # Add in the appropriate restfrequency to the header
+        sp.call(['puthd',
+                 'in={}.vis/restfreq'.format(self.path),
+                 'value={}'.format(self.restfreq)
+                 ])
+
+        # See June 7 & 22 notes and baseline_cutoff.py for how 30 klambda was
+        # determined in select=-uvrange(0,30)
+        sp.call(['invert',
+                 'vis={}.vis'.format(self.path),
+                 'map={}.mp'.format(self.path),
+                 'beam={}.bm'.format(self.path),
+                 'options=systemp',
+                 'select=-uvrange(0,{})'.format(self.baseline_cutoff),
+                 'cell=0.045',
+                 'imsize=256',
+                 'robust=2'
+                 ])
+
+        sp.call(['clean',
+                 'map={}.mp'.format(self.path),
+                 'beam={}.bm'.format(self.path),
+                 'out={}.cl'.format(self.path),
+                 'niters=10000',
+                 'threshold=1e-3'
+                 ])
+
+        sp.call(['restor',
+                 'map={}.mp'.format(self.path),
+                 'beam={}.bm'.format(self.path),
+                 'model={}.cl'.format(self.path),
+                 'out={}.cm'.format(self.path)
+                 ])
+
+
+        # Display clean image with 2,4,6 sigma contours, if desired
+        if show:
+
+            # Display an unimportant imaage to get around the fact that the
+            # first image displayed with cgdisp in a session can't be deleted
+            sp.call(['cgdisp', 'in=cgdisp_start.im', 'type=p', 'device=/xs'])
+
+            # Get rms for countours
+            imstat_out = sp.check_output(['imstat',
+                                          'in={}.cm'.format(self.path),
+                                          "region='boxes(256,0,512,200)'"])
+            clean_rms = float(imstat_out[-38:-29])
+            print(("Clean rms is {}".format(clean_rms)))
+
+            # Display
+            sp.call(['cgdisp',
+                     'in={}.cm,{}.cm'.format(self.path, self.path),
+                     'type=p,c', 'device=/xs',
+                     'slev=a,{}'.format(clean_rms),
+                     'levs1=-6,-4,-2,2,4,6',
+                     'region=arcsec,box(-5,-5,5,5)',
+                     'labtyp=arcsec',
+                     'beamtyp=b,l,3'
+                     ])
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 # Gridsearch Functions
 # These are probably all broken due to the deprecating of constants.py
